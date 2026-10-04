@@ -6,7 +6,7 @@ import { GlassPanel } from '../components/GlassPanel';
 import { Map } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  createParkingSpots,
+  createAllParkingSpots,
   DEFAULT_LOCATION,
   searchDemoLocations,
   DemoLocation,
@@ -19,7 +19,7 @@ export const ExploreScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const mapRef = useRef<any>(null);
-  const parkingSpots = createParkingSpots(activeLocation);
+  const parkingSpots = createAllParkingSpots();
   const searchResults = searchDemoLocations(searchQuery);
 
   const handleLocationSelect = (location: DemoLocation) => {

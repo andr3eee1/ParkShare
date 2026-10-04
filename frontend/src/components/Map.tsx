@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { tokens } from '../theme/tokens';
 
-let MapContainer: any, TileLayer: any, Marker: any, DivIcon: any, useMapEvents: any;
+let MapContainer: any, TileLayer: any, Marker: any, DivIcon: any, useMapEvents: any, useMap: any;
 if (Platform.OS === 'web') {
   require('leaflet/dist/leaflet.css');
   const RL = require('react-leaflet');
@@ -11,6 +11,7 @@ if (Platform.OS === 'web') {
   TileLayer = RL.TileLayer;
   Marker = RL.Marker;
   useMapEvents = RL.useMapEvents;
+  useMap = RL.useMap;
   const L = require('leaflet');
   DivIcon = L.divIcon;
 }
@@ -24,6 +25,187 @@ interface MapDestination {
 const getDestinationCoordinates = (destination?: MapDestination): [number, number] => (
   destination ? [destination.latitude, destination.longitude] : [44.4820, 26.1130]
 );
+
+const CLUSTER_ZOOM_THRESHOLD = 16;
+const CLUSTER_RADIUS = 64;
+const DESTINATION_ZOOM_THRESHOLD = 12;
+
+interface SpotCluster {
+  spots: any[];
+  center: [number, number];
+  projectedCenter: { x: number; y: number };
+}
+
+const getSpotCoordinates = (spot: any): [number, number] => {
+  if (typeof spot.latitude === 'number' && typeof spot.longitude === 'number') {
+    return [spot.latitude, spot.longitude];
+  }
+
+  const baseLat = 44.4820;
+  const baseLng = 26.1130;
+  const lat = baseLat + (parseFloat(spot.y) - 50) * -0.0003;
+  const lng = baseLng + (parseFloat(spot.x) - 50) * 0.0003;
+  return [lat, lng];
+};
+
+const getSpotClusters = (spots: any[], map: any, selectedSpot: any): SpotCluster[] => {
+  const bounds = map.getBounds();
+  const visibleSpots = spots.filter((spot) => bounds.contains(getSpotCoordinates(spot)));
+  const zoom = map.getZoom();
+
+  if (zoom >= CLUSTER_ZOOM_THRESHOLD) {
+    return visibleSpots.map((spot) => ({
+      spots: [spot],
+      center: getSpotCoordinates(spot),
+      projectedCenter: map.project(getSpotCoordinates(spot), zoom),
+    }));
+  }
+
+  return visibleSpots.reduce<SpotCluster[]>((clusters, spot) => {
+    if (selectedSpot?.id === spot.id) {
+      clusters.push({
+        spots: [spot],
+        center: getSpotCoordinates(spot),
+        projectedCenter: map.project(getSpotCoordinates(spot), zoom),
+      });
+      return clusters;
+    }
+
+    const coordinates = getSpotCoordinates(spot);
+    const projected = map.project(coordinates, zoom);
+    const nearbyCluster = clusters.find((cluster) => {
+      if (cluster.spots.some((clusterSpot) => clusterSpot.id === selectedSpot?.id)) {
+        return false;
+      }
+
+      const distance = Math.hypot(
+        cluster.projectedCenter.x - projected.x,
+        cluster.projectedCenter.y - projected.y,
+      );
+      return distance <= CLUSTER_RADIUS;
+    });
+
+    if (!nearbyCluster) {
+      clusters.push({ spots: [spot], center: coordinates, projectedCenter: projected });
+      return clusters;
+    }
+
+    nearbyCluster.spots.push(spot);
+    const count = nearbyCluster.spots.length;
+    nearbyCluster.center = [
+      nearbyCluster.spots.reduce((sum, clusterSpot) => sum + getSpotCoordinates(clusterSpot)[0], 0) / count,
+      nearbyCluster.spots.reduce((sum, clusterSpot) => sum + getSpotCoordinates(clusterSpot)[1], 0) / count,
+    ];
+    nearbyCluster.projectedCenter = map.project(nearbyCluster.center, zoom);
+    return clusters;
+  }, []);
+};
+
+const WebDestinationMarker = ({ destination }: { destination: MapDestination }) => {
+  const map = useMap();
+  const [isVisible, setIsVisible] = useState(map.getZoom() >= DESTINATION_ZOOM_THRESHOLD);
+
+  useEffect(() => {
+    const updateVisibility = () => setIsVisible(map.getZoom() >= DESTINATION_ZOOM_THRESHOLD);
+    map.on('zoomend', updateVisibility);
+    return () => map.off('zoomend', updateVisibility);
+  }, [map]);
+
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <Marker
+      position={getDestinationCoordinates(destination) as any}
+      icon={new DivIcon({
+        className: 'destination-leaflet-marker',
+        html: '<div class="destination-marker"></div>',
+        iconSize: [28, 34],
+        iconAnchor: [14, 34],
+      })}
+      zIndexOffset={2000}
+    />
+  );
+};
+
+const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
+  spots: any[];
+  selectedSpot: any;
+  onSelectSpot: (spot: any) => void;
+}) => {
+  const map = useMap();
+  const [viewportVersion, setViewportVersion] = useState(0);
+
+  useEffect(() => {
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const refreshVisibleSpots = () => {
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
+      refreshTimer = setTimeout(() => setViewportVersion((version) => version + 1), 350);
+    };
+
+    setViewportVersion((version) => version + 1);
+    map.on('zoomend moveend', refreshVisibleSpots);
+    return () => {
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
+      map.off('zoomend moveend', refreshVisibleSpots);
+    };
+  }, [map, spots]);
+
+  const clusters = getSpotClusters(spots, map, selectedSpot);
+  void viewportVersion;
+
+  return <>
+    {clusters.map((cluster) => {
+      if (cluster.spots.length > 1) {
+        const icon = new DivIcon({
+          className: 'cluster-leaflet-marker',
+          html: `<div class="cluster-marker">${cluster.spots.length}</div>`,
+          iconSize: [44, 44],
+          iconAnchor: [22, 22],
+        });
+
+        return (
+          <Marker
+            key={`cluster-${cluster.spots.map((spot) => spot.id).join('-')}`}
+            position={cluster.center as any}
+            icon={icon}
+            eventHandlers={{
+              click: () => map.setView(cluster.center, Math.min(map.getZoom() + 2, 18)),
+            }}
+          />
+        );
+      }
+
+      const spot = cluster.spots[0];
+      const isSelected = selectedSpot?.id === spot.id;
+      const isMunicipal = spot.type === 'municipal';
+      const bgColor = isMunicipal
+        ? (isSelected ? '#1E3A8A' : '#3B82F6')
+        : (isSelected ? '#14532D' : '#22C55E');
+      const icon = new DivIcon({
+        className: 'custom-leaflet-marker',
+        html: `<div class="marker-content" style="background-color: ${bgColor}; transform: scale(${isSelected ? 1.2 : 1});"><span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span></div>`,
+        iconSize: [80, 30],
+        iconAnchor: [40, 15],
+      });
+
+      return (
+        <Marker
+          key={spot.id}
+          position={getSpotCoordinates(spot) as any}
+          icon={icon}
+          zIndexOffset={isSelected ? 1000 : 0}
+          eventHandlers={{ click: () => onSelectSpot(spot) }}
+        />
+      );
+    })}
+  </>;
+};
 
 export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination }: {
   spots: any[];
@@ -71,7 +253,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
     if (Platform.OS === 'web' && webMapRef.current) {
       webMapRef.current.panTo(targetCoordinates);
     } else if (webviewRef.current) {
-      let script = `if (typeof updateSelection === 'function') { updateSelection('${selectedSpot?.id || ''}'); }`;
+      let script = `if (typeof updateSelection === 'function') { updateSelection(${JSON.stringify(selectedSpot?.id || '')}); }`;
       script += `if (typeof map !== 'undefined') { map.panTo([${targetCoordinates[0]}, ${targetCoordinates[1]}]); }`;
       script += 'true;';
       webviewRef.current.injectJavaScript(script);
@@ -92,6 +274,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           .leaflet-container { width: 100%; height: 100%; position: absolute; }
           .custom-leaflet-marker { background: transparent; border: none; }
           .destination-leaflet-marker { background: transparent; border: none; }
+          .cluster-leaflet-marker { background: transparent; border: none; }
           .marker-content {
             display: flex;
             align-items: center;
@@ -113,12 +296,27 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
             padding: 2px 4px;
             border-radius: 4px;
           }
-          .destination-marker {
-            width: 34px;
-            height: 34px;
-            border-radius: 50% 50% 50% 0;
-            background-color: #23262B;
+          .cluster-marker {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: #86EFAC;
             border: 3px solid #FFFFFF;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+            color: #14532D;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: bold;
+          }
+          .destination-marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50% 50% 50% 0;
+            background-color: #EF4444;
+            border: 2px solid #FFFFFF;
             box-shadow: 0 4px 8px rgba(0,0,0,0.25);
             transform: rotate(-45deg);
             position: relative;
@@ -126,12 +324,12 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           .destination-marker::after {
             content: '';
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background-color: #FFFFFF;
-            top: 9px;
-            left: 9px;
+            top: 6px;
+            left: 6px;
           }
           .leaflet-control-attribution { display: none; }
         `}</style>
@@ -146,115 +344,36 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <WebMapEvents />
           {destination && (
-            <Marker
-              key="destination"
-              position={getDestinationCoordinates(destination) as any}
-              icon={new DivIcon({
-                className: 'destination-leaflet-marker',
-                html: '<div class="destination-marker"></div>',
-                iconSize: [40, 48],
-                iconAnchor: [20, 48],
-              })}
-              zIndexOffset={2000}
-            />
+            <WebDestinationMarker key="destination" destination={destination} />
           )}
-          {spots.map((spot: any) => {
-            const isSelected = selectedSpot?.id === spot.id;
-            const isMunicipal = spot.type === 'municipal';
-            
-            const bgColor = isMunicipal 
-              ? (isSelected ? '#1E3A8A' : '#3B82F6') // Dark Blue : Light Blue
-              : (isSelected ? '#14532D' : '#22C55E'); // Dark Green : Light Green
-              
-            const scale = isSelected ? 'scale(1.2)' : 'scale(1)';
-            const zIndexOffset = isSelected ? 1000 : 0;
-            
-            const html = `
-              <div class="marker-content" style="background-color: ${bgColor}; transform: ${scale};">
-                <span class="marker-price">${spot.price} RON</span>
-                <span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span>
-              </div>
-            `;
-            
-            const icon = new DivIcon({
-              className: 'custom-leaflet-marker',
-              html: html,
-              iconSize: [80, 30],
-              iconAnchor: [40, 15]
-            });
-
-            return (
-              <Marker 
-                key={spot.id} 
-                position={getCoordinates(spot) as any} 
-                icon={icon} 
-                zIndexOffset={zIndexOffset}
-                eventHandlers={{ click: () => onSelectSpot(spot) }}
-              />
-            );
-          })}
+          <WebMapSpots spots={spots} selectedSpot={selectedSpot} onSelectSpot={onSelectSpot} />
         </MapContainer>
       </View>
     );
   }
 
   const htmlContent = (() => {
-    const markersHtml = spots.map((spot: any) => {
-      const isMunicipal = spot.type === 'municipal';
-      const coords = getCoordinates(spot);
-      const markerKey = String(spot.id).replace(/[^a-zA-Z0-9_$]/g, '_');
-      const spotId = JSON.stringify(spot.id);
-      
-      const bgColor = isMunicipal ? '#3B82F6' : '#22C55E'; // Light Blue : Light Green
-      const scale = 'scale(1)';
-      const zIndex = 1;
-
-      return `
-        var el_${markerKey} = document.createElement('div');
-        el_${markerKey}.id = 'marker_${markerKey}';
-        el_${markerKey}.className = 'marker-content';
-        el_${markerKey}.style.backgroundColor = '${bgColor}';
-        el_${markerKey}.style.transform = '${scale}';
-        el_${markerKey}.style.zIndex = '${zIndex}';
-        el_${markerKey}.innerHTML = '<span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span>';
-        
-        var m_${markerKey} = L.marker([${coords[0]}, ${coords[1]}], {
-          icon: L.divIcon({
-            className: 'custom-leaflet-marker',
-            html: el_${markerKey}.outerHTML,
-            iconSize: [80, 30],
-            iconAnchor: [40, 15]
-          })
-        }).addTo(map).on('click', function(e) {
-           L.DomEvent.stopPropagation(e);
-           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'select', id: ${spotId} }));
-        });
-      `;
-    }).join('\n');
-
-    const updateSelectionLogic = spots.map((spot: any) => `
-      var el_${String(spot.id).replace(/[^a-zA-Z0-9_$]/g, '_')} = document.getElementById('marker_${String(spot.id).replace(/[^a-zA-Z0-9_$]/g, '_')}');
-      if (el_${String(spot.id).replace(/[^a-zA-Z0-9_$]/g, '_')}) {
-        var isSelected = (${JSON.stringify(spot.id)} === selectedId);
-        var isMunicipal = ${spot.type === 'municipal'};
-        el_${String(spot.id).replace(/[^a-zA-Z0-9_$]/g, '_')}.style.backgroundColor = isMunicipal ? (isSelected ? '#1E3A8A' : '#3B82F6') : (isSelected ? '#14532D' : '#22C55E');
-        el_${String(spot.id).replace(/[^a-zA-Z0-9_$]/g, '_')}.style.transform = isSelected ? 'scale(1.2)' : 'scale(1)';
-        el_${String(spot.id).replace(/[^a-zA-Z0-9_$]/g, '_')}.style.zIndex = isSelected ? '1000' : '1';
-      }
-    `).join('\n');
-
+    const spotsJson = JSON.stringify(spots).replace(/</g, '\\u003c');
     const destinationCoordinates = getDestinationCoordinates(destination);
     const destinationMarker = destination ? `
-      L.marker([${destinationCoordinates[0]}, ${destinationCoordinates[1]}], {
+      var destinationMarker = L.marker([${destinationCoordinates[0]}, ${destinationCoordinates[1]}], {
         icon: L.divIcon({
           className: 'destination-leaflet-marker',
           html: '<div class="destination-marker"></div>',
-          iconSize: [40, 48],
-          iconAnchor: [20, 48]
+          iconSize: [28, 34],
+          iconAnchor: [14, 34]
         }),
         zIndexOffset: 2000
       }).addTo(map);
-    ` : '';
+      function updateDestinationVisibility() {
+        if (map.getZoom() < ${DESTINATION_ZOOM_THRESHOLD}) {
+          if (map.hasLayer(destinationMarker)) map.removeLayer(destinationMarker);
+        } else if (!map.hasLayer(destinationMarker)) {
+          destinationMarker.addTo(map);
+        }
+      }
+      map.on('zoomend', updateDestinationVisibility);
+    ` : 'var destinationMarker = null;';
 
     return `
       <!DOCTYPE html>
@@ -268,6 +387,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
           .custom-leaflet-marker { background: transparent; border: none; }
           .destination-leaflet-marker { background: transparent; border: none; }
+          .cluster-leaflet-marker { background: transparent; border: none; }
           .marker-content {
             display: flex;
             align-items: center;
@@ -289,12 +409,27 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
             padding: 2px 4px;
             border-radius: 4px;
           }
-          .destination-marker {
-            width: 34px;
-            height: 34px;
-            border-radius: 50% 50% 50% 0;
-            background-color: #23262B;
+          .cluster-marker {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: #86EFAC;
             border: 3px solid #FFFFFF;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+            color: #14532D;
+            font-family: sans-serif;
+            font-size: 15px;
+            font-weight: bold;
+          }
+          .destination-marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50% 50% 50% 0;
+            background-color: #EF4444;
+            border: 2px solid #FFFFFF;
             box-shadow: 0 4px 8px rgba(0,0,0,0.25);
             transform: rotate(-45deg);
             position: relative;
@@ -302,12 +437,12 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           .destination-marker::after {
             content: '';
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background-color: #FFFFFF;
-            top: 9px;
-            left: 9px;
+            top: 6px;
+            left: 6px;
           }
           .leaflet-control-attribution { display: none; }
           .leaflet-control-zoom { display: none; }
@@ -318,17 +453,108 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
         <script>
           var map = L.map('map', { zoomControl: false }).setView([${destinationCoordinates[0]}, ${destinationCoordinates[1]}], 14.5);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+          var spotData = ${spotsJson};
+          var selectedId = null;
+          var markersLayer = L.layerGroup().addTo(map);
+          var refreshTimer = null;
+
+          function spotCoordinates(spot) {
+            if (typeof spot.latitude === 'number' && typeof spot.longitude === 'number') {
+              return [spot.latitude, spot.longitude];
+            }
+            return [44.4820 + (parseFloat(spot.y) - 50) * -0.0003, 26.1130 + (parseFloat(spot.x) - 50) * 0.0003];
+          }
+
+          function markerHtml(spot) {
+            var isSelected = spot.id === selectedId;
+            var isMunicipal = spot.type === 'municipal';
+            var color = isMunicipal ? (isSelected ? '#1E3A8A' : '#3B82F6') : (isSelected ? '#14532D' : '#22C55E');
+            var scale = isSelected ? 'scale(1.2)' : 'scale(1)';
+            return '<div class="marker-content" style="background-color: ' + color + '; transform: ' + scale + ';">' +
+              '<span class="marker-price">' + spot.price + ' RON</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span></div>';
+          }
+
+          function renderSpots() {
+            markersLayer.clearLayers();
+            var bounds = map.getBounds();
+            var zoom = map.getZoom();
+            var visibleSpots = spotData.filter(function(spot) { return bounds.contains(spotCoordinates(spot)); });
+            var clusters = [];
+
+            visibleSpots.forEach(function(spot) {
+              var coordinates = spotCoordinates(spot);
+              var projected = map.project(coordinates, zoom);
+              if (zoom >= ${CLUSTER_ZOOM_THRESHOLD} || spot.id === selectedId) {
+                clusters.push({ spots: [spot], center: coordinates, projectedCenter: projected });
+                return;
+              }
+
+              var nearbyCluster = clusters.find(function(cluster) {
+                if (cluster.spots.some(function(clusterSpot) { return clusterSpot.id === selectedId; })) return false;
+                return Math.hypot(cluster.projectedCenter.x - projected.x, cluster.projectedCenter.y - projected.y) <= ${CLUSTER_RADIUS};
+              });
+              if (!nearbyCluster) {
+                clusters.push({ spots: [spot], center: coordinates, projectedCenter: projected });
+                return;
+              }
+
+              nearbyCluster.spots.push(spot);
+              nearbyCluster.center = [
+                nearbyCluster.spots.reduce(function(sum, clusterSpot) { return sum + spotCoordinates(clusterSpot)[0]; }, 0) / nearbyCluster.spots.length,
+                nearbyCluster.spots.reduce(function(sum, clusterSpot) { return sum + spotCoordinates(clusterSpot)[1]; }, 0) / nearbyCluster.spots.length
+              ];
+              nearbyCluster.projectedCenter = map.project(nearbyCluster.center, zoom);
+            });
+
+            clusters.forEach(function(cluster) {
+              if (cluster.spots.length > 1) {
+                L.marker(cluster.center, {
+                  icon: L.divIcon({
+                    className: 'cluster-leaflet-marker',
+                    html: '<div class="cluster-marker">' + cluster.spots.length + '</div>',
+                    iconSize: [44, 44],
+                    iconAnchor: [22, 22]
+                  })
+                }).addTo(markersLayer).on('click', function(e) {
+                  L.DomEvent.stopPropagation(e);
+                  map.setView(cluster.center, Math.min(map.getZoom() + 2, 18));
+                });
+                return;
+              }
+
+              var spot = cluster.spots[0];
+              L.marker(spotCoordinates(spot), {
+                icon: L.divIcon({
+                  className: 'custom-leaflet-marker',
+                  html: markerHtml(spot),
+                  iconSize: [80, 30],
+                  iconAnchor: [40, 15]
+                })
+              }).addTo(markersLayer).on('click', function(e) {
+                L.DomEvent.stopPropagation(e);
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'select', id: spot.id }));
+              });
+            });
+          }
+
+          function scheduleRefresh() {
+            if (refreshTimer) clearTimeout(refreshTimer);
+            refreshTimer = setTimeout(renderSpots, 350);
+          }
+
+          map.on('zoomend moveend', scheduleRefresh);
           
           map.on('click', function() {
             window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'map_click' }));
           });
 
-          function updateSelection(selectedId) {
-            ${updateSelectionLogic}
+          function updateSelection(nextSelectedId) {
+            selectedId = nextSelectedId;
+            renderSpots();
           }
 
           ${destinationMarker}
-          ${markersHtml}
+          renderSpots();
         </script>
       </body>
       </html>
