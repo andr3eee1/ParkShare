@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard, ActivityIndicator } from 'react-native';
+import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Location from 'expo-location';
 import { tokens } from '../theme/tokens';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
 import { GlassPanel } from '../components/GlassPanel';
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -114,6 +116,7 @@ const WheelPicker = ({ items, selectedValue, onValueChange, disabledItems = [], 
 };
 
 export const ExploreScreen = () => {
+  const { user } = useContext(AuthContext);
   const { getPassForSpot, isParkPlusActive } = usePasses();
   const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -465,7 +468,15 @@ export const ExploreScreen = () => {
                 <Text style={[styles.locationText, { flexShrink: 1 }]} numberOfLines={1}>{activeLocation ? activeLocation.shortName : 'My Location'}</Text>
               </View>
               <View style={styles.headerRight}>
-                <View style={styles.avatar} />
+                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }]}>
+                  {user?.avatarUrl ? (
+                    <Image source={{ uri: user.avatarUrl }} style={{ width: '100%', height: '100%' }} />
+                  ) : (
+                    <Text style={{ fontFamily: tokens.typography.heading, fontSize: 14, color: tokens.colors.white }}>
+                      {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                    </Text>
+                  )}
+                </View>
               </View>
             </View>
 
@@ -1069,7 +1080,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: tokens.colors.primaryText,
   },
   searchContainer: {
     flexDirection: 'row',
