@@ -755,6 +755,9 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     padding: 24,
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
