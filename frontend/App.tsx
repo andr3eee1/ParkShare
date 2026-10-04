@@ -22,6 +22,9 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-goog
 
 import { tokens } from './src/theme/tokens';
 import { ExploreScreen } from './src/screens/ExploreScreen';
+import { HistoryScreen } from './src/screens/HistoryScreen';
+import { PassesScreen } from './src/screens/PassesScreen';
+import { PassProvider } from './src/context/PassContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Tab = createBottomTabNavigator();
@@ -59,7 +62,7 @@ export default function App() {
             tabBarIcon: ({ color, size }) => {
               let iconName: any = 'map';
               if (route.name === 'Explore') iconName = 'search';
-              else if (route.name === 'Bookings') iconName = 'calendar';
+              else if (route.name === 'History') iconName = 'time';
               else if (route.name === 'Passes') iconName = 'card';
               else if (route.name === 'Account') iconName = 'person';
               return <Ionicons name={iconName} size={size} color={color} />;
@@ -82,8 +85,8 @@ export default function App() {
           })}
         >
           <Tab.Screen name="Explore" component={ExploreScreen} />
-          <Tab.Screen name="Bookings" children={() => <PlaceholderScreen name="Bookings" />} />
-          <Tab.Screen name="Passes" children={() => <PlaceholderScreen name="Passes" />} />
+          <Tab.Screen name="History" component={HistoryScreen} />
+          <Tab.Screen name="Passes" component={PassesScreen} />
           <Tab.Screen name="Account" component={AccountScreen} />
         </Tab.Navigator>
     );
@@ -126,9 +129,11 @@ export default function App() {
 
   const AppRoot = (
     <SafeAreaProvider>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <PassProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </PassProvider>
     </SafeAreaProvider>
   );
 

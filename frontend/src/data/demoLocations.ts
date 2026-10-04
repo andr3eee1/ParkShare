@@ -133,7 +133,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude' |
     price: 4,
     host: 'Elena M.',
     distance: '2 min walk',
-    available: '09:00 - 18:00',
+    available: '08:00 - 18:00',
     reservations: [],
     evCharging: true,
   },
@@ -235,7 +235,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude' |
     price: 3,
     host: 'Maria B.',
     distance: '12 min walk',
-    available: '22:00 - 06:00',
+    available: '19:00 - 07:00',
     reservations: [],
   },
 ];

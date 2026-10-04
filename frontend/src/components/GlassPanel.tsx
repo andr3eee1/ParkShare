@@ -8,13 +8,14 @@ interface GlassPanelProps {
   style?: ViewStyle | ViewStyle[];
   intensity?: number;
   borderRadius?: number;
+  overlayColor?: string;
 }
 
-export const GlassPanel: React.FC<GlassPanelProps> = ({ children, style, intensity = 60, borderRadius }) => {
+export const GlassPanel: React.FC<GlassPanelProps> = ({ children, style, intensity = 60, borderRadius, overlayColor }) => {
   return (
     <View style={[styles.container, borderRadius ? { borderRadius } : null, style]}>
       <BlurView intensity={intensity} tint="light" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, styles.overlay, borderRadius ? { borderRadius } : null]} />
+      <View style={[StyleSheet.absoluteFill, styles.overlay, overlayColor ? { backgroundColor: overlayColor } : null, borderRadius ? { borderRadius } : null]} />
       {children}
     </View>
   );

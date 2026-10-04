@@ -8,6 +8,7 @@ import { tokens } from '../theme/tokens';
 import { GlassPanel } from '../components/GlassPanel';
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { usePasses } from '../context/PassContext';
 import {
   createAllParkingSpots,
   DEFAULT_LOCATION,
@@ -113,6 +114,7 @@ const WheelPicker = ({ items, selectedValue, onValueChange, disabledItems = [], 
 };
 
 export const ExploreScreen = () => {
+  const { getPassForSpot, isParkPlusActive } = usePasses();
   const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [isDetailsVisible, setDetailsVisible] = useState(false);
@@ -363,6 +365,15 @@ export const ExploreScreen = () => {
 
   // Calculate total duration in minutes
   const totalDurationMinutes = Math.max(0, departureMinutes - actualStartMinutes);
+  const appliedPass = getPassForSpot(selectedSpot);
+  const parkPlusTimeDeductionMinutes = isParkPlusActive && totalDurationMinutes > 120 ? 15 : 0;
+  const billableDurationMinutes = Math.max(0, totalDurationMinutes - parkPlusTimeDeductionMinutes);
+  const baseParkingCost = (totalDurationMinutes / 60) * (selectedSpot?.price || 0);
+  const timeDeductionValue = (parkPlusTimeDeductionMinutes / 60) * (selectedSpot?.price || 0);
+  const billableParkingCost = (billableDurationMinutes / 60) * (selectedSpot?.price || 0);
+  const parkPlusDiscount = isParkPlusActive ? billableParkingCost * 0.15 : 0;
+  const parkingCost = billableParkingCost - parkPlusDiscount;
+  const securityDeposit = appliedPass ? 0 : (selectedSpot?.price || 0) * 5;
 
   const handleZoomIn = () => {
     mapRef.current?.zoomIn();
@@ -804,17 +815,32 @@ export const ExploreScreen = () => {
               {/* Receipt */}
               <View style={styles.receiptContainer}>
                 <View style={styles.receiptRow}>
-                  <Text style={styles.receiptLabel}>Parking Hold ({formatDurationDisplay(totalDurationMinutes)} × {selectedSpot.price} RON/hr)</Text>
-                  <Text style={styles.receiptValue}>{((totalDurationMinutes / 60) * selectedSpot.price).toFixed(2)} RON</Text>
+                  <Text style={styles.receiptLabel}>Parking ({formatDurationDisplay(totalDurationMinutes)} × {selectedSpot.price} RON/hr)</Text>
+                  <Text style={styles.receiptValue}>{baseParkingCost.toFixed(2)} RON</Text>
                 </View>
+                {parkPlusTimeDeductionMinutes > 0 && (
+                  <View style={styles.receiptRow}>
+                    <Text style={styles.receiptLabel}>Park Plus time benefit (15 min)</Text>
+                    <Text style={styles.discountValue}>-{timeDeductionValue.toFixed(2)} RON</Text>
+                  </View>
+                )}
+                {isParkPlusActive && (
+                  <View style={styles.receiptRow}>
+                    <Text style={styles.receiptLabel}>Park Plus discount (15%)</Text>
+                    <Text style={styles.discountValue}>-{parkPlusDiscount.toFixed(2)} RON</Text>
+                  </View>
+                )}
                 <View style={styles.receiptRow}>
                   <Text style={styles.receiptLabel}>Security Deposit (Refundable)</Text>
-                  <Text style={styles.receiptValue}>{selectedSpot.price * 5} RON</Text>
+                  <Text style={[styles.receiptValue, appliedPass && styles.waivedValue]}>{appliedPass ? 'WAIVED' : `${securityDeposit} RON`}</Text>
                 </View>
+                {appliedPass && (
+                  <Text style={styles.passAppliedText}>{appliedPass.name} applied · GPS check-in enabled</Text>
+                )}
                 <View style={styles.receiptDivider} />
                 <View style={styles.receiptRow}>
                   <Text style={styles.receiptTotalLabel}>Total</Text>
-                  <Text style={styles.receiptTotalValue}>{(((totalDurationMinutes / 60) * selectedSpot.price) + (selectedSpot.price * 5)).toFixed(2)} RON</Text>
+                  <Text style={styles.receiptTotalValue}>{(parkingCost + securityDeposit).toFixed(2)} RON</Text>
                 </View>
               </View>
 
@@ -1366,6 +1392,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: tokens.colors.primaryText,
+  },
+  discountValue: {
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
+    fontWeight: '600',
+    color: tokens.colors.availabilityGreen,
+  },
+  waivedValue: {
+    color: tokens.colors.availabilityGreen,
+  },
+  passAppliedText: {
+    fontFamily: tokens.typography.body,
+    fontSize: 11,
+    color: tokens.colors.availabilityGreen,
+    marginTop: 2,
+    marginBottom: 4,
   },
   receiptDivider: {
     height: 1,
