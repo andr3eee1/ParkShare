@@ -1,25 +1,128 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useContext } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
+import { AuthContext } from '../../context/AuthContext';
 
 export const PersonalInformationScreen = () => {
   const navigation = useNavigation();
+  const { user, token, updateUser } = useContext(AuthContext);
+
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleSave = async () => {
+    if (!firstName || !lastName) {
+      setError('First and last name are required.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess(false);
+
+    try {
+      const res = await fetch('http://pana.com.ro:8745/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ firstName, lastName })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        if (Array.isArray(data.error)) {
+           throw new Error(data.error.map((e: any) => e.message).join(', '));
+        }
+        throw new Error(data.error || 'Failed to update profile');
+      }
+
+      await updateUser(data.user);
+      setSuccess(true);
+      
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={tokens.colors.primaryText} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Personal Information</Text>
-        <View style={{ width: 40 }} />
-      </View>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.placeholder}>Update your personal details here.</Text>
-      </ScrollView>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={tokens.colors.primaryText} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Personal Information</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <ScrollView contentContainerStyle={styles.content}>
+          
+          {error ? (
+            <View style={styles.errorBox}>
+              <Ionicons name="warning" size={20} color={tokens.colors.primaryText} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          {success ? (
+            <View style={styles.successBox}>
+              <Ionicons name="checkmark-circle" size={20} color="#047857" />
+              <Text style={styles.successText}>Profile updated successfully!</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>First name</Text>
+            <TextInput
+              style={styles.input}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Jane"
+              placeholderTextColor={tokens.colors.secondaryText}
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Last name</Text>
+            <TextInput
+              style={styles.input}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Doe"
+              placeholderTextColor={tokens.colors.secondaryText}
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Email address</Text>
+            <TextInput
+              style={[styles.input, styles.disabledInput]}
+              value={user?.email || ''}
+              editable={false}
+            />
+            <Text style={styles.helperText}>Email address cannot be changed currently.</Text>
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleSave} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color={tokens.colors.white} />
+            ) : (
+              <Text style={styles.buttonText}>Save Changes</Text>
+            )}
+          </TouchableOpacity>
+
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -54,11 +157,73 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  placeholder: {
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  errorText: {
+    fontFamily: tokens.typography.body,
+    color: '#991B1B',
+    marginLeft: 8,
+    flex: 1,
+  },
+  successBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  successText: {
+    fontFamily: tokens.typography.body,
+    color: '#047857',
+    marginLeft: 8,
+    flex: 1,
+  },
+  formGroup: {
+    marginBottom: 24,
+  },
+  label: {
+    fontFamily: tokens.typography.body,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: tokens.colors.primaryText,
+  },
+  input: {
+    backgroundColor: tokens.colors.white,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 16,
     fontFamily: tokens.typography.body,
     fontSize: 16,
+    color: tokens.colors.primaryText,
+  },
+  disabledInput: {
+    backgroundColor: '#F3F4F6',
     color: tokens.colors.secondaryText,
-    textAlign: 'center',
-    marginTop: 48,
-  }
+  },
+  helperText: {
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+    color: tokens.colors.secondaryText,
+    marginTop: 6,
+  },
+  button: {
+    backgroundColor: tokens.colors.primaryText,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buttonText: {
+    color: tokens.colors.white,
+    fontFamily: tokens.typography.heading,
+    fontSize: 16,
+  },
 });
