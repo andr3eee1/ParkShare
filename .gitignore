@@ -136,3 +136,4 @@ dist
 android/
 # iOS
 ios/
+backend/uploads/

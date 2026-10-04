@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import multer from 'multer';
+import path from 'path';
 import { requireAuth, AuthRequest } from './middleware';
 
 const router = Router();
@@ -115,7 +117,7 @@ const UpdateProfileSchema = z.object({
 
 router.put('/profile', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
   try {
-    const userId = req.user?.userId;
+    const userId = (req as AuthRequest).user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const data = UpdateProfileSchema.parse(req.body);
@@ -146,6 +148,31 @@ router.put('/profile', requireAuth, async (req: AuthRequest, res: any): Promise<
     }
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => {
+    cb(null, `${(req as AuthRequest).user?.userId}-${Date.now()}${path.extname(file.originalname)}`);
+  }
+});
+const upload = multer({ storage });
+
+router.post('/upload-avatar', requireAuth, upload.single('avatar'), async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    
+    // Construct the public URL
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const url = `${protocol}://${host}/uploads/${req.file.filename}`;
+    
+    res.json({ url });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Internal server error during upload' });
   }
 });
 

@@ -5,6 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
 
 export const PersonalInformationScreen = () => {
   const navigation = useNavigation();
@@ -16,6 +18,52 @@ export const PersonalInformationScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      await uploadImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (uri: string) => {
+    setUploadingAvatar(true);
+    setError('');
+    
+    try {
+      const filename = uri.split('/').pop() || 'avatar.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image`;
+
+      const formData = new FormData();
+      formData.append('avatar', { uri, name: filename, type } as any);
+
+      const res = await fetch('http://pana.com.ro:8745/auth/upload-avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      
+      setAvatarUrl(data.url);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!firstName || !lastName) {
@@ -82,19 +130,30 @@ export const PersonalInformationScreen = () => {
             </View>
           ) : null}
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Profile Picture URL</Text>
-            <TextInput
-              style={styles.input}
-              value={avatarUrl}
-              onChangeText={setAvatarUrl}
-              placeholder="https://example.com/photo.jpg"
-              placeholderTextColor={tokens.colors.secondaryText}
-              keyboardType="url"
-              autoCapitalize="none"
-            />
-            <Text style={styles.helperText}>Paste a direct link to an image (optional).</Text>
+
+          <View style={{ alignItems: 'center', marginBottom: 32 }}>
+            <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: tokens.colors.primaryText, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginBottom: 16 }}>
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <Text style={{ fontFamily: tokens.typography.heading, fontSize: 36, color: tokens.colors.white }}>
+                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity 
+              onPress={pickImage} 
+              disabled={uploadingAvatar}
+              style={{ backgroundColor: '#F3F4F6', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}
+            >
+              {uploadingAvatar ? (
+                <ActivityIndicator size="small" color={tokens.colors.primaryText} />
+              ) : (
+                <Text style={{ fontFamily: tokens.typography.body, fontWeight: '600', color: tokens.colors.primaryText }}>Change Photo</Text>
+              )}
+            </TouchableOpacity>
           </View>
+
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>First name</Text>
