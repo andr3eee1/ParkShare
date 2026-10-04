@@ -20,7 +20,8 @@ const DEFAULT_USER_LOCATION = { latitude: 44.4720, longitude: 26.1020 };
 export const ExploreScreen = () => {
   const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [activeLocation, setActiveLocation] = useState<DemoLocation | null>(null);
+  const [activeLocation, setActiveLocation] = useState(DEFAULT_LOCATION);
+  const [searchedLocation, setSearchedLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -51,6 +52,7 @@ export const ExploreScreen = () => {
 
   const handleLocationSelect = (location: DemoLocation) => {
     setActiveLocation(location);
+    setSearchedLocation(location);
     mapRef.current?.centerOnLocation(location);
     setSearchQuery(location.name);
     setSearchFocused(false);
@@ -136,7 +138,7 @@ export const ExploreScreen = () => {
         spots={parkingSpots}
         selectedSpot={selectedSpot}
         onSelectSpot={setSelectedSpot}
-        destination={activeLocation || undefined}
+        destination={searchedLocation ?? undefined}
         userLocation={userLocation || DEFAULT_USER_LOCATION}
       />
 
@@ -165,7 +167,7 @@ export const ExploreScreen = () => {
                 value={searchQuery}
                 onChangeText={(text) => {
                   setSearchQuery(text);
-                  if (text === '') setActiveLocation(null);
+                  if (text === '') setSearchedLocation(null);
                   setSearchFocused(true);
                 }}
                 onFocus={() => setSearchFocused(true)}
@@ -173,7 +175,7 @@ export const ExploreScreen = () => {
                 returnKeyType="search"
               />
               {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => { setSearchQuery(''); setActiveLocation(null); Keyboard.dismiss(); }}>
+                <TouchableOpacity onPress={() => { setSearchQuery(''); setSearchedLocation(null); Keyboard.dismiss(); }}>
                   <Ionicons name="close-circle" size={20} color={tokens.colors.secondaryText} style={{ padding: 4 }} />
                 </TouchableOpacity>
               )}
