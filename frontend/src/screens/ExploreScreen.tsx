@@ -669,10 +669,6 @@ export const ExploreScreen = () => {
         {selectedSpot && (
           <View pointerEvents="box-none" style={isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper}>
             <GlassPanel borderRadius={tokens.radii.upperSheet} style={isDesktop ? [styles.bookingSheet, { marginBottom: 0, marginHorizontal: 0 }] : styles.bookingSheet}>
-              <View style={styles.dragHandleContainer}>
-                <View style={styles.dragHandle} />
-              </View>
-              
               <View style={styles.sheetHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.spotName}>{selectedSpot.name}</Text>
