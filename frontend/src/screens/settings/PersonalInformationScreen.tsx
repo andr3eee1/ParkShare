@@ -64,6 +64,22 @@ export const PersonalInformationScreen = () => {
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       
       setAvatarUrl(data.url);
+
+      // Auto-save the new avatar URL to the profile
+      const profileRes = await fetch('http://pana.com.ro:8745/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ firstName, lastName, avatarUrl: data.url })
+      });
+      const profileData = await profileRes.json();
+      if (profileRes.ok) {
+        await updateUser(profileData.user);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
