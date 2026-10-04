@@ -1,23 +1,44 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal } from 'react-native';
+import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { tokens } from '../theme/tokens';
 import { GlassPanel } from '../components/GlassPanel';
 import { Map } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const DUMMY_SPOTS = [
-  { id: '1', name: 'Driveway (Verified)', type: 'private', price: 4, x: '25%', y: '30%', host: 'Elena M.', available: '09:00 - 18:00' },
-  { id: '2', name: 'Street Meter 1204', type: 'municipal', price: 5, x: '60%', y: '45%', host: 'City of Bucharest', available: '24/7' },
-  { id: '3', name: 'Apartment Complex B', type: 'private', price: 6, x: '75%', y: '20%', host: 'Andrei P.', available: '10:00 - 20:00' },
-  { id: '4', name: 'Office Underground', type: 'private', price: 8, x: '40%', y: '70%', host: 'Corporate Hub', available: '18:00 - 08:00' },
-];
+import {
+  createAllParkingSpots,
+  DEFAULT_LOCATION,
+  searchDemoLocations,
+  DemoLocation,
+  DemoParkingSpot,
+} from '../data/demoLocations';
 
 export const ExploreScreen = () => {
   const [selectedSpot, setSelectedSpot] = useState<any>(null);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [activeLocation, setActiveLocation] = useState(DEFAULT_LOCATION);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+
   const mapRef = useRef<any>(null);
+  const parkingSpots = createAllParkingSpots();
+  const searchResults = searchDemoLocations(searchQuery);
+
+  const handleLocationSelect = (location: DemoLocation) => {
+    setActiveLocation(location);
+    setSearchQuery(location.name);
+    setSearchFocused(false);
+    setSelectedSpot(null);
+    Keyboard.dismiss();
+  };
+
+  const handleSearchSubmit = () => {
+    const firstResult = searchResults[0];
+    if (firstResult) {
+      handleLocationSelect(firstResult);
+    }
+  };
 
   // Modal State
   const [vehiclePlate, setVehiclePlate] = useState('');
@@ -85,7 +106,13 @@ export const ExploreScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Map ref={mapRef} spots={DUMMY_SPOTS} selectedSpot={selectedSpot} onSelectSpot={setSelectedSpot} />
+      <Map
+        ref={mapRef}
+        spots={parkingSpots}
+        selectedSpot={selectedSpot}
+        onSelectSpot={setSelectedSpot}
+        destination={activeLocation}
+      />
 
       <SafeAreaView style={styles.safeArea} pointerEvents="box-none">
         {/* Top Header Panel */}
@@ -95,7 +122,7 @@ export const ExploreScreen = () => {
               <Text style={styles.wordmark}>ParkShare</Text>
               <View style={styles.locationBadge}>
                 <Ionicons name="location" size={14} color={tokens.colors.availabilityGreen} />
-                <Text style={styles.locationText}>Pipera</Text>
+                <Text style={styles.locationText}>{activeLocation.shortName}</Text>
               </View>
               <View style={styles.headerRight}>
                 <Text style={styles.passesShortcut}>Passes</Text>
@@ -108,9 +135,41 @@ export const ExploreScreen = () => {
               <TextInput 
                 placeholder="Where are you going?" 
                 placeholderTextColor={tokens.colors.secondaryText}
-                style={styles.searchInput} 
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={(query) => {
+                  setSearchQuery(query);
+                  setSearchFocused(true);
+                }}
+                onFocus={() => setSearchFocused(true)}
+                onSubmitEditing={handleSearchSubmit}
+                returnKeyType="search"
               />
             </View>
+
+            {searchFocused && searchQuery.trim().length > 0 && (
+              <View style={styles.suggestionsContainer}>
+                {searchResults.length > 0 ? (
+                  searchResults.slice(0, 5).map((location) => (
+                    <TouchableOpacity
+                      key={location.id}
+                      style={styles.suggestionRow}
+                      onPress={() => handleLocationSelect(location)}
+                    >
+                      <Ionicons name="location-outline" size={18} color={tokens.colors.availabilityGreen} />
+                      <View style={styles.suggestionTextContainer}>
+                        <Text style={styles.suggestionName}>{location.name}</Text>
+                        <Text style={styles.suggestionSubtitle}>{location.subtitle}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View style={styles.noResultsRow}>
+                    <Text style={styles.noResultsText}>No demo locations found</Text>
+                  </View>
+                )}
+              </View>
+            )}
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
               {['Available', 'Verified only', 'Private', 'Municipal', 'EV'].map((filter, i) => (
@@ -351,6 +410,46 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 16,
     color: tokens.colors.primaryText,
+  },
+  suggestionsContainer: {
+    backgroundColor: tokens.colors.white,
+    borderRadius: tokens.radii.inputControl,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  suggestionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+  },
+  suggestionTextContainer: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  suggestionName: {
+    fontFamily: tokens.typography.bodyMedium,
+    fontSize: 14,
+    color: tokens.colors.primaryText,
+  },
+  suggestionSubtitle: {
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+    color: tokens.colors.secondaryText,
+    marginTop: 2,
+  },
+  noResultsRow: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  noResultsText: {
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    color: tokens.colors.secondaryText,
   },
   filtersScroll: {
     flexDirection: 'row',
