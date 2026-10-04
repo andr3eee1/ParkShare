@@ -53,7 +53,7 @@ const getAvailability = (availableStr: string) => {
   if (!isAvailable) {
     return { isAvailable: false, text: 'Opens ' + parts[0].trim() };
   }
-  return { isAvailable: true, text: '' };
+  return { isAvailable: true, text: 'until ' + parts[1].trim() };
 };
 
 const CLUSTER_ZOOM_THRESHOLD = 16;
@@ -216,18 +216,22 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
       const isSelected = selectedSpot?.id === spot.id;
       const isMunicipal = spot.type === 'municipal';
       const avail = getAvailability(spot.available);
+      const isUnavail = !avail.isAvailable || spot.isOccupied;
       
       let bgColor = isMunicipal
         ? (isSelected ? '#1E3A8A' : '#3B82F6')
         : (isSelected ? '#14532D' : '#22C55E');
         
-      if (!avail.isAvailable) {
-        bgColor = isSelected ? '#7F1D1D' : '#EF4444'; // Dark Red : Red
+      if (isUnavail) {
+        bgColor = isSelected ? '#7F1D1D' : '#EF4444';
       }
       
-      const contentHtml = avail.isAvailable 
-        ? `<span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span>`
-        : `<span class="marker-price">${avail.text}</span>`;
+      const contentHtml = isUnavail
+        ? `<span class="marker-price" style="font-size:12px;">Unavailable</span>`
+        : `<div style="display:flex;flex-direction:column;align-items:center;">
+             <div><span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span></div>
+             ${avail.text ? `<span style="font-size:9px;font-weight:normal;opacity:0.8;margin-top:2px;">${avail.text}</span>` : ''}
+           </div>`;
         
       const icon = new DivIcon({
         className: 'custom-leaflet-marker',
@@ -636,23 +640,30 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
             if (!isAvailable) {
               return { isAvailable: false, text: 'Opens ' + parts[0].trim() };
             }
-            return { isAvailable: true, text: '' };
+            return { isAvailable: true, text: 'until ' + parts[1].trim() };
           }
 
           function markerHtml(spot) {
             var isSelected = spot.id === selectedId;
             var isMunicipal = spot.type === 'municipal';
             var avail = getAvailability(spot.available);
+            var isUnavail = !avail.isAvailable || spot.isOccupied;
             
             var color = isMunicipal ? (isSelected ? '#1E3A8A' : '#3B82F6') : (isSelected ? '#14532D' : '#22C55E');
-            if (!avail.isAvailable) {
+            if (isUnavail) {
               color = isSelected ? '#7F1D1D' : '#EF4444';
             }
             
             var scale = isSelected ? 'scale(1.2)' : 'scale(1)';
-            var contentHtml = avail.isAvailable
-              ? '<span class="marker-price">' + spot.price + ' RON</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span>'
-              : '<span class="marker-price">' + avail.text + '</span>';
+            var contentHtml = '';
+            if (isUnavail) {
+              contentHtml = '<span class="marker-price" style="font-size:12px;">Unavailable</span>';
+            } else {
+              contentHtml = '<div style="display:flex;flex-direction:column;align-items:center;">' +
+                '<div><span class="marker-price">' + spot.price + ' RON</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span></div>' +
+                (avail.text ? '<span style="font-size:9px;font-weight:normal;opacity:0.8;margin-top:2px;">' + avail.text + '</span>' : '') +
+                '</div>';
+            }
               
             return '<div class="marker-content" style="background-color: ' + color + '; transform: ' + scale + ';">' + contentHtml + '</div>';
           }
