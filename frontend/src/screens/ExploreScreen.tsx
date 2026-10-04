@@ -100,6 +100,26 @@ export const ExploreScreen = () => {
 
   const { min: openTime, max: closeTime } = getMinMaxMinutes();
   
+  const isCurrentlyOccupied = (() => {
+    if (!selectedSpot || !selectedSpot.reservations) return false;
+    for (const res of selectedSpot.reservations) {
+      const [rH, rM] = res.startTime.split(':').map(Number);
+      const [eH, eM] = res.endTime.split(':').map(Number);
+      const rStart = rH * 60 + rM;
+      const rEnd = eH * 60 + eM;
+      
+      const isCrossMidnight = rEnd < rStart;
+      let isActive = false;
+      if (isCrossMidnight) {
+        isActive = currentMinutesRaw >= rStart || currentMinutesRaw < rEnd;
+      } else {
+        isActive = currentMinutesRaw >= rStart && currentMinutesRaw < rEnd;
+      }
+      if (isActive) return true;
+    }
+    return false;
+  })();
+  
   // The booking starts right now (or when the lot opens, if it's currently closed)
   const actualStartMinutes = Math.max(openTime, currentMinutesRaw);
   
@@ -262,7 +282,7 @@ export const ExploreScreen = () => {
                 </View>
               </View>
 
-              {(sliderMin > sliderMax || (selectedSpot as any)?.isOccupied) ? (
+              {(sliderMin > sliderMax || isCurrentlyOccupied) ? (
                 <View style={styles.municipalWarning}>
                   <Text style={styles.municipalWarningText}>This spot is currently unavailable.</Text>
                 </View>

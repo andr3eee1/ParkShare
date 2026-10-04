@@ -27,18 +27,37 @@ const getDestinationCoordinates = (destination?: MapDestination): [number, numbe
 );
 
 
-const getAvailability = (availableStr: string) => {
-  if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
-  const parts = availableStr.split('-');
-  if (parts.length !== 2) return { isAvailable: true, text: '' };
-  
+const getAvailability = (availableStr: string, reservations: {startTime: string, endTime: string}[] = []) => {
   const now = new Date();
   const currentMins = now.getHours() * 60 + now.getMinutes();
-  
+
   const parseTime = (t: string) => {
     const p = t.trim().split(':');
     return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
   };
+
+  // Check active reservations first
+  for (const res of reservations) {
+    const rStart = parseTime(res.startTime);
+    const rEnd = parseTime(res.endTime);
+    // If end is before start, it crosses midnight. Adjust logic for active reservation:
+    const isCrossMidnight = rEnd < rStart;
+    let isActive = false;
+    if (isCrossMidnight) {
+      isActive = currentMins >= rStart || currentMins < rEnd;
+    } else {
+      isActive = currentMins >= rStart && currentMins < rEnd;
+    }
+    
+    if (isActive) {
+      return { isAvailable: false, text: 'Opens ' + res.endTime.trim() };
+    }
+  }
+
+  if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
+  
+  const parts = availableStr.split('-');
+  if (parts.length !== 2) return { isAvailable: true, text: '' };
   
   const startMins = parseTime(parts[0]);
   const endMins = parseTime(parts[1]);
@@ -218,8 +237,8 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
       const spot = cluster.spots[0];
       const isSelected = selectedSpot?.id === spot.id;
       const isMunicipal = spot.type === 'municipal';
-      const avail = getAvailability(spot.available);
-      const isUnavail = !avail.isAvailable || spot.isOccupied;
+      const avail = getAvailability(spot.available, spot.reservations || []);
+      const isUnavail = !avail.isAvailable;
       
       let bgColor = isMunicipal
         ? (isSelected ? '#1E3A8A' : '#3B82F6')
@@ -622,16 +641,36 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
           }
 
 
-          function getAvailability(availableStr) {
-            if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
-            var parts = availableStr.split('-');
-            if (parts.length !== 2) return { isAvailable: true, text: '' };
+          function getAvailability(availableStr, reservations) {
             var now = new Date();
             var currentMins = now.getHours() * 60 + now.getMinutes();
             var parseTime = function(t) {
               var p = t.trim().split(':');
               return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
             };
+
+            if (reservations && Array.isArray(reservations)) {
+              for (var i = 0; i < reservations.length; i++) {
+                var res = reservations[i];
+                var rStart = parseTime(res.startTime);
+                var rEnd = parseTime(res.endTime);
+                var isCrossMidnight = rEnd < rStart;
+                var isActive = false;
+                if (isCrossMidnight) {
+                  isActive = currentMins >= rStart || currentMins < rEnd;
+                } else {
+                  isActive = currentMins >= rStart && currentMins < rEnd;
+                }
+                if (isActive) {
+                  return { isAvailable: false, text: 'Opens ' + res.endTime.trim() };
+                }
+              }
+            }
+
+            if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
+            var parts = availableStr.split('-');
+            if (parts.length !== 2) return { isAvailable: true, text: '' };
+            
             var startMins = parseTime(parts[0]);
             var endMins = parseTime(parts[1]);
             var isAvailable = false;
@@ -652,8 +691,8 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
           function markerHtml(spot) {
             var isSelected = spot.id === selectedId;
             var isMunicipal = spot.type === 'municipal';
-            var avail = getAvailability(spot.available);
-            var isUnavail = !avail.isAvailable || spot.isOccupied;
+            var avail = getAvailability(spot.available, spot.reservations || []);
+            var isUnavail = !avail.isAvailable;
             
             var color = isMunicipal ? (isSelected ? '#1E3A8A' : '#3B82F6') : (isSelected ? '#14532D' : '#22C55E');
             if (isUnavail) {

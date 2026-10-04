@@ -10,6 +10,11 @@ export interface DemoLocation {
   aliases: string[];
 }
 
+export interface Reservation {
+  startTime: string;
+  endTime: string;
+}
+
 export interface DemoParkingSpot {
   id: string;
   name: string;
@@ -20,7 +25,7 @@ export interface DemoParkingSpot {
   available: string;
   latitude: number;
   longitude: number;
-  isOccupied: boolean;
+  reservations: Reservation[];
 }
 
 export const DEMO_LOCATIONS: DemoLocation[] = [
@@ -126,7 +131,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'Elena M.',
     distance: '2 min walk',
     available: '09:00 - 18:00',
-    isOccupied: false,
+    reservations: [],
   },
   {
     name: 'Street Meter 1204',
@@ -135,7 +140,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'City of Bucharest',
     distance: '1 min walk',
     available: '24/7',
-    isOccupied: false,
+    reservations: [],
   },
   {
     name: 'Apartment Complex B',
@@ -144,7 +149,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'Andrei P.',
     distance: '3 min walk',
     available: '10:00 - 20:00',
-    isOccupied: false,
+    reservations: [],
   },
   {
     name: 'Office Underground',
@@ -153,7 +158,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'Corporate Hub',
     distance: '4 min walk',
     available: '18:00 - 08:00',
-    isOccupied: false,
+    reservations: [],
   },
   {
     name: 'Boulevard Meter 208',
@@ -162,7 +167,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'City of Bucharest',
     distance: '5 min walk',
     available: '24/7',
-    isOccupied: false,
+    reservations: [],
   },
   {
     name: 'Garden Spot (Verified)',
@@ -171,7 +176,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'Mihai D.',
     distance: '6 min walk',
     available: '08:00 - 22:00',
-    isOccupied: false,
+    reservations: [],
   },
   {
     name: 'Resident Garage',
@@ -180,7 +185,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'Ioana R.',
     distance: '7 min walk',
     available: '24/7',
-    isOccupied: false,
+    reservations: [],
   },
   {
     name: 'Public Lot 14',
@@ -189,7 +194,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'City of Bucharest',
     distance: '8 min walk',
     available: '24/7',
-    isOccupied: false,
+    reservations: [],
   },
 ];
 
