@@ -135,7 +135,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'City of Bucharest',
     distance: '1 min walk',
     available: '24/7',
-    isOccupied: true,
+    isOccupied: false,
   },
   {
     name: 'Apartment Complex B',
@@ -180,7 +180,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     host: 'Ioana R.',
     distance: '7 min walk',
     available: '24/7',
-    isOccupied: true,
+    isOccupied: false,
   },
   {
     name: 'Public Lot 14',

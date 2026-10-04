@@ -103,9 +103,10 @@ export const ExploreScreen = () => {
   // The booking starts right now (or when the lot opens, if it's currently closed)
   const actualStartMinutes = Math.max(openTime, currentMinutesRaw);
   
-  // Minimum departure is rounded up to the next 30-min interval + 30 mins minimum duration
-  const sliderMin = (Math.ceil(actualStartMinutes / 30) * 30) + 30;
-  const sliderMax = closeTime;
+  // Start time is not rounded for the exact calculation, but departure slider is snapped to 5 mins
+  const roundedStart = Math.ceil(actualStartMinutes / 5) * 5;
+  const sliderMin = roundedStart + 30; // Minimum 30 min reservation
+  const sliderMax = Math.floor(closeTime / 5) * 5;
 
   const [departureMinutes, setDepartureMinutes] = useState(sliderMin + 60); // Default to roughly 1.5 hrs from now
 
@@ -261,9 +262,13 @@ export const ExploreScreen = () => {
                 </View>
               </View>
 
-              {selectedSpot.type === 'private' ? (
+              {(sliderMin > sliderMax || (selectedSpot as any)?.isOccupied) ? (
+                <View style={styles.municipalWarning}>
+                  <Text style={styles.municipalWarningText}>This spot is currently unavailable.</Text>
+                </View>
+              ) : selectedSpot.type === 'private' ? (
                 <TouchableOpacity style={styles.reserveButton} onPress={() => { 
-                  setDepartureMinutes(sliderMin + 60); // Reset to 1 hr minimum
+                  setDepartureMinutes(Math.min(sliderMin + 60, sliderMax)); 
                   setModalVisible(true); 
                 }}>
                   <Text style={styles.reserveButtonText}>Reserve space</Text>
@@ -321,7 +326,7 @@ export const ExploreScreen = () => {
                   style={{ width: '100%', height: 40 }}
                   minimumValue={sliderMin}
                   maximumValue={sliderMax}
-                  step={30}
+                  step={5}
                   value={departureMinutes}
                   onValueChange={setDepartureMinutes}
                   minimumTrackTintColor={tokens.colors.primaryText}

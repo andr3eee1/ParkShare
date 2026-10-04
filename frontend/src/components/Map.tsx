@@ -44,13 +44,16 @@ const getAvailability = (availableStr: string) => {
   const endMins = parseTime(parts[1]);
   
   let isAvailable = false;
+  let timeRemaining = 0;
   if (endMins < startMins) {
     isAvailable = currentMins >= startMins || currentMins < endMins;
+    timeRemaining = currentMins < endMins ? (endMins - currentMins) : (endMins + 1440 - currentMins);
   } else {
     isAvailable = currentMins >= startMins && currentMins < endMins;
+    timeRemaining = endMins - currentMins;
   }
   
-  if (!isAvailable) {
+  if (!isAvailable || timeRemaining < 30) {
     return { isAvailable: false, text: 'Opens ' + parts[0].trim() };
   }
   return { isAvailable: true, text: 'until ' + parts[1].trim() };
@@ -230,7 +233,7 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
         ? `<span class="marker-price" style="font-size:12px;">Unavailable</span>`
         : `<div style="display:flex;flex-direction:column;align-items:center;">
              <div><span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span></div>
-             ${avail.text ? `<span style="font-size:9px;font-weight:normal;opacity:0.8;margin-top:2px;">${avail.text}</span>` : ''}
+             ${avail.text ? `<span style="font-size:11px;font-weight:600;opacity:1;margin-top:2px;">${avail.text}</span>` : ''}
            </div>`;
         
       const icon = new DivIcon({
@@ -632,12 +635,15 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
             var startMins = parseTime(parts[0]);
             var endMins = parseTime(parts[1]);
             var isAvailable = false;
+            var timeRemaining = 0;
             if (endMins < startMins) {
               isAvailable = currentMins >= startMins || currentMins < endMins;
+              timeRemaining = currentMins < endMins ? (endMins - currentMins) : (endMins + 1440 - currentMins);
             } else {
               isAvailable = currentMins >= startMins && currentMins < endMins;
+              timeRemaining = endMins - currentMins;
             }
-            if (!isAvailable) {
+            if (!isAvailable || timeRemaining < 30) {
               return { isAvailable: false, text: 'Opens ' + parts[0].trim() };
             }
             return { isAvailable: true, text: 'until ' + parts[1].trim() };
