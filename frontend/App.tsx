@@ -2,6 +2,9 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet, Platform, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { LoginScreen } from './src/screens/LoginScreen';
+import { RegisterScreen } from './src/screens/RegisterScreen';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
@@ -12,6 +15,7 @@ import { ExploreScreen } from './src/screens/ExploreScreen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 // Placeholder screens for other tabs
 const PlaceholderScreen = ({ name }: { name: string }) => (
@@ -39,7 +43,6 @@ export default function App() {
     const bottomPadding = Math.max(insets.bottom, 12);
     
     return (
-      <NavigationContainer>
         <Tab.Navigator
           screenOptions={({ route }) => ({
             headerShown: false,
@@ -73,13 +76,18 @@ export default function App() {
           <Tab.Screen name="Passes" children={() => <PlaceholderScreen name="Passes" />} />
           <Tab.Screen name="Account" children={() => <PlaceholderScreen name="Account" />} />
         </Tab.Navigator>
-      </NavigationContainer>
     );
   };
 
   const AppRoot = (
     <SafeAreaProvider>
-      <MainNavigator />
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="MainApp" component={MainNavigator} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 
