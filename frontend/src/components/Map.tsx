@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { tokens } from '../theme/tokens';
@@ -271,6 +271,47 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
     return [lat, lng];
   };
 
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' && webviewRef.current) {
+      if (destination) {
+        webviewRef.current.injectJavaScript(`
+          if (typeof setDestination !== 'undefined') {
+            setDestination(${destination.latitude}, ${destination.longitude});
+          }
+          true;
+        `);
+      } else {
+        webviewRef.current.injectJavaScript(`
+          if (typeof setDestination !== 'undefined') {
+            setDestination(null, null);
+          }
+          true;
+        `);
+      }
+    }
+  }, [destination]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' && webviewRef.current) {
+      if (userLocation) {
+        webviewRef.current.injectJavaScript(`
+          if (typeof setUserLocation !== 'undefined') {
+            setUserLocation(${userLocation.latitude}, ${userLocation.longitude});
+          }
+          true;
+        `);
+      } else {
+        webviewRef.current.injectJavaScript(`
+          if (typeof setUserLocation !== 'undefined') {
+            setUserLocation(null, null);
+          }
+          true;
+        `);
+      }
+    }
+  }, [userLocation]);
+
   useEffect(() => {
     const targetCoordinates = selectedSpot
       ? getCoordinates(selectedSpot)
@@ -383,42 +424,8 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
     );
   }
 
-  const htmlContent = (() => {
+  const htmlContent = useMemo(() => {
     const spotsJson = JSON.stringify(spots).replace(/</g, '\\u003c');
-    const destinationCoordinates = getDestinationCoordinates(destination);
-
-    const userLocationMarker = userLocation ? `
-      L.marker([${userLocation.latitude}, ${userLocation.longitude}], {
-        icon: L.divIcon({
-          className: 'user-leaflet-marker',
-          html: '<div class="user-location-dot"><div class="user-location-pulse"></div></div>',
-          iconSize: [24, 24],
-          iconAnchor: [12, 12]
-        }),
-        zIndexOffset: 3000
-      }).addTo(map);
-    ` : '';
-
-    const destinationMarker = destination ? `
-      var destinationMarker = L.marker([${destinationCoordinates[0]}, ${destinationCoordinates[1]}], {
-        icon: L.divIcon({
-          className: 'destination-leaflet-marker',
-          html: '<div class="destination-marker"></div>',
-          iconSize: [28, 34],
-          iconAnchor: [14, 34]
-        }),
-        zIndexOffset: 2000
-      }).addTo(map);
-      function updateDestinationVisibility() {
-        if (!destinationMarker) return;
-        if (map.getZoom() < ${DESTINATION_ZOOM_THRESHOLD}) {
-          if (map.hasLayer(destinationMarker)) map.removeLayer(destinationMarker);
-        } else if (!map.hasLayer(destinationMarker)) {
-          destinationMarker.addTo(map);
-        }
-      }
-      map.on('zoomend', updateDestinationVisibility);
-    ` : 'var destinationMarker = null;';
 
     return `
       <!DOCTYPE html>
@@ -500,7 +507,58 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
       <body>
         <div id="map"></div>
         <script>
-          var map = L.map('map', { zoomControl: false }).setView([${destinationCoordinates[0]}, ${destinationCoordinates[1]}], 14.5);
+          var map = L.map('map', { zoomControl: false }).setView([44.4820, 26.1130], 14.5);
+          var destinationMarker = null;
+          var userLocationMarker = null;
+          
+          function updateDestinationVisibility() {
+            if (!destinationMarker) return;
+            if (map.getZoom() < ${DESTINATION_ZOOM_THRESHOLD}) {
+              if (map.hasLayer(destinationMarker)) map.removeLayer(destinationMarker);
+            } else if (!map.hasLayer(destinationMarker)) {
+              destinationMarker.addTo(map);
+            }
+          }
+          map.on('zoomend', updateDestinationVisibility);
+          
+          function setDestination(lat, lng) {
+            if (destinationMarker) {
+              map.removeLayer(destinationMarker);
+            }
+            if (lat !== null && lng !== null) {
+              destinationMarker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                  className: 'destination-leaflet-marker',
+                  html: '<div class="destination-marker"></div>',
+                  iconSize: [28, 34],
+                  iconAnchor: [14, 34]
+                }),
+                zIndexOffset: 2000
+              });
+              updateDestinationVisibility();
+            } else {
+              destinationMarker = null;
+            }
+          }
+
+          function setUserLocation(lat, lng) {
+            if (userLocationMarker) {
+              map.removeLayer(userLocationMarker);
+            }
+            if (lat !== null && lng !== null) {
+              userLocationMarker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                  className: 'user-leaflet-marker',
+                  html: '<div class="user-location-dot"><div class="user-location-pulse"></div></div>',
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12]
+                }),
+                zIndexOffset: 3000
+              }).addTo(map);
+            } else {
+              userLocationMarker = null;
+            }
+          }
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
           var spotData = ${spotsJson};
           var selectedId = null;
@@ -602,14 +660,12 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
             renderSpots();
           }
 
-          ${destinationMarker}
-          ${userLocationMarker}
           renderSpots();
         </script>
       </body>
       </html>
     `;
-  })();
+  }, [spots]);
 
   return (
     <View style={styles.container}>
