@@ -101,7 +101,7 @@ const getSpotClusters = (spots: any[], map: any, selectedSpot: any): SpotCluster
   }, []);
 };
 
-const WebDestinationMarker = ({ destination }: { destination: MapDestination }) => {
+const WebDestinationMarker = ({ destination }: { destination?: MapDestination }) => {
   const map = useMap();
   const [isVisible, setIsVisible] = useState(map.getZoom() >= DESTINATION_ZOOM_THRESHOLD);
 
@@ -111,7 +111,7 @@ const WebDestinationMarker = ({ destination }: { destination: MapDestination }) 
     return () => map.off('zoomend', updateVisibility);
   }, [map]);
 
-  if (!isVisible) {
+  if (!isVisible || !destination) {
     return null;
   }
 
@@ -207,11 +207,29 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
   </>;
 };
 
-export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination }: {
+
+const WebUserLocationMarker = ({ userLocation }: { userLocation?: { latitude: number; longitude: number } }) => {
+  if (!userLocation) return null;
+  return (
+    <Marker
+      position={[userLocation.latitude, userLocation.longitude] as any}
+      icon={new DivIcon({
+        className: 'user-leaflet-marker',
+        html: '<div class="user-location-dot"><div class="user-location-pulse"></div></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      })}
+      zIndexOffset={3000}
+    />
+  );
+};
+
+export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination, userLocation }: {
   spots: any[];
   selectedSpot: any;
   onSelectSpot: (spot: any) => void;
   destination?: MapDestination;
+  userLocation?: { latitude: number; longitude: number };
 }, ref) => {
   const webviewRef = useRef<WebView>(null);
   const webMapRef = useRef<any>(null);
@@ -229,6 +247,13 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
         webMapRef.current.zoomOut();
       } else if (webviewRef.current) {
         webviewRef.current.injectJavaScript(`if (typeof map !== 'undefined') { map.zoomOut(); } true;`);
+      }
+    },
+    centerOnLocation: (loc: { latitude: number; longitude: number }) => {
+      if (Platform.OS === 'web' && webMapRef.current) {
+        webMapRef.current.setView([loc.latitude, loc.longitude], 16);
+      } else if (webviewRef.current) {
+        webviewRef.current.injectJavaScript(`if (typeof map !== 'undefined') { map.setView([${loc.latitude}, ${loc.longitude}], 16); } true;`);
       }
     }
   }));
@@ -274,6 +299,10 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           .leaflet-container { width: 100%; height: 100%; position: absolute; }
           .custom-leaflet-marker { background: transparent; border: none; }
           .destination-leaflet-marker { background: transparent; border: none; }
+          .user-leaflet-marker { background: transparent; border: none; }
+          .user-location-dot { width: 16px; height: 16px; background-color: #3B82F6; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.3); position: relative; }
+          .user-location-pulse { position: absolute; top: -12px; left: -12px; width: 40px; height: 40px; border-radius: 50%; background-color: rgba(59, 130, 246, 0.4); animation: pulse 2s infinite ease-in-out; }
+          @keyframes pulse { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
           .cluster-leaflet-marker { background: transparent; border: none; }
           .marker-content {
             display: flex;
@@ -346,6 +375,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           {destination && (
             <WebDestinationMarker key="destination" destination={destination} />
           )}
+          <WebUserLocationMarker userLocation={userLocation} />
           <WebMapSpots spots={spots} selectedSpot={selectedSpot} onSelectSpot={onSelectSpot} />
         </MapContainer>
       </View>
@@ -355,6 +385,19 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
   const htmlContent = (() => {
     const spotsJson = JSON.stringify(spots).replace(/</g, '\\u003c');
     const destinationCoordinates = getDestinationCoordinates(destination);
+
+    const userLocationMarker = userLocation ? `
+      L.marker([${userLocation.latitude}, ${userLocation.longitude}], {
+        icon: L.divIcon({
+          className: 'user-leaflet-marker',
+          html: '<div class="user-location-dot"><div class="user-location-pulse"></div></div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        }),
+        zIndexOffset: 3000
+      }).addTo(map);
+    ` : '';
+
     const destinationMarker = destination ? `
       var destinationMarker = L.marker([${destinationCoordinates[0]}, ${destinationCoordinates[1]}], {
         icon: L.divIcon({
@@ -366,6 +409,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
         zIndexOffset: 2000
       }).addTo(map);
       function updateDestinationVisibility() {
+        if (!destinationMarker) return;
         if (map.getZoom() < ${DESTINATION_ZOOM_THRESHOLD}) {
           if (map.hasLayer(destinationMarker)) map.removeLayer(destinationMarker);
         } else if (!map.hasLayer(destinationMarker)) {
@@ -387,6 +431,10 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
           .custom-leaflet-marker { background: transparent; border: none; }
           .destination-leaflet-marker { background: transparent; border: none; }
+          .user-leaflet-marker { background: transparent; border: none; }
+          .user-location-dot { width: 16px; height: 16px; background-color: #3B82F6; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.3); position: relative; }
+          .user-location-pulse { position: absolute; top: -12px; left: -12px; width: 40px; height: 40px; border-radius: 50%; background-color: rgba(59, 130, 246, 0.4); animation: pulse 2s infinite ease-in-out; }
+          @keyframes pulse { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
           .cluster-leaflet-marker { background: transparent; border: none; }
           .marker-content {
             display: flex;
@@ -554,6 +602,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
           }
 
           ${destinationMarker}
+          ${userLocationMarker}
           renderSpots();
         </script>
       </body>

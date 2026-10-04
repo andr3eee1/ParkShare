@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import * as Location from 'expo-location';
 import { tokens } from '../theme/tokens';
 import { GlassPanel } from '../components/GlassPanel';
 import { Map } from '../components/Map';
@@ -14,12 +15,35 @@ import {
   DemoParkingSpot,
 } from '../data/demoLocations';
 
+const DEFAULT_USER_LOCATION = { latitude: 44.4720, longitude: 26.1020 };
+
 export const ExploreScreen = () => {
-  const [selectedSpot, setSelectedSpot] = useState<any>(null);
+  const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [activeLocation, setActiveLocation] = useState(DEFAULT_LOCATION);
+  const [activeLocation, setActiveLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setUserLocation(DEFAULT_USER_LOCATION);
+        return;
+      }
+
+      // Quick fetch first
+      let lastKnown = await Location.getLastKnownPositionAsync({});
+      if (lastKnown) {
+        setUserLocation({ latitude: lastKnown.coords.latitude, longitude: lastKnown.coords.longitude });
+      }
+
+      // High accuracy fetch
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
+    })();
+  }, []);
 
   const mapRef = useRef<any>(null);
   const parkingSpots = createAllParkingSpots();
@@ -27,6 +51,7 @@ export const ExploreScreen = () => {
 
   const handleLocationSelect = (location: DemoLocation) => {
     setActiveLocation(location);
+    mapRef.current?.centerOnLocation(location);
     setSearchQuery(location.name);
     setSearchFocused(false);
     setSelectedSpot(null);
@@ -111,18 +136,19 @@ export const ExploreScreen = () => {
         spots={parkingSpots}
         selectedSpot={selectedSpot}
         onSelectSpot={setSelectedSpot}
-        destination={activeLocation}
+        destination={activeLocation || undefined}
+        userLocation={userLocation || DEFAULT_USER_LOCATION}
       />
 
-      <SafeAreaView style={styles.safeArea} pointerEvents="box-none">
+      <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any }]}>
         {/* Top Header Panel */}
-        <View style={styles.headerContainer} pointerEvents="box-none">
+        <View style={[styles.headerContainer, { pointerEvents: 'box-none' as any }]}>
           <GlassPanel borderRadius={tokens.radii.topPanel} style={styles.headerPanel}>
             <View style={styles.headerTopRow}>
               <Text style={styles.wordmark}>ParkShare</Text>
               <View style={styles.locationBadge}>
                 <Ionicons name="location" size={14} color={tokens.colors.availabilityGreen} />
-                <Text style={styles.locationText}>{activeLocation.shortName}</Text>
+                <Text style={styles.locationText}>{activeLocation ? activeLocation.shortName : 'My Location'}</Text>
               </View>
               <View style={styles.headerRight}>
                 <Text style={styles.passesShortcut}>Passes</Text>
@@ -137,14 +163,20 @@ export const ExploreScreen = () => {
                 placeholderTextColor={tokens.colors.secondaryText}
                 style={styles.searchInput}
                 value={searchQuery}
-                onChangeText={(query) => {
-                  setSearchQuery(query);
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  if (text === '') setActiveLocation(null);
                   setSearchFocused(true);
                 }}
                 onFocus={() => setSearchFocused(true)}
                 onSubmitEditing={handleSearchSubmit}
                 returnKeyType="search"
               />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => { setSearchQuery(''); setActiveLocation(null); Keyboard.dismiss(); }}>
+                  <Ionicons name="close-circle" size={20} color={tokens.colors.secondaryText} style={{ padding: 4 }} />
+                </TouchableOpacity>
+              )}
             </View>
 
             {searchFocused && searchQuery.trim().length > 0 && (
@@ -182,7 +214,7 @@ export const ExploreScreen = () => {
         </View>
 
         {/* Map Controls */}
-        <View style={[styles.mapControls, selectedSpot && { bottom: 200 }]} pointerEvents="box-none">
+        <View style={[styles.mapControls, selectedSpot && { bottom: 200 }, { pointerEvents: 'box-none' as any }]}>
           <GlassPanel borderRadius={12} style={styles.controlGroup}>
             <TouchableOpacity style={styles.controlButton} onPress={handleZoomIn}>
               <Ionicons name="add" size={24} color={tokens.colors.primaryText} />
@@ -193,7 +225,7 @@ export const ExploreScreen = () => {
             </TouchableOpacity>
           </GlassPanel>
           <GlassPanel borderRadius={12} style={styles.controlSingle}>
-            <TouchableOpacity style={styles.controlButton}>
+            <TouchableOpacity style={styles.controlButton} onPress={() => mapRef.current?.centerOnLocation(userLocation || DEFAULT_USER_LOCATION)}>
               <Ionicons name="navigate" size={20} color={tokens.colors.primaryText} />
             </TouchableOpacity>
           </GlassPanel>
@@ -201,7 +233,7 @@ export const ExploreScreen = () => {
 
         {/* Booking Sheet (Simplified) */}
         {selectedSpot && (
-          <View style={styles.bookingSheetWrapper} pointerEvents="box-none">
+          <View style={[styles.bookingSheetWrapper, { pointerEvents: 'box-none' as any }]}>
             <GlassPanel borderRadius={tokens.radii.upperSheet} style={styles.bookingSheet}>
               <View style={styles.dragHandleContainer}>
                 <View style={styles.dragHandle} />
