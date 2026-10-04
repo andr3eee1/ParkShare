@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal } from 'react-native';
+import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Location from 'expo-location';
@@ -161,8 +161,11 @@ export const ExploreScreen = () => {
     mapRef.current?.zoomOut();
   };
 
-  return (
-    <View style={styles.container}>
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && windowWidth > 768;
+
+  const renderMap = () => (
+    <>
       <Map
         ref={mapRef}
         spots={parkingSpots}
@@ -171,10 +174,12 @@ export const ExploreScreen = () => {
         destination={searchedLocation ?? undefined}
         userLocation={userLocation || DEFAULT_USER_LOCATION}
       />
+    </>
+  );
 
-      <SafeAreaView pointerEvents="box-none" style={styles.safeArea}>
-        {/* Top Header Panel */}
-        <View pointerEvents="box-none" style={styles.headerContainer}>
+  const renderSearchPanel = () => (
+    <>
+      <View pointerEvents="box-none" style={styles.headerContainer}>
           <GlassPanel borderRadius={tokens.radii.topPanel} style={styles.headerPanel}>
             <View style={styles.headerTopRow}>
               <Text style={styles.wordmark}>ParkShare</Text>
@@ -244,9 +249,13 @@ export const ExploreScreen = () => {
             </ScrollView>
           </GlassPanel>
         </View>
+    </>
+  );
 
-        {/* Map Controls */}
-        <View pointerEvents="box-none" style={[styles.mapControls, selectedSpot && { bottom: 300 }]}>
+  const renderMapControls = () => (
+    <>
+      {/* Map Controls */}
+        <View pointerEvents="box-none" style={[styles.mapControls, !isDesktop && selectedSpot && { bottom: 300 }]}>
           <GlassPanel borderRadius={12} style={styles.controlGroup}>
             <TouchableOpacity style={styles.controlButton} onPress={handleZoomIn}>
               <Ionicons name="add" size={24} color={tokens.colors.primaryText} />
@@ -262,11 +271,15 @@ export const ExploreScreen = () => {
             </TouchableOpacity>
           </GlassPanel>
         </View>
+    </>
+  );
 
-        {/* Booking Sheet (Simplified) */}
+  const renderBookingSheet = () => (
+    <>
+      {/* Booking Sheet (Simplified) */}
         {selectedSpot && (
-          <View pointerEvents="box-none" style={styles.bookingSheetWrapper}>
-            <GlassPanel borderRadius={tokens.radii.upperSheet} style={styles.bookingSheet}>
+          <View pointerEvents="box-none" style={isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper}>
+            <GlassPanel borderRadius={tokens.radii.upperSheet} style={isDesktop ? [styles.bookingSheet, { marginBottom: 0, marginHorizontal: 0 }] : styles.bookingSheet}>
               <View style={styles.dragHandleContainer}>
                 <View style={styles.dragHandle} />
               </View>
@@ -306,8 +319,11 @@ export const ExploreScreen = () => {
             </GlassPanel>
           </View>
         )}
-      </SafeAreaView>
+    </>
+  );
 
+  const renderModal = () => (
+    <>
       {/* Reservation Details Modal */}
       {selectedSpot && (
         <Modal visible={isModalVisible} transparent={true} animationType="fade">
@@ -388,7 +404,38 @@ export const ExploreScreen = () => {
           </View>
         </Modal>
       )}
-    </View>
+    </>
+  );
+
+  return (
+    <>
+      {isDesktop ? (
+        <View style={[styles.container, { flexDirection: 'row' }]}>
+          <View style={{ width: 420, height: '100%', backgroundColor: tokens.colors.paleMapBackground, zIndex: 10, shadowColor: '#000', shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.1, shadowRadius: 12, padding: 16 }}>
+            <SafeAreaView style={{ flex: 1 }}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+                {renderSearchPanel()}
+                {renderBookingSheet()}
+              </ScrollView>
+            </SafeAreaView>
+          </View>
+          <View style={{ flex: 1, position: 'relative' }}>
+            {renderMap()}
+            {renderMapControls()}
+          </View>
+        </View>
+      ) : (
+        <View style={styles.container}>
+          {renderMap()}
+          <SafeAreaView pointerEvents="box-none" style={styles.safeArea}>
+            {renderSearchPanel()}
+            {renderMapControls()}
+            {renderBookingSheet()}
+          </SafeAreaView>
+        </View>
+      )}
+      {renderModal()}
+    </>
   );
 };
 
