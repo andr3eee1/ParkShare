@@ -1,20 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../theme/tokens';
 
 export const AccountScreen = () => {
   const navigation = useNavigation<any>();
+  const { user, logout } = useContext(AuthContext);
 
-  const handleLogout = () => {
-    // TODO: Clear token from SecureStore/AsyncStorage here
-    
-    // Navigate back to Login and clear the stack
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+  const handleLogout = async () => {
+    await logout();
   };
 
   const menuItems = [
@@ -41,13 +38,13 @@ export const AccountScreen = () => {
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>JD</Text>
+            <Text style={styles.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>John Doe</Text>
-            <Text style={styles.profileEmail}>john.doe@example.com</Text>
+            <Text style={styles.profileName}>{user?.firstName} {user?.lastName}</Text>
+            <Text style={styles.profileEmail}>{user?.email}</Text>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>Verified User</Text>
+              <Text style={styles.roleText}>{user?.role === 'PROVIDER' ? 'Parking Provider' : 'Verified User'}</Text>
             </View>
           </View>
         </View>

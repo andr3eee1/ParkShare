@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
 import { tokens } from '../theme/tokens';
 import { Ionicons } from '@expo/vector-icons';
 
 export const RegisterScreen = () => {
   const navigation = useNavigation<any>();
+  const { login } = useContext(AuthContext);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -37,8 +40,7 @@ export const RegisterScreen = () => {
         throw new Error(data.error || 'Registration failed');
       }
 
-      // Navigate to main app
-      navigation.replace('MainApp');
+      await login(data.user, data.token);
     } catch (err: any) {
       setError(err.message);
     } finally {

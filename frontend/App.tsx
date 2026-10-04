@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Platform, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { AuthProvider, AuthContext } from './src/context/AuthContext';
+import { useContext } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from './src/screens/LoginScreen';
@@ -80,15 +82,38 @@ export default function App() {
     );
   };
 
-  const AppRoot = (
-    <SafeAreaProvider>
+  const RootNavigator = () => {
+    const { user, isLoading } = useContext(AuthContext);
+
+    if (isLoading) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: tokens.colors.paleMapBackground }}>
+          <Text style={{ fontFamily: tokens.typography.heading, fontSize: 24, color: tokens.colors.primaryText }}>ParkShare</Text>
+        </View>
+      );
+    }
+
+    return (
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="MainApp" component={MainNavigator} />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {user == null ? (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </>
+          ) : (
+            <Stack.Screen name="MainApp" component={MainNavigator} />
+          )}
         </Stack.Navigator>
       </NavigationContainer>
+    );
+  };
+
+  const AppRoot = (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 

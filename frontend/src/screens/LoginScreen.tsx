@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
 import { tokens } from '../theme/tokens';
 import { Ionicons } from '@expo/vector-icons';
 
 export const LoginScreen = () => {
   const navigation = useNavigation<any>();
+  const { login } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,11 +35,7 @@ export const LoginScreen = () => {
         throw new Error(data.error || 'Login failed');
       }
 
-      // TODO: Save token to SecureStore/AsyncStorage
-      // console.log(data.token);
-      
-      // Navigate to main app
-      navigation.replace('MainApp');
+      await login(data.user, data.token);
     } catch (err: any) {
       setError(err.message);
     } finally {
