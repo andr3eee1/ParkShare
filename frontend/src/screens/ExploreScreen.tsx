@@ -20,7 +20,7 @@ const DEFAULT_USER_LOCATION = { latitude: 44.4720, longitude: 26.1020 };
 export const ExploreScreen = () => {
   const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [activeLocation, setActiveLocation] = useState(DEFAULT_LOCATION);
+  const [activeLocation, setActiveLocation] = useState<DemoLocation | null>(null);
   const [searchedLocation, setSearchedLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -37,12 +37,16 @@ export const ExploreScreen = () => {
       // Quick fetch first
       let lastKnown = await Location.getLastKnownPositionAsync({});
       if (lastKnown) {
-        setUserLocation({ latitude: lastKnown.coords.latitude, longitude: lastKnown.coords.longitude });
+        const coords = { latitude: lastKnown.coords.latitude, longitude: lastKnown.coords.longitude };
+        setUserLocation(coords);
+        if (!activeLocation) mapRef.current?.centerOnLocation(coords);
       }
 
       // High accuracy fetch
       let location = await Location.getCurrentPositionAsync({});
-      setUserLocation({ latitude: location.coords.latitude, longitude: location.coords.longitude });
+      const coords = { latitude: location.coords.latitude, longitude: location.coords.longitude };
+      setUserLocation(coords);
+      if (!activeLocation) mapRef.current?.centerOnLocation(coords);
     })();
   }, []);
 

@@ -313,19 +313,20 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
   }, [userLocation]);
 
   useEffect(() => {
-    const targetCoordinates = selectedSpot
-      ? getCoordinates(selectedSpot)
-      : getDestinationCoordinates(destination);
-
     if (Platform.OS === 'web' && webMapRef.current) {
-      webMapRef.current.panTo(targetCoordinates);
+      if (selectedSpot) {
+        webMapRef.current.panTo(getCoordinates(selectedSpot));
+      }
     } else if (webviewRef.current) {
       let script = `if (typeof updateSelection === 'function') { updateSelection(${JSON.stringify(selectedSpot?.id || '')}); }`;
-      script += `if (typeof map !== 'undefined') { map.panTo([${targetCoordinates[0]}, ${targetCoordinates[1]}]); }`;
+      if (selectedSpot) {
+        const coords = getCoordinates(selectedSpot);
+        script += `if (typeof map !== 'undefined') { map.panTo([${coords[0]}, ${coords[1]}]); }`;
+      }
       script += 'true;';
       webviewRef.current.injectJavaScript(script);
     }
-  }, [selectedSpot, destination]);
+  }, [selectedSpot]);
 
   if (Platform.OS === 'web') {
     const WebMapEvents = () => {
