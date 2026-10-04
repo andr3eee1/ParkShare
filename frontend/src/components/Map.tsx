@@ -26,6 +26,36 @@ const getDestinationCoordinates = (destination?: MapDestination): [number, numbe
   destination ? [destination.latitude, destination.longitude] : [44.4820, 26.1130]
 );
 
+
+const getAvailability = (availableStr: string) => {
+  if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
+  const parts = availableStr.split('-');
+  if (parts.length !== 2) return { isAvailable: true, text: '' };
+  
+  const now = new Date();
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+  
+  const parseTime = (t: string) => {
+    const p = t.trim().split(':');
+    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+  };
+  
+  const startMins = parseTime(parts[0]);
+  const endMins = parseTime(parts[1]);
+  
+  let isAvailable = false;
+  if (endMins < startMins) {
+    isAvailable = currentMins >= startMins || currentMins < endMins;
+  } else {
+    isAvailable = currentMins >= startMins && currentMins < endMins;
+  }
+  
+  if (!isAvailable) {
+    return { isAvailable: false, text: 'Opens ' + parts[0].trim() };
+  }
+  return { isAvailable: true, text: '' };
+};
+
 const CLUSTER_ZOOM_THRESHOLD = 16;
 const CLUSTER_RADIUS = 64;
 const DESTINATION_ZOOM_THRESHOLD = 12;
@@ -185,12 +215,23 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
       const spot = cluster.spots[0];
       const isSelected = selectedSpot?.id === spot.id;
       const isMunicipal = spot.type === 'municipal';
-      const bgColor = isMunicipal
+      const avail = getAvailability(spot.available);
+      
+      let bgColor = isMunicipal
         ? (isSelected ? '#1E3A8A' : '#3B82F6')
         : (isSelected ? '#14532D' : '#22C55E');
+        
+      if (!avail.isAvailable) {
+        bgColor = isSelected ? '#7F1D1D' : '#EF4444'; // Dark Red : Red
+      }
+      
+      const contentHtml = avail.isAvailable 
+        ? `<span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span>`
+        : `<span class="marker-price">${avail.text}</span>`;
+        
       const icon = new DivIcon({
         className: 'custom-leaflet-marker',
-        html: `<div class="marker-content" style="background-color: ${bgColor}; transform: scale(${isSelected ? 1.2 : 1});"><span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span></div>`,
+        html: `<div class="marker-content" style="background-color: ${bgColor}; transform: scale(${isSelected ? 1.2 : 1});">${contentHtml}</div>`,
         iconSize: [80, 30],
         iconAnchor: [40, 15],
       });
@@ -573,13 +614,47 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
             return [44.4820 + (parseFloat(spot.y) - 50) * -0.0003, 26.1130 + (parseFloat(spot.x) - 50) * 0.0003];
           }
 
+
+          function getAvailability(availableStr) {
+            if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
+            var parts = availableStr.split('-');
+            if (parts.length !== 2) return { isAvailable: true, text: '' };
+            var now = new Date();
+            var currentMins = now.getHours() * 60 + now.getMinutes();
+            var parseTime = function(t) {
+              var p = t.trim().split(':');
+              return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+            };
+            var startMins = parseTime(parts[0]);
+            var endMins = parseTime(parts[1]);
+            var isAvailable = false;
+            if (endMins < startMins) {
+              isAvailable = currentMins >= startMins || currentMins < endMins;
+            } else {
+              isAvailable = currentMins >= startMins && currentMins < endMins;
+            }
+            if (!isAvailable) {
+              return { isAvailable: false, text: 'Opens ' + parts[0].trim() };
+            }
+            return { isAvailable: true, text: '' };
+          }
+
           function markerHtml(spot) {
             var isSelected = spot.id === selectedId;
             var isMunicipal = spot.type === 'municipal';
+            var avail = getAvailability(spot.available);
+            
             var color = isMunicipal ? (isSelected ? '#1E3A8A' : '#3B82F6') : (isSelected ? '#14532D' : '#22C55E');
+            if (!avail.isAvailable) {
+              color = isSelected ? '#7F1D1D' : '#EF4444';
+            }
+            
             var scale = isSelected ? 'scale(1.2)' : 'scale(1)';
-            return '<div class="marker-content" style="background-color: ' + color + '; transform: ' + scale + ';">' +
-              '<span class="marker-price">' + spot.price + ' RON</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span></div>';
+            var contentHtml = avail.isAvailable
+              ? '<span class="marker-price">' + spot.price + ' RON</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span>'
+              : '<span class="marker-price">' + avail.text + '</span>';
+              
+            return '<div class="marker-content" style="background-color: ' + color + '; transform: ' + scale + ';">' + contentHtml + '</div>';
           }
 
           function renderSpots() {
