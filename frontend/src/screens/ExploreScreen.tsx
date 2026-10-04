@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Location from 'expo-location';
 import { tokens } from '../theme/tokens';
 import { GlassPanel } from '../components/GlassPanel';
-import { Map } from '../components/Map';
+import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   createAllParkingSpots,
@@ -51,7 +51,12 @@ export const ExploreScreen = () => {
   }, []);
 
   const mapRef = useRef<any>(null);
-  const parkingSpots = createAllParkingSpots();
+  const parkingSpots = useMemo(() => {
+    return createAllParkingSpots().filter(spot => {
+      const avail = getAvailability(spot.available, spot.reservations || []);
+      return avail.isAvailable;
+    });
+  }, []);
   const searchResults = searchDemoLocations(searchQuery);
 
   const handleLocationSelect = (location: DemoLocation) => {

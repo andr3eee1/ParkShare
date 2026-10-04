@@ -27,7 +27,7 @@ const getDestinationCoordinates = (destination?: MapDestination): [number, numbe
 );
 
 
-const getAvailability = (availableStr: string, reservations: {startTime: string, endTime: string}[] = []) => {
+export const getAvailability = (availableStr: string, reservations: {startTime: string, endTime: string}[] = []) => {
   const now = new Date();
   const currentMins = now.getHours() * 60 + now.getMinutes();
 
