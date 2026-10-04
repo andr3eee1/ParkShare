@@ -8,6 +8,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { AccountScreen } from './src/screens/AccountScreen';
+import { PersonalInformationScreen } from './src/screens/settings/PersonalInformationScreen';
+import { PaymentMethodsScreen } from './src/screens/settings/PaymentMethodsScreen';
+import { MyVehiclesScreen } from './src/screens/settings/MyVehiclesScreen';
+import { NotificationsScreen } from './src/screens/settings/NotificationsScreen';
+import { SecurityScreen } from './src/screens/settings/SecurityScreen';
+import { HelpSupportScreen } from './src/screens/settings/HelpSupportScreen';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
@@ -102,7 +109,15 @@ export default function App() {
               <Stack.Screen name="Register" component={RegisterScreen} />
             </>
           ) : (
-            <Stack.Screen name="MainApp" component={MainNavigator} />
+            <>
+              <Stack.Screen name="MainApp" component={MainNavigator} />
+              <Stack.Screen name="PersonalInformation" component={PersonalInformationScreen} />
+              <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+              <Stack.Screen name="MyVehicles" component={MyVehiclesScreen} />
+              <Stack.Screen name="Notifications" component={NotificationsScreen} />
+              <Stack.Screen name="Security" component={SecurityScreen} />
+              <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+            </>
           )}
         </Stack.Navigator>
       </NavigationContainer>

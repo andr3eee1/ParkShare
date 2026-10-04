@@ -15,12 +15,12 @@ export const AccountScreen = () => {
   };
 
   const menuItems = [
-    { icon: 'person-outline', title: 'Personal Information', subtitle: 'Name, Email, Phone' },
-    { icon: 'card-outline', title: 'Payment Methods', subtitle: 'Manage cards and billing' },
-    { icon: 'car-outline', title: 'My Vehicles', subtitle: 'License plates and vehicle details' },
-    { icon: 'notifications-outline', title: 'Notifications', subtitle: 'Push and email preferences' },
-    { icon: 'shield-checkmark-outline', title: 'Security', subtitle: 'Password and 2FA settings' },
-    { icon: 'help-circle-outline', title: 'Help & Support', subtitle: 'FAQ and contact support' },
+    { icon: 'person-outline', title: 'Personal Information', subtitle: 'Name, Email, Phone', route: 'PersonalInformation' },
+    { icon: 'card-outline', title: 'Payment Methods', subtitle: 'Manage cards and billing', route: 'PaymentMethods' },
+    { icon: 'car-outline', title: 'My Vehicles', subtitle: 'License plates and vehicle details', route: 'MyVehicles' },
+    { icon: 'notifications-outline', title: 'Notifications', subtitle: 'Push and email preferences', route: 'Notifications' },
+    { icon: 'shield-checkmark-outline', title: 'Security', subtitle: 'Password and 2FA settings', route: 'Security' },
+    { icon: 'help-circle-outline', title: 'Help & Support', subtitle: 'FAQ and contact support', route: 'HelpSupport' },
   ];
 
   return (
@@ -30,7 +30,7 @@ export const AccountScreen = () => {
         {/* Header Section */}
         <View style={styles.header}>
           <Text style={styles.screenTitle}>Account</Text>
-          <TouchableOpacity style={styles.editButton}>
+          <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('PersonalInformation')}>
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -52,7 +52,7 @@ export const AccountScreen = () => {
         {/* Menu Items */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.menuItem}>
+            <TouchableOpacity key={index} style={styles.menuItem} onPress={() => navigation.navigate(item.route)}>
               <View style={styles.menuIconContainer}>
                 <Ionicons name={item.icon as any} size={22} color={tokens.colors.primaryText} />
               </View>
