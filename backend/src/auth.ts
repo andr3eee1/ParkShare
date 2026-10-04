@@ -14,6 +14,7 @@ const RegisterSchema = z.object({
   password: z.string().min(6),
   firstName: z.string().min(2),
   lastName: z.string().min(2),
+  avatarUrl: z.string().url().optional(),
   role: z.enum(['USER', 'PROVIDER']).optional()
 });
 
@@ -40,6 +41,7 @@ router.post('/register', async (req, res): Promise<any> => {
         passwordHash,
         firstName: data.firstName,
         lastName: data.lastName,
+        avatarUrl: data.avatarUrl,
         role: data.role || 'USER'
       }
     });
@@ -54,6 +56,7 @@ router.post('/register', async (req, res): Promise<any> => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
         role: user.role
       }
     });
@@ -90,6 +93,7 @@ router.post('/login', async (req, res): Promise<any> => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
         role: user.role
       }
     });
@@ -106,6 +110,7 @@ router.post('/login', async (req, res): Promise<any> => {
 const UpdateProfileSchema = z.object({
   firstName: z.string().min(2).optional(),
   lastName: z.string().min(2).optional(),
+  avatarUrl: z.string().url().optional().or(z.literal('')), 
 });
 
 router.put('/profile', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
@@ -120,6 +125,7 @@ router.put('/profile', requireAuth, async (req: AuthRequest, res: any): Promise<
       data: {
         ...(data.firstName && { firstName: data.firstName }),
         ...(data.lastName && { lastName: data.lastName }),
+        ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl === '' ? null : data.avatarUrl }),
       }
     });
 
@@ -130,6 +136,7 @@ router.put('/profile', requireAuth, async (req: AuthRequest, res: any): Promise<
         email: updatedUser.email,
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
+        avatarUrl: updatedUser.avatarUrl,
         role: updatedUser.role
       }
     });

@@ -12,6 +12,7 @@ export const PersonalInformationScreen = () => {
 
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -33,7 +34,7 @@ export const PersonalInformationScreen = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ firstName, lastName })
+        body: JSON.stringify({ firstName, lastName, avatarUrl })
       });
       const data = await res.json();
       
@@ -80,6 +81,20 @@ export const PersonalInformationScreen = () => {
               <Text style={styles.successText}>Profile updated successfully!</Text>
             </View>
           ) : null}
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Profile Picture URL</Text>
+            <TextInput
+              style={styles.input}
+              value={avatarUrl}
+              onChangeText={setAvatarUrl}
+              placeholder="https://example.com/photo.jpg"
+              placeholderTextColor={tokens.colors.secondaryText}
+              keyboardType="url"
+              autoCapitalize="none"
+            />
+            <Text style={styles.helperText}>Paste a direct link to an image (optional).</Text>
+          </View>
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>First name</Text>
