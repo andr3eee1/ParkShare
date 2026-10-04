@@ -20,11 +20,14 @@ const DEFAULT_USER_LOCATION = { latitude: 44.4720, longitude: 26.1020 };
 export const ExploreScreen = () => {
   const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isDetailsVisible, setDetailsVisible] = useState(false);
   const [activeLocation, setActiveLocation] = useState<DemoLocation | null>(null);
   const [searchedLocation, setSearchedLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [activeFilters, setActiveFilters] = useState<string[]>(['All']);
+  const [maxPrice, setMaxPrice] = useState<number>(10);
 
   useEffect(() => {
     (async () => {
@@ -53,10 +56,27 @@ export const ExploreScreen = () => {
   const mapRef = useRef<any>(null);
   const parkingSpots = useMemo(() => {
     return createAllParkingSpots().filter(spot => {
+      // First, always filter out currently active spots if the request implied availability? 
+      // The prompt didn't say "don't filter unavailable", just "remove the verified only and available [buttons]".
+      // I'll keep the base availability check (unless the user meant to see ALL spots including unavailable ones).
       const avail = getAvailability(spot.available, spot.reservations || []);
-      return avail.isAvailable;
+      if (!avail.isAvailable) return false;
+
+      // Filter by max price
+      if (spot.price > maxPrice) return false;
+
+      // If 'All' is active, bypass other tag filters
+      if (activeFilters.includes('All')) return true;
+
+      // Otherwise, check specific filters
+      let passes = true;
+      if (activeFilters.includes('Private') && spot.type !== 'private') passes = false;
+      if (activeFilters.includes('Municipal') && spot.type !== 'municipal') passes = false;
+      if (activeFilters.includes('EV') && !spot.evCharging) passes = false;
+      
+      return passes;
     });
-  }, []);
+  }, [activeFilters, maxPrice]);
   const searchResults = searchDemoLocations(searchQuery);
 
   const handleLocationSelect = (location: DemoLocation) => {
@@ -240,13 +260,53 @@ export const ExploreScreen = () => {
               </View>
             )}
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
-              {['Available', 'Verified only', 'Private', 'Municipal', 'EV'].map((filter, i) => (
-                <View key={i} style={[styles.filterChip, i === 0 && styles.filterChipActive]}>
-                  <Text style={[styles.filterText, i === 0 && styles.filterTextActive]}>{filter}</Text>
-                </View>
-              ))}
-            </ScrollView>
+            <View style={{ marginBottom: 12 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
+                {['All', 'Private', 'Municipal', 'EV'].map((filter, i) => {
+                  const isActive = activeFilters.includes(filter);
+                  return (
+                    <TouchableOpacity
+                      key={i}
+                      style={[styles.filterChip, isActive && styles.filterChipActive]}
+                      onPress={() => {
+                        setActiveFilters(prev => {
+                          if (filter === 'All') return ['All'];
+                          let next = prev.includes(filter) 
+                            ? prev.filter(f => f !== filter) 
+                            : [...prev.filter(f => f !== 'All'), filter];
+                          
+                          if (filter === 'Municipal') {
+                            next = next.filter(f => f !== 'Private');
+                          } else if (filter === 'Private') {
+                            next = next.filter(f => f !== 'Municipal');
+                          }
+                          
+                          return next.length === 0 ? ['All'] : next;
+                        });
+                      }}
+                    >
+                      <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{filter}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontFamily: tokens.typography.body, fontSize: 12, color: tokens.colors.secondaryText, marginRight: 8, width: 80 }}>
+                Max: {maxPrice} RON
+              </Text>
+              <Slider
+                style={{ flex: 1, height: 30 }}
+                minimumValue={2}
+                maximumValue={15}
+                step={1}
+                value={maxPrice}
+                onValueChange={setMaxPrice}
+                minimumTrackTintColor={tokens.colors.primaryText}
+                maximumTrackTintColor="#E5E7EB"
+                thumbTintColor={tokens.colors.primaryText}
+              />
+            </View>
           </GlassPanel>
         </View>
     </>
@@ -289,6 +349,7 @@ export const ExploreScreen = () => {
                   <Text style={styles.spotName}>{selectedSpot.name}</Text>
                   <Text style={styles.spotDetails}>
                     {selectedSpot.host} • {selectedSpot.type === 'private' ? 'Private space' : 'Municipal parking'}
+                    {selectedSpot.evCharging ? ' • EV Charging' : ''}
                   </Text>
                   <Text style={styles.availableText}>Available: {selectedSpot.available}</Text>
                 </View>
@@ -316,6 +377,13 @@ export const ExploreScreen = () => {
                   <Text style={styles.municipalWarningText}>Information only. Pay at the physical meter.</Text>
                 </View>
               )}
+
+              <TouchableOpacity 
+                style={[styles.reserveButton, { marginTop: 12, backgroundColor: tokens.colors.white, borderWidth: 1, borderColor: '#E5E7EB' }]} 
+                onPress={() => setDetailsVisible(true)}
+              >
+                <Text style={[styles.reserveButtonText, { color: tokens.colors.primaryText }]}>See Details</Text>
+              </TouchableOpacity>
             </GlassPanel>
           </View>
         )}
@@ -399,6 +467,47 @@ export const ExploreScreen = () => {
 
               <TouchableOpacity style={styles.reserveButton} onPress={() => setModalVisible(false)}>
                 <Text style={styles.reserveButtonText}>Proceed to Payment</Text>
+              </TouchableOpacity>
+            </GlassPanel>
+          </View>
+        </Modal>
+      )}
+
+      {/* Details Modal */}
+      {selectedSpot && (
+        <Modal visible={isDetailsVisible} transparent={true} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <GlassPanel borderRadius={16} style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.spotName}>Space Details</Text>
+                <TouchableOpacity onPress={() => setDetailsVisible(false)}>
+                  <Ionicons name="close" size={24} color={tokens.colors.primaryText} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalSection}>
+                <View style={{ width: '100%', height: 160, backgroundColor: '#E5E7EB', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                  <Ionicons name="image-outline" size={48} color="#9CA3AF" />
+                  <Text style={{ marginTop: 8, color: '#6B7280', fontFamily: tokens.typography.body }}>Photo Placeholder</Text>
+                </View>
+
+                <Text style={styles.sectionLabel}>Address (Long press to copy)</Text>
+                <Text style={[styles.spotDetails, { color: tokens.colors.primaryText, marginBottom: 16 }]} selectable={true}>
+                  {selectedSpot.address}
+                </Text>
+
+                {selectedSpot.type === 'private' && selectedSpot.spotNumber && (
+                  <>
+                    <Text style={styles.sectionLabel}>Spot Number</Text>
+                    <Text style={[styles.spotDetails, { color: tokens.colors.primaryText, marginBottom: 16 }]} selectable={true}>
+                      {selectedSpot.spotNumber}
+                    </Text>
+                  </>
+                )}
+              </View>
+
+              <TouchableOpacity style={styles.reserveButton} onPress={() => setDetailsVisible(false)}>
+                <Text style={styles.reserveButtonText}>Close</Text>
               </TouchableOpacity>
             </GlassPanel>
           </View>

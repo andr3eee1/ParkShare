@@ -26,6 +26,9 @@ export interface DemoParkingSpot {
   latitude: number;
   longitude: number;
   reservations: Reservation[];
+  evCharging?: boolean;
+  address: string;
+  spotNumber?: string;
 }
 
 export const DEMO_LOCATIONS: DemoLocation[] = [
@@ -123,7 +126,7 @@ export const DEMO_LOCATIONS: DemoLocation[] = [
 
 export const DEFAULT_LOCATION = DEMO_LOCATIONS[0];
 
-const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[] = [
+const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude' | 'address' | 'spotNumber'>[] = [
   {
     name: 'Driveway (Verified)',
     type: 'private',
@@ -132,6 +135,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     distance: '2 min walk',
     available: '09:00 - 18:00',
     reservations: [],
+    evCharging: true,
   },
   {
     name: 'Street Meter 1204',
@@ -159,6 +163,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude'>[
     distance: '4 min walk',
     available: '18:00 - 08:00',
     reservations: [],
+    evCharging: true,
   },
   {
     name: 'Boulevard Meter 208',
@@ -215,6 +220,8 @@ export const createParkingSpots = (location: DemoLocation): DemoParkingSpot[] =>
     id: `${location.id}-${index + 1}`,
     latitude: location.latitude + PARKING_OFFSETS[index][0],
     longitude: location.longitude + PARKING_OFFSETS[index][1],
+    address: `${location.name} St, No. ${index * 4 + 1}, Bucharest`,
+    spotNumber: template.type === 'private' ? `P-${10 + index}` : undefined,
   }))
 );
 

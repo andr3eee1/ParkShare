@@ -395,6 +395,19 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
     }
   }, [selectedSpot]);
 
+  useEffect(() => {
+    if (Platform.OS !== 'web' && webviewRef.current) {
+      const script = `
+        if (typeof spotData !== 'undefined' && typeof renderSpots === 'function') {
+          spotData = ${JSON.stringify(spots).replace(/</g, '\\u003c')};
+          renderSpots();
+        }
+        true;
+      `;
+      webviewRef.current.injectJavaScript(script);
+    }
+  }, [spots]);
+
   if (Platform.OS === 'web') {
     const WebMapEvents = () => {
       useMapEvents({
@@ -797,7 +810,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
       </body>
       </html>
     `;
-  }, [spots]);
+  }, []);
 
   return (
     <View style={styles.container}>
