@@ -536,7 +536,7 @@ export const ExploreScreen = () => {
                     Maximum price per hour
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 40, backgroundColor: tokens.colors.background, marginRight: 8, paddingHorizontal: 16, borderRadius: 20 }}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 40, backgroundColor: tokens.colors.paleMapBackground, marginRight: 8, paddingHorizontal: 16, borderRadius: 20 }}>
                       <TextInput
                         style={[styles.searchInput, { flex: 1, height: 40 }]}
                         placeholder="e.g. 10"
@@ -601,7 +601,7 @@ export const ExploreScreen = () => {
               };
 
               return (
-                <View style={{ marginTop: 8, backgroundColor: tokens.colors.background, padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                <View style={{ marginTop: 8, backgroundColor: tokens.colors.paleMapBackground, padding: 12, borderRadius: 12, alignItems: 'center' }}>
                   <Text style={{ fontFamily: tokens.typography.body, fontSize: 16, color: tokens.colors.primaryText, marginBottom: 12, textAlign: 'center', fontWeight: '600' }}>
                     Until: {tempHour}:{tempMinute}
                   </Text>

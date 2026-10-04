@@ -80,6 +80,8 @@ export const LoginScreen = () => {
             secureTextEntry
             value={password}
             onChangeText={setPassword}
+            onSubmitEditing={handleLogin}
+            returnKeyType="go"
           />
         </View>
 

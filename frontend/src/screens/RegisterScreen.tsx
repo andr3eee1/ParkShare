@@ -113,6 +113,8 @@ export const RegisterScreen = () => {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+              onSubmitEditing={handleRegister}
+              returnKeyType="go"
             />
           </View>
 
