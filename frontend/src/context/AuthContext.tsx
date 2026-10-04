@@ -36,11 +36,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedToken = await AsyncStorage.getItem('userToken');
         const storedUser = await AsyncStorage.getItem('userData');
         if (storedToken && storedUser) {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            if (parsedUser && typeof parsedUser === 'object') {
+              setToken(storedToken);
+              setUser(parsedUser);
+            }
+          } catch (parseError) {
+            // Corrupted data, clear it
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('userData');
+          }
         }
       } catch (e) {
-        console.error('Restoring token failed', e);
+        // Silently ignore storage access errors on first load
       }
       setIsLoading(false);
     };
