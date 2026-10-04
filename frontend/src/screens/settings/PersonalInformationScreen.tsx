@@ -44,7 +44,13 @@ export const PersonalInformationScreen = () => {
       const type = match ? `image/${match[1]}` : `image`;
 
       const formData = new FormData();
-      formData.append('avatar', { uri, name: filename, type } as any);
+      if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('avatar', blob, filename);
+      } else {
+        formData.append('avatar', { uri, name: filename, type } as any);
+      }
 
       const res = await fetch('http://pana.com.ro:8745/auth/upload-avatar', {
         method: 'POST',
