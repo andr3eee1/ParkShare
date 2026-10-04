@@ -18,6 +18,7 @@ export const ExploreScreen = () => {
   const [selectedSpot, setSelectedSpot] = useState<any>(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [activeLocation, setActiveLocation] = useState(DEFAULT_LOCATION);
+  const [searchedLocation, setSearchedLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -27,6 +28,7 @@ export const ExploreScreen = () => {
 
   const handleLocationSelect = (location: DemoLocation) => {
     setActiveLocation(location);
+    setSearchedLocation(location);
     setSearchQuery(location.name);
     setSearchFocused(false);
     setSelectedSpot(null);
@@ -111,7 +113,7 @@ export const ExploreScreen = () => {
         spots={parkingSpots}
         selectedSpot={selectedSpot}
         onSelectSpot={setSelectedSpot}
-        destination={activeLocation}
+        destination={searchedLocation ?? undefined}
       />
 
       <SafeAreaView style={styles.safeArea} pointerEvents="box-none">
@@ -139,6 +141,7 @@ export const ExploreScreen = () => {
                 value={searchQuery}
                 onChangeText={(query) => {
                   setSearchQuery(query);
+                  setSearchedLocation(null);
                   setSearchFocused(true);
                 }}
                 onFocus={() => setSearchFocused(true)}

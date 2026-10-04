@@ -157,11 +157,12 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
   }, [map, spots]);
 
   const clusters = getSpotClusters(spots, map, selectedSpot);
+  const isClusteredView = map.getZoom() < CLUSTER_ZOOM_THRESHOLD;
   void viewportVersion;
 
   return <>
     {clusters.map((cluster) => {
-      if (cluster.spots.length > 1) {
+      if (isClusteredView || cluster.spots.length > 1) {
         const icon = new DivIcon({
           className: 'cluster-leaflet-marker',
           html: `<div class="cluster-marker">${cluster.spots.length}</div>`,
@@ -507,7 +508,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination 
             });
 
             clusters.forEach(function(cluster) {
-              if (cluster.spots.length > 1) {
+              if (zoom < ${CLUSTER_ZOOM_THRESHOLD} || cluster.spots.length > 1) {
                 L.marker(cluster.center, {
                   icon: L.divIcon({
                     className: 'cluster-leaflet-marker',
