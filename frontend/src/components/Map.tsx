@@ -292,10 +292,11 @@ const WebUserLocationMarker = ({ userLocation }: { userLocation?: { latitude: nu
   );
 };
 
-export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination, userLocation }: {
+export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, destination, userLocation }: {
   spots: any[];
   selectedSpot: any;
   onSelectSpot: (spot: any) => void;
+  onMapClick?: () => void;
   destination?: MapDestination;
   userLocation?: { latitude: number; longitude: number };
 }, ref) => {
@@ -411,7 +412,10 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
   if (Platform.OS === 'web') {
     const WebMapEvents = () => {
       useMapEvents({
-        click: () => onSelectSpot(null)
+        click: () => {
+          onSelectSpot(null);
+          if (onMapClick) onMapClick();
+        }
       });
       return null;
     };
@@ -829,6 +833,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, destination,
             const data = JSON.parse(event.nativeEvent.data);
             if (data.type === 'map_click') {
               onSelectSpot(null);
+              if (onMapClick) onMapClick();
             } else if (data.type === 'select') {
               const tappedSpot = spots.find((s: any) => s.id === data.id);
               if (tappedSpot) {

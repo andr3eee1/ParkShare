@@ -132,6 +132,11 @@ export const ExploreScreen = () => {
   const [isFiltersVisible, setFiltersVisible] = useState(false);
   const hasActiveFilters = maxPrice !== null || timeLimit !== null || !activeFilters.includes('All');
 
+  const filtersScrollRef = useRef<ScrollView>(null);
+  const filterLayouts = useRef<{ [key: string]: { x: number, width: number } }>({});
+  const { width: windowWidth } = useWindowDimensions();
+  const scrollWidthRef = useRef(windowWidth);
+
   // Keep the screen clear: collapse the filters whenever a parking spot is
   // opened or closed.
   useEffect(() => {
@@ -367,7 +372,6 @@ export const ExploreScreen = () => {
     mapRef.current?.zoomOut();
   };
 
-  const { width: windowWidth } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && windowWidth > 768;
 
   const renderMap = () => (
@@ -377,6 +381,10 @@ export const ExploreScreen = () => {
         spots={parkingSpots}
         selectedSpot={selectedSpot}
         onSelectSpot={setSelectedSpot}
+        onMapClick={() => {
+          setFiltersVisible(false);
+          setActiveDropdown(null);
+        }}
         destination={searchedLocation ?? undefined}
         userLocation={userLocation || DEFAULT_USER_LOCATION}
       />
@@ -463,7 +471,16 @@ export const ExploreScreen = () => {
             {isFiltersVisible && (
             <>
             <View style={{ marginBottom: 8 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={true} persistentScrollbar={true} indicatorStyle="black" style={styles.filtersScroll} contentContainerStyle={{ paddingBottom: 16 }}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={true} 
+                persistentScrollbar={true} 
+                indicatorStyle="black" 
+                style={styles.filtersScroll} 
+                contentContainerStyle={{ paddingBottom: 16 }}
+                ref={filtersScrollRef}
+                onLayout={(e) => { scrollWidthRef.current = e.nativeEvent.layout.width; }}
+              >
                 {['All', 'Price Limit', 'Time Limit', 'Private', 'Municipal', 'EV'].map((filter, i) => {
                   let isActive = false;
                   if (filter === 'Price Limit') isActive = maxPrice !== null;
@@ -478,7 +495,18 @@ export const ExploreScreen = () => {
                     <TouchableOpacity
                       key={i}
                       style={[styles.filterChip, isActive && styles.filterChipActive]}
+                      onLayout={(e) => {
+                        const { x, width } = e.nativeEvent.layout;
+                        filterLayouts.current[filter] = { x, width };
+                      }}
                       onPress={() => {
+                        const layout = filterLayouts.current[filter];
+                        if (layout && filtersScrollRef.current) {
+                          let scrollX = layout.x + layout.width / 2 - scrollWidthRef.current / 2;
+                          if (scrollX < 0) scrollX = 0;
+                          filtersScrollRef.current.scrollTo({ x: scrollX, y: 0, animated: true });
+                        }
+
                         if (filter === 'Price Limit') {
                           if (maxPrice !== null) {
                             setMaxPrice(null);
@@ -535,10 +563,10 @@ export const ExploreScreen = () => {
                   <Text style={{ fontFamily: tokens.typography.body, fontSize: 13, fontWeight: '600', color: tokens.colors.primaryText, marginBottom: 6, marginLeft: 4 }}>
                     Maximum price per hour
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 40, backgroundColor: tokens.colors.paleMapBackground, marginRight: 8, paddingHorizontal: 16, borderRadius: 20 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 40, backgroundColor: tokens.colors.paleMapBackground, marginRight: 8, paddingHorizontal: 12, borderRadius: 20, overflow: 'hidden', minWidth: 0 }}>
                       <TextInput
-                        style={[styles.searchInput, { flex: 1, height: 40 }]}
+                        style={[styles.searchInput, { flex: 1, height: 40, fontSize: 14, minWidth: 0, marginRight: 4 }]}
                         placeholder="e.g. 10"
                         placeholderTextColor={tokens.colors.secondaryText}
                         keyboardType="decimal-pad"
@@ -555,9 +583,9 @@ export const ExploreScreen = () => {
                         returnKeyType="done"
                         autoFocus
                       />
-                      <Text style={{ fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.secondaryText, marginLeft: 4 }}>RON / hour</Text>
+                      <Text style={{ fontFamily: tokens.typography.body, fontSize: 13, color: tokens.colors.secondaryText, flexShrink: 0 }} numberOfLines={1}>RON/hr</Text>
                     </View>
-                    <TouchableOpacity style={{ backgroundColor: tokens.colors.primaryText, paddingHorizontal: 16, height: 40, borderRadius: 20, justifyContent: 'center' }} onPress={applyPrice}>
+                    <TouchableOpacity style={{ backgroundColor: tokens.colors.primaryText, paddingHorizontal: 16, height: 40, borderRadius: 20, justifyContent: 'center', flexShrink: 0 }} onPress={applyPrice}>
                       <Text style={{ color: tokens.colors.white, fontWeight: 'bold' }}>Set</Text>
                     </TouchableOpacity>
                   </View>
@@ -802,7 +830,7 @@ export const ExploreScreen = () => {
       {selectedSpot && (
         <Modal visible={isDetailsVisible} transparent={true} animationType="fade">
           <Pressable style={styles.modalOverlay} onPress={() => setDetailsVisible(false)}>
-            <Pressable onPress={() => {}} style={{ width: '100%', maxWidth: 400 }}>
+            <Pressable onPress={() => {}} style={{ width: '100%', maxWidth: 400, alignSelf: 'center' }}>
               <GlassPanel borderRadius={16} style={styles.modalContent}>
                 <View style={[styles.modalHeader, { borderBottomWidth: 0, paddingBottom: 8 }]}>
                   <Text style={styles.spotName}>Space Details</Text>
