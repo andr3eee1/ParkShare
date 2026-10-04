@@ -7,6 +7,8 @@ export const tokens = {
     warningAmber: '#D97706',
     paleMapBackground: '#EEF2F5',
     lightPanelBase: '#F7F9FB',
+    background: '#F7F9FB',
+    panelSurface: '#FFFFFF',
     white: '#FFFFFF',
     transparentWhite: 'rgba(255, 255, 255, 0.88)', // ~88% opaque
     borderLight: 'rgba(255, 255, 255, 0.5)',
