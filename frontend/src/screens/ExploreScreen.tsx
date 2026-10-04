@@ -246,7 +246,7 @@ export const ExploreScreen = () => {
         </View>
 
         {/* Map Controls */}
-        <View style={[styles.mapControls, selectedSpot && { bottom: 200 }, { pointerEvents: 'box-none' as any }]}>
+        <View style={[styles.mapControls, selectedSpot && { bottom: 300 }, { pointerEvents: 'box-none' as any }]}>
           <GlassPanel borderRadius={12} style={styles.controlGroup}>
             <TouchableOpacity style={styles.controlButton} onPress={handleZoomIn}>
               <Ionicons name="add" size={24} color={tokens.colors.primaryText} />
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
   },
   bookingSheet: {
     marginHorizontal: 16,
-    marginBottom: Platform.OS === 'ios' ? 0 : 20,
+    marginBottom: 16,
     padding: 24,
     paddingTop: 12,
   },

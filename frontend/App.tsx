@@ -34,8 +34,11 @@ export default function App() {
     return null;
   }
 
-  const AppContent = (
-    <SafeAreaProvider>
+  const MainNavigator = () => {
+    const insets = require('react-native-safe-area-context').useSafeAreaInsets();
+    const bottomPadding = Math.max(insets.bottom, 12);
+    
+    return (
       <NavigationContainer>
         <Tab.Navigator
           screenOptions={({ route }) => ({
@@ -54,8 +57,8 @@ export default function App() {
               backgroundColor: tokens.colors.white,
               borderTopWidth: 1,
               borderTopColor: '#E5E7EB',
-              height: Platform.OS === 'ios' ? 88 : 60,
-              paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+              height: 60 + bottomPadding,
+              paddingBottom: bottomPadding,
               paddingTop: 8,
             },
             tabBarLabelStyle: {
@@ -71,38 +74,32 @@ export default function App() {
           <Tab.Screen name="Account" children={() => <PlaceholderScreen name="Account" />} />
         </Tab.Navigator>
       </NavigationContainer>
+    );
+  };
+
+  const AppRoot = (
+    <SafeAreaProvider>
+      <MainNavigator />
     </SafeAreaProvider>
   );
 
   if (Platform.OS === 'web') {
     return (
       <View style={styles.webWrapper}>
-        <View style={styles.mobileContainer}>
-          {AppContent}
-        </View>
+        {AppRoot}
       </View>
     );
   }
 
-  return AppContent;
+  return AppRoot;
 }
 
 const styles = StyleSheet.create({
   webWrapper: {
     flex: 1,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#EEF2F5',
   },
   mobileContainer: {
-    width: 390,
-    height: 845,
-    backgroundColor: tokens.colors.white,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    borderRadius: 24,
+    // Deprecated fixed size constraints
   },
 });
