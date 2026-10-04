@@ -172,9 +172,9 @@ export const ExploreScreen = () => {
         userLocation={userLocation || DEFAULT_USER_LOCATION}
       />
 
-      <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any }]}>
+      <SafeAreaView pointerEvents="box-none" style={styles.safeArea}>
         {/* Top Header Panel */}
-        <View style={[styles.headerContainer, { pointerEvents: 'box-none' as any }]}>
+        <View pointerEvents="box-none" style={styles.headerContainer}>
           <GlassPanel borderRadius={tokens.radii.topPanel} style={styles.headerPanel}>
             <View style={styles.headerTopRow}>
               <Text style={styles.wordmark}>ParkShare</Text>
@@ -246,7 +246,7 @@ export const ExploreScreen = () => {
         </View>
 
         {/* Map Controls */}
-        <View style={[styles.mapControls, selectedSpot && { bottom: 300 }, { pointerEvents: 'box-none' as any }]}>
+        <View pointerEvents="box-none" style={[styles.mapControls, selectedSpot && { bottom: 300 }]}>
           <GlassPanel borderRadius={12} style={styles.controlGroup}>
             <TouchableOpacity style={styles.controlButton} onPress={handleZoomIn}>
               <Ionicons name="add" size={24} color={tokens.colors.primaryText} />
@@ -265,7 +265,7 @@ export const ExploreScreen = () => {
 
         {/* Booking Sheet (Simplified) */}
         {selectedSpot && (
-          <View style={[styles.bookingSheetWrapper, { pointerEvents: 'box-none' as any }]}>
+          <View pointerEvents="box-none" style={styles.bookingSheetWrapper}>
             <GlassPanel borderRadius={tokens.radii.upperSheet} style={styles.bookingSheet}>
               <View style={styles.dragHandleContainer}>
                 <View style={styles.dragHandle} />
