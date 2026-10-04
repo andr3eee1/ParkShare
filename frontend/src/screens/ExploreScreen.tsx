@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions } from 'react-native';
+import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Location from 'expo-location';
@@ -21,6 +21,7 @@ export const ExploreScreen = () => {
   const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [isDetailsVisible, setDetailsVisible] = useState(false);
+  const [isPhotoZoomed, setPhotoZoomed] = useState(false);
   const [activeLocation, setActiveLocation] = useState<DemoLocation | null>(null);
   const [searchedLocation, setSearchedLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -476,41 +477,56 @@ export const ExploreScreen = () => {
       {/* Details Modal */}
       {selectedSpot && (
         <Modal visible={isDetailsVisible} transparent={true} animationType="fade">
-          <View style={styles.modalOverlay}>
-            <GlassPanel borderRadius={16} style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.spotName}>Space Details</Text>
-                <TouchableOpacity onPress={() => setDetailsVisible(false)}>
-                  <Ionicons name="close" size={24} color={tokens.colors.primaryText} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.modalSection}>
-                <View style={{ width: '100%', height: 160, backgroundColor: '#E5E7EB', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
-                  <Ionicons name="image-outline" size={48} color="#9CA3AF" />
-                  <Text style={{ marginTop: 8, color: '#6B7280', fontFamily: tokens.typography.body }}>Photo Placeholder</Text>
+          <Pressable style={styles.modalOverlay} onPress={() => setDetailsVisible(false)}>
+            <Pressable onPress={() => {}} style={{ width: '100%', maxWidth: 400 }}>
+              <GlassPanel borderRadius={16} style={styles.modalContent}>
+                <View style={[styles.modalHeader, { borderBottomWidth: 0, paddingBottom: 8 }]}>
+                  <Text style={styles.spotName}>Space Details</Text>
                 </View>
 
-                <Text style={styles.sectionLabel}>Address (Long press to copy)</Text>
-                <Text style={[styles.spotDetails, { color: tokens.colors.primaryText, marginBottom: 16 }]} selectable={true}>
-                  {selectedSpot.address}
-                </Text>
+                <View style={[styles.modalSection, { borderTopWidth: 0 }]}>
+                  <TouchableOpacity activeOpacity={0.8} onPress={() => setPhotoZoomed(true)}>
+                    <View style={{ width: '100%', height: 160, backgroundColor: '#E5E7EB', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                      <Ionicons name="image-outline" size={48} color="#9CA3AF" />
+                      <Text style={{ marginTop: 8, color: '#6B7280', fontFamily: tokens.typography.body }}>Photo Placeholder</Text>
+                    </View>
+                  </TouchableOpacity>
 
-                {selectedSpot.type === 'private' && selectedSpot.spotNumber && (
-                  <>
-                    <Text style={styles.sectionLabel}>Spot Number</Text>
-                    <Text style={[styles.spotDetails, { color: tokens.colors.primaryText, marginBottom: 16 }]} selectable={true}>
-                      {selectedSpot.spotNumber}
+                  <Text style={styles.sectionLabel}>Address</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'space-between' }}>
+                    <Text style={[styles.spotDetails, { color: tokens.colors.primaryText, flex: 1, marginRight: 8 }]} selectable={true}>
+                      {selectedSpot.address}
                     </Text>
-                  </>
-                )}
-              </View>
+                    <TouchableOpacity style={{ padding: 4 }} onPress={() => {
+                      try {
+                        Clipboard.setString(selectedSpot.address);
+                      } catch (e) {
+                        console.warn("Clipboard not available");
+                      }
+                    }}>
+                      <Ionicons name="copy-outline" size={20} color={tokens.colors.primaryText} />
+                    </TouchableOpacity>
+                  </View>
 
-              <TouchableOpacity style={styles.reserveButton} onPress={() => setDetailsVisible(false)}>
-                <Text style={styles.reserveButtonText}>Close</Text>
-              </TouchableOpacity>
-            </GlassPanel>
-          </View>
+                  {selectedSpot.type === 'private' && selectedSpot.spotNumber && (
+                    <>
+                      <Text style={styles.sectionLabel}>Spot Number</Text>
+                      <Text style={[styles.spotDetails, { color: tokens.colors.primaryText, marginBottom: 16 }]} selectable={true}>
+                        {selectedSpot.spotNumber}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              </GlassPanel>
+            </Pressable>
+          </Pressable>
+
+          {isPhotoZoomed && (
+            <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }]} onPress={() => setPhotoZoomed(false)}>
+              <Ionicons name="image-outline" size={120} color="#9CA3AF" />
+              <Text style={{ marginTop: 24, color: '#9CA3AF', fontFamily: tokens.typography.body, fontSize: 18 }}>Photo Placeholder</Text>
+            </Pressable>
+          )}
         </Modal>
       )}
     </>
