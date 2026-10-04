@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Location from 'expo-location';
 import { tokens } from '../theme/tokens';
 import { GlassPanel } from '../components/GlassPanel';
@@ -17,6 +18,61 @@ import {
 
 const DEFAULT_USER_LOCATION = { latitude: 44.4720, longitude: 26.1020 };
 
+const WheelPicker = ({ items, selectedValue, onValueChange, itemHeight = 40 }: { items: string[], selectedValue: string, onValueChange: (val: string) => void, itemHeight?: number }) => {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const isProgrammatic = useRef(true);
+  
+  useEffect(() => {
+    if (isProgrammatic.current) {
+      const index = items.indexOf(selectedValue);
+      if (index >= 0 && scrollViewRef.current) {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollTo({ y: index * itemHeight, animated: true });
+        }, 50);
+      }
+    }
+    isProgrammatic.current = true;
+  }, [items, selectedValue, itemHeight]);
+
+  return (
+    <View style={{ height: itemHeight * 3, width: 70, overflow: 'hidden' }}>
+      <View style={{ position: 'absolute', top: itemHeight, left: 0, right: 0, height: itemHeight, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 8, zIndex: -1 }} />
+      <ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={itemHeight}
+        decelerationRate="fast"
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          const index = Math.round(e.nativeEvent.contentOffset.y / itemHeight);
+          if (items[index] && items[index] !== selectedValue) {
+            isProgrammatic.current = false;
+            onValueChange(items[index]);
+          }
+        }}
+      >
+        <View style={{ height: itemHeight }} />
+        {items.map((item, i) => {
+          const isSelected = selectedValue === item;
+          return (
+            <TouchableOpacity key={i} activeOpacity={0.7} onPress={() => {
+              isProgrammatic.current = true;
+              onValueChange(item);
+            }}>
+              <View style={{ height: itemHeight, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: isSelected ? 18 : 14, fontWeight: isSelected ? 'bold' : 'normal', color: isSelected ? tokens.colors.primaryText : tokens.colors.secondaryText }}>
+                  {item}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+        <View style={{ height: itemHeight }} />
+      </ScrollView>
+    </View>
+  );
+};
+
 export const ExploreScreen = () => {
   const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -28,7 +84,12 @@ export const ExploreScreen = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>(['All']);
-  const [maxPrice, setMaxPrice] = useState<number>(10);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [timeLimit, setTimeLimit] = useState<string | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'price' | 'time' | null>(null);
+  const [tempPrice, setTempPrice] = useState('');
+  const [tempHour, setTempHour] = useState('12');
+  const [tempMinute, setTempMinute] = useState('00');
 
   useEffect(() => {
     (async () => {
@@ -54,6 +115,52 @@ export const ExploreScreen = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    if (activeDropdown === 'time') {
+      const now = new Date();
+      let curH = now.getHours();
+      let curM = now.getMinutes();
+      let minM_calc = Math.ceil(curM / 5) * 5;
+      if (minM_calc >= 60) {
+        minM_calc = 0;
+        curH = (curH + 1) % 24;
+      }
+      
+      const hourItems = [];
+      let h = curH;
+      while (true) {
+        hourItems.push(h.toString().padStart(2, '0'));
+        if (h === 6) break;
+        h = (h + 1) % 24;
+      }
+      
+      let currentSetHour = tempHour;
+      if (!hourItems.includes(currentSetHour)) {
+        currentSetHour = hourItems[0];
+        setTempHour(currentSetHour);
+      }
+      
+      let minM = 0;
+      if (parseInt(currentSetHour) === curH) {
+        minM = minM_calc;
+      }
+      
+      const minuteItems = [];
+      if (currentSetHour === '06') {
+        minuteItems.push('00');
+      } else {
+        for (let i = minM; i <= 55; i += 5) {
+          minuteItems.push(i.toString().padStart(2, '0'));
+        }
+        if (minuteItems.length === 0) minuteItems.push('00');
+      }
+      
+      if (!minuteItems.includes(tempMinute)) {
+        setTempMinute(minuteItems[0]);
+      }
+    }
+  }, [activeDropdown, tempHour, tempMinute]);
+
   const mapRef = useRef<any>(null);
   const parkingSpots = useMemo(() => {
     return createAllParkingSpots().filter(spot => {
@@ -64,7 +171,37 @@ export const ExploreScreen = () => {
       if (!avail.isAvailable) return false;
 
       // Filter by max price
-      if (spot.price > maxPrice) return false;
+      if (maxPrice !== null && spot.price > maxPrice) return false;
+
+      // Filter by time limit
+      if (timeLimit) {
+        let limitMins = 0;
+        if (timeLimit.includes(':')) {
+          const [h, m] = timeLimit.split(':').map(Number);
+          limitMins = (h || 0) * 60 + (m || 0);
+        } else {
+          limitMins = parseInt(timeLimit.replace(/[^0-9]/g, '')) * 60;
+        }
+
+        if (!isNaN(limitMins)) {
+          const now = new Date();
+          const currentMins = now.getHours() * 60 + now.getMinutes();
+          if (limitMins < currentMins) limitMins += 1440;
+
+          if (spot.available !== '24/7') {
+            const parts = spot.available.split('-');
+            if (parts.length === 2) {
+              const [minH, minM] = parts[0].trim().split(':').map(Number);
+              const [maxH, maxM] = parts[1].trim().split(':').map(Number);
+              let closeMins = maxH * 60 + maxM;
+              let openMins = minH * 60 + minM;
+              if (closeMins <= openMins) closeMins += 1440;
+              
+              if (limitMins > closeMins) return false;
+            }
+          }
+        }
+      }
 
       // If 'All' is active, bypass other tag filters
       if (activeFilters.includes('All')) return true;
@@ -77,7 +214,7 @@ export const ExploreScreen = () => {
       
       return passes;
     });
-  }, [activeFilters, maxPrice]);
+  }, [activeFilters, maxPrice, timeLimit]);
   const searchResults = searchDemoLocations(searchQuery);
 
   const handleLocationSelect = (location: DemoLocation) => {
@@ -106,7 +243,7 @@ export const ExploreScreen = () => {
 
   // Calculate minute bounds
   const getMinMaxMinutes = () => {
-    if (!selectedSpot || selectedSpot.available === '24/7') return { min: 0, max: 1440 };
+    if (!selectedSpot || selectedSpot.available === '24/7') return { min: 0, max: 1800 };
     
     const parts = selectedSpot.available.split('-');
     if (parts.length === 2) {
@@ -261,17 +398,48 @@ export const ExploreScreen = () => {
               </View>
             )}
 
-            <View style={{ marginBottom: 12 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
-                {['All', 'Private', 'Municipal', 'EV'].map((filter, i) => {
-                  const isActive = activeFilters.includes(filter);
+            <View style={{ marginBottom: 8 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={true} persistentScrollbar={true} indicatorStyle="black" style={styles.filtersScroll} contentContainerStyle={{ paddingBottom: 16 }}>
+                {['All', 'Price Limit', 'Time Limit', 'Private', 'Municipal', 'EV'].map((filter, i) => {
+                  let isActive = false;
+                  if (filter === 'Price Limit') isActive = maxPrice !== null;
+                  else if (filter === 'Time Limit') isActive = timeLimit !== null;
+                  else isActive = activeFilters.includes(filter);
+
+                  let displayText = filter;
+                  if (filter === 'Price Limit' && maxPrice !== null) displayText = `Max: ${maxPrice} RON`;
+                  if (filter === 'Time Limit' && timeLimit !== null) displayText = `Until: ${timeLimit}`;
+
                   return (
                     <TouchableOpacity
                       key={i}
                       style={[styles.filterChip, isActive && styles.filterChipActive]}
                       onPress={() => {
+                        if (filter === 'Price Limit') {
+                          if (maxPrice !== null) {
+                            setMaxPrice(null);
+                          } else {
+                            if (activeDropdown === 'price') setActiveDropdown(null);
+                            else { setTempPrice(''); setActiveDropdown('price'); }
+                          }
+                          return;
+                        }
+                        if (filter === 'Time Limit') {
+                          if (timeLimit !== null) {
+                            setTimeLimit(null);
+                          } else {
+                            if (activeDropdown === 'time') setActiveDropdown(null);
+                            else { setActiveDropdown('time'); }
+                          }
+                          return;
+                        }
+
                         setActiveFilters(prev => {
-                          if (filter === 'All') return ['All'];
+                          if (filter === 'All') {
+                            setMaxPrice(null);
+                            setTimeLimit(null);
+                            return ['All'];
+                          }
                           let next = prev.includes(filter) 
                             ? prev.filter(f => f !== filter) 
                             : [...prev.filter(f => f !== 'All'), filter];
@@ -286,28 +454,95 @@ export const ExploreScreen = () => {
                         });
                       }}
                     >
-                      <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{filter}</Text>
+                      <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{displayText}</Text>
                     </TouchableOpacity>
                   );
                 })}
               </ScrollView>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontFamily: tokens.typography.body, fontSize: 12, color: tokens.colors.secondaryText, marginRight: 8, width: 80 }}>
-                Max: {maxPrice} RON
-              </Text>
-              <Slider
-                style={{ flex: 1, height: 30 }}
-                minimumValue={2}
-                maximumValue={15}
-                step={1}
-                value={maxPrice}
-                onValueChange={setMaxPrice}
-                minimumTrackTintColor={tokens.colors.primaryText}
-                maximumTrackTintColor="#E5E7EB"
-                thumbTintColor={tokens.colors.primaryText}
-              />
-            </View>
+            {activeDropdown === 'price' && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                <TextInput
+                  style={[styles.searchInput, { flex: 1, height: 40, backgroundColor: tokens.colors.background, marginRight: 8, paddingHorizontal: 16, borderRadius: 20 }]}
+                  placeholder="Max Price (e.g. 10)"
+                  placeholderTextColor={tokens.colors.secondaryText}
+                  keyboardType="numeric"
+                  value={tempPrice}
+                  onChangeText={setTempPrice}
+                  autoFocus
+                />
+                <TouchableOpacity style={{ backgroundColor: tokens.colors.primaryText, paddingHorizontal: 16, height: 40, borderRadius: 20, justifyContent: 'center' }} onPress={() => {
+                  const val = parseFloat(tempPrice);
+                  if (!isNaN(val) && val > 0) setMaxPrice(val);
+                  setActiveDropdown(null);
+                }}>
+                  <Text style={{ color: tokens.colors.white, fontWeight: 'bold' }}>Set</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {activeDropdown === 'time' && (() => {
+              const now = new Date();
+              let curH = now.getHours();
+              let curM = now.getMinutes();
+              let minM_calc = Math.ceil(curM / 5) * 5;
+              if (minM_calc >= 60) {
+                minM_calc = 0;
+                curH = (curH + 1) % 24;
+              }
+
+              const hourItems = [];
+              let h = curH;
+              while (true) {
+                hourItems.push(h.toString().padStart(2, '0'));
+                if (h === 6) break;
+                h = (h + 1) % 24;
+              }
+
+              let minM = 0;
+              if (parseInt(tempHour) === curH) {
+                minM = minM_calc;
+              }
+              const minuteItems = [];
+              if (tempHour === '06') {
+                minuteItems.push('00');
+              } else {
+                for (let i = minM; i <= 55; i += 5) {
+                  minuteItems.push(i.toString().padStart(2, '0'));
+                }
+                if (minuteItems.length === 0) minuteItems.push('00');
+              }
+
+              return (
+                <View style={{ marginTop: 8, backgroundColor: tokens.colors.background, padding: 12, borderRadius: 12, alignItems: 'center' }}>
+                  <Text style={{ fontFamily: tokens.typography.body, fontSize: 16, color: tokens.colors.primaryText, marginBottom: 12, textAlign: 'center', fontWeight: '600' }}>
+                    Until: {tempHour}:{tempMinute}
+                  </Text>
+                  
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: 160 }}>
+                    <WheelPicker
+                      items={hourItems}
+                      selectedValue={tempHour}
+                      onValueChange={setTempHour}
+                      key={hourItems.join(',')}
+                    />
+                    <Text style={{ fontSize: 24, fontWeight: 'bold', marginHorizontal: 8 }}>:</Text>
+                    <WheelPicker
+                      items={minuteItems}
+                      selectedValue={tempMinute}
+                      onValueChange={setTempMinute}
+                      key={minuteItems.join(',')}
+                    />
+                  </View>
+                  
+                  <TouchableOpacity style={{ backgroundColor: tokens.colors.primaryText, paddingVertical: 10, paddingHorizontal: 32, borderRadius: 20, alignItems: 'center', marginTop: 12 }} onPress={() => {
+                    setTimeLimit(`${tempHour}:${tempMinute}`);
+                    setActiveDropdown(null);
+                  }}>
+                    <Text style={{ color: tokens.colors.white, fontWeight: 'bold' }}>Set Time Limit</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })()}
           </GlassPanel>
         </View>
     </>
@@ -531,6 +766,7 @@ export const ExploreScreen = () => {
       )}
     </>
   );
+
 
   return (
     <>

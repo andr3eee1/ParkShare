@@ -161,7 +161,7 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude' |
     price: 8,
     host: 'Corporate Hub',
     distance: '4 min walk',
-    available: '18:00 - 08:00',
+    available: '18:00 - 06:00',
     reservations: [],
     evCharging: true,
   },
@@ -201,6 +201,43 @@ const PARKING_TEMPLATES: Omit<DemoParkingSpot, 'id' | 'latitude' | 'longitude' |
     available: '24/7',
     reservations: [],
   },
+  {
+    name: 'Weekend Yard',
+    type: 'private',
+    price: 4,
+    host: 'Radu S.',
+    distance: '9 min walk',
+    available: '00:00 - 23:59',
+    reservations: [],
+  },
+  {
+    name: 'Evening Driveway',
+    type: 'private',
+    price: 5,
+    host: 'Ana K.',
+    distance: '10 min walk',
+    available: '17:00 - 09:00',
+    reservations: [],
+  },
+  {
+    name: 'Afternoon Spot',
+    type: 'private',
+    price: 6,
+    host: 'Vlad T.',
+    distance: '2 min walk',
+    available: '12:00 - 18:00',
+    reservations: [],
+    evCharging: true,
+  },
+  {
+    name: 'Night Owl Parking',
+    type: 'private',
+    price: 3,
+    host: 'Maria B.',
+    distance: '12 min walk',
+    available: '22:00 - 06:00',
+    reservations: [],
+  },
 ];
 
 const PARKING_OFFSETS = [
@@ -212,7 +249,12 @@ const PARKING_OFFSETS = [
   [-0.0020, 0.0017],
   [0.0022, -0.0018],
   [-0.0003, -0.0022],
+  [-0.0012, 0.0025],
+  [0.0025, 0.0015],
+  [-0.0022, -0.0010],
+  [0.0005, -0.0025],
 ] as const;
+
 
 export const createParkingSpots = (location: DemoLocation): DemoParkingSpot[] => (
   PARKING_TEMPLATES.map((template, index) => ({
