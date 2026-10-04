@@ -18,21 +18,53 @@ import {
 
 const DEFAULT_USER_LOCATION = { latitude: 44.4720, longitude: 26.1020 };
 
-const WheelPicker = ({ items, selectedValue, onValueChange, itemHeight = 40 }: { items: string[], selectedValue: string, onValueChange: (val: string) => void, itemHeight?: number }) => {
+const WheelPicker = ({ items, selectedValue, onValueChange, disabledItems = [], itemHeight = 40 }: { items: string[], selectedValue: string, onValueChange: (val: string) => void, disabledItems?: string[], itemHeight?: number }) => {
   const scrollViewRef = useRef<ScrollView>(null);
-  const isProgrammatic = useRef(true);
-  
+  const offsetRef = useRef(0);
+  const targetRef = useRef<number | null>(null);
+  const mountedRef = useRef(false);
+  const itemsKey = items.join(',');
+
+  // Latest props for the native wheel listener (which is attached only once).
+  const latest = useRef({ items, selectedValue, onValueChange, disabledItems });
+  latest.current = { items, selectedValue, onValueChange, disabledItems };
+
+  // Keep the scroll position in sync with the selected value, but only when it
+  // actually differs (so scrolling by hand never triggers a second scroll).
   useEffect(() => {
-    if (isProgrammatic.current) {
-      const index = items.indexOf(selectedValue);
-      if (index >= 0 && scrollViewRef.current) {
-        setTimeout(() => {
-          scrollViewRef.current?.scrollTo({ y: index * itemHeight, animated: true });
-        }, 50);
-      }
-    }
-    isProgrammatic.current = true;
-  }, [items, selectedValue, itemHeight]);
+    const index = items.indexOf(selectedValue);
+    const animated = mountedRef.current;
+    mountedRef.current = true;
+    if (index < 0) return;
+    const target = index * itemHeight;
+    if (Math.abs(offsetRef.current - target) < 1) return;
+    targetRef.current = target;
+    scrollViewRef.current?.scrollTo({ y: target, animated });
+    offsetRef.current = target;
+    setTimeout(() => { if (targetRef.current === target) targetRef.current = null; }, 400);
+  }, [itemsKey, selectedValue, itemHeight]);
+
+  // Web: a mouse-wheel notch is ~100px (2+ items). Take over the wheel event and
+  // move exactly one item per notch instead.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node: HTMLElement | undefined = (scrollViewRef.current as any)?.getScrollableNode?.();
+    if (!node) return;
+    let acc = 0;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      acc += e.deltaY;
+      if (Math.abs(acc) < 30) return; // let trackpads accumulate a bit
+      const dir = acc > 0 ? 1 : -1;
+      acc = 0;
+      const { items: its, selectedValue: sel, onValueChange: change, disabledItems: dis } = latest.current;
+      let i = its.indexOf(sel) + dir;
+      while (i >= 0 && i < its.length && dis.includes(its[i])) i += dir;
+      if (i >= 0 && i < its.length) change(its[i]);
+    };
+    node.addEventListener('wheel', onWheel, { passive: false });
+    return () => node.removeEventListener('wheel', onWheel);
+  }, []);
 
   return (
     <View style={{ height: itemHeight * 3, width: 70, overflow: 'hidden' }}>
@@ -44,9 +76,18 @@ const WheelPicker = ({ items, selectedValue, onValueChange, itemHeight = 40 }: {
         decelerationRate="fast"
         scrollEventThrottle={16}
         onScroll={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.y / itemHeight);
+          const y = e.nativeEvent.contentOffset.y;
+          if (targetRef.current !== null) {
+            // Programmatic scroll in progress: ignore until it arrives.
+            if (Math.abs(y - targetRef.current) < 1) {
+              targetRef.current = null;
+              offsetRef.current = y;
+            }
+            return;
+          }
+          offsetRef.current = y;
+          const index = Math.round(y / itemHeight);
           if (items[index] && items[index] !== selectedValue) {
-            isProgrammatic.current = false;
             onValueChange(items[index]);
           }
         }}
@@ -54,12 +95,10 @@ const WheelPicker = ({ items, selectedValue, onValueChange, itemHeight = 40 }: {
         <View style={{ height: itemHeight }} />
         {items.map((item, i) => {
           const isSelected = selectedValue === item;
+          const isDisabled = disabledItems.includes(item);
           return (
-            <TouchableOpacity key={i} activeOpacity={0.7} onPress={() => {
-              isProgrammatic.current = true;
-              onValueChange(item);
-            }}>
-              <View style={{ height: itemHeight, justifyContent: 'center', alignItems: 'center' }}>
+            <TouchableOpacity key={i} activeOpacity={0.7} disabled={isDisabled} onPress={() => onValueChange(item)}>
+              <View style={{ height: itemHeight, justifyContent: 'center', alignItems: 'center', opacity: isDisabled ? 0.25 : 1 }}>
                 <Text style={{ fontSize: isSelected ? 18 : 14, fontWeight: isSelected ? 'bold' : 'normal', color: isSelected ? tokens.colors.primaryText : tokens.colors.secondaryText }}>
                   {item}
                 </Text>
@@ -90,6 +129,15 @@ export const ExploreScreen = () => {
   const [tempPrice, setTempPrice] = useState('');
   const [tempHour, setTempHour] = useState('12');
   const [tempMinute, setTempMinute] = useState('00');
+  const [isFiltersVisible, setFiltersVisible] = useState(false);
+  const hasActiveFilters = maxPrice !== null || timeLimit !== null || !activeFilters.includes('All');
+
+  // Keep the screen clear: collapse the filters whenever a parking spot is
+  // opened or closed.
+  useEffect(() => {
+    setFiltersVisible(false);
+    setActiveDropdown(null);
+  }, [selectedSpot]);
 
   useEffect(() => {
     (async () => {
@@ -372,6 +420,20 @@ export const ExploreScreen = () => {
                   <Ionicons name="close-circle" size={20} color={tokens.colors.secondaryText} style={{ padding: 4 }} />
                 </TouchableOpacity>
               )}
+              <View style={{ width: 1, height: 24, backgroundColor: '#E5E7EB', marginHorizontal: 6 }} />
+              <TouchableOpacity
+                accessibilityLabel="Toggle filters"
+                onPress={() => {
+                  setFiltersVisible(v => !v);
+                  setActiveDropdown(null);
+                }}
+                style={{ padding: 4 }}
+              >
+                <Ionicons name={isFiltersVisible ? 'filter' : 'filter-outline'} size={20} color={isFiltersVisible ? tokens.colors.primaryText : tokens.colors.secondaryText} />
+                {hasActiveFilters && (
+                  <View style={{ position: 'absolute', top: 2, right: 2, width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.availabilityGreen }} />
+                )}
+              </TouchableOpacity>
             </View>
 
             {searchFocused && searchQuery.trim().length > 0 && (
@@ -398,6 +460,8 @@ export const ExploreScreen = () => {
               </View>
             )}
 
+            {isFiltersVisible && (
+            <>
             <View style={{ marginBottom: 8 }}>
               <ScrollView horizontal showsHorizontalScrollIndicator={true} persistentScrollbar={true} indicatorStyle="black" style={styles.filtersScroll} contentContainerStyle={{ paddingBottom: 16 }}>
                 {['All', 'Price Limit', 'Time Limit', 'Private', 'Municipal', 'EV'].map((filter, i) => {
@@ -407,7 +471,7 @@ export const ExploreScreen = () => {
                   else isActive = activeFilters.includes(filter);
 
                   let displayText = filter;
-                  if (filter === 'Price Limit' && maxPrice !== null) displayText = `Max: ${maxPrice} RON`;
+                  if (filter === 'Price Limit' && maxPrice !== null) displayText = `Max: ${maxPrice} RON/h`;
                   if (filter === 'Time Limit' && timeLimit !== null) displayText = `Until: ${timeLimit}`;
 
                   return (
@@ -460,26 +524,46 @@ export const ExploreScreen = () => {
                 })}
               </ScrollView>
             </View>
-            {activeDropdown === 'price' && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                <TextInput
-                  style={[styles.searchInput, { flex: 1, height: 40, backgroundColor: tokens.colors.background, marginRight: 8, paddingHorizontal: 16, borderRadius: 20 }]}
-                  placeholder="Max Price (e.g. 10)"
-                  placeholderTextColor={tokens.colors.secondaryText}
-                  keyboardType="numeric"
-                  value={tempPrice}
-                  onChangeText={setTempPrice}
-                  autoFocus
-                />
-                <TouchableOpacity style={{ backgroundColor: tokens.colors.primaryText, paddingHorizontal: 16, height: 40, borderRadius: 20, justifyContent: 'center' }} onPress={() => {
-                  const val = parseFloat(tempPrice);
-                  if (!isNaN(val) && val > 0) setMaxPrice(val);
-                  setActiveDropdown(null);
-                }}>
-                  <Text style={{ color: tokens.colors.white, fontWeight: 'bold' }}>Set</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            {activeDropdown === 'price' && (() => {
+              const applyPrice = () => {
+                const val = parseFloat(tempPrice);
+                if (!isNaN(val) && val > 0) setMaxPrice(val);
+                setActiveDropdown(null);
+              };
+              return (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={{ fontFamily: tokens.typography.body, fontSize: 13, fontWeight: '600', color: tokens.colors.primaryText, marginBottom: 6, marginLeft: 4 }}>
+                    Maximum price per hour
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', height: 40, backgroundColor: tokens.colors.background, marginRight: 8, paddingHorizontal: 16, borderRadius: 20 }}>
+                      <TextInput
+                        style={[styles.searchInput, { flex: 1, height: 40 }]}
+                        placeholder="e.g. 10"
+                        placeholderTextColor={tokens.colors.secondaryText}
+                        keyboardType="decimal-pad"
+                        inputMode="decimal"
+                        value={tempPrice}
+                        onChangeText={(text) => {
+                          // Digits only, plus a single decimal point (comma accepted as point).
+                          let clean = text.replace(',', '.').replace(/[^0-9.]/g, '');
+                          const dot = clean.indexOf('.');
+                          if (dot !== -1) clean = clean.slice(0, dot + 1) + clean.slice(dot + 1).replace(/\./g, '');
+                          setTempPrice(clean);
+                        }}
+                        onSubmitEditing={applyPrice}
+                        returnKeyType="done"
+                        autoFocus
+                      />
+                      <Text style={{ fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.secondaryText, marginLeft: 4 }}>RON / hour</Text>
+                    </View>
+                    <TouchableOpacity style={{ backgroundColor: tokens.colors.primaryText, paddingHorizontal: 16, height: 40, borderRadius: 20, justifyContent: 'center' }} onPress={applyPrice}>
+                      <Text style={{ color: tokens.colors.white, fontWeight: 'bold' }}>Set</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })()}
             {activeDropdown === 'time' && (() => {
               const now = new Date();
               let curH = now.getHours();
@@ -502,15 +586,19 @@ export const ExploreScreen = () => {
               if (parseInt(tempHour) === curH) {
                 minM = minM_calc;
               }
-              const minuteItems = [];
-              if (tempHour === '06') {
-                minuteItems.push('00');
-              } else {
-                for (let i = minM; i <= 55; i += 5) {
-                  minuteItems.push(i.toString().padStart(2, '0'));
-                }
-                if (minuteItems.length === 0) minuteItems.push('00');
-              }
+              // The minute list never changes, so switching hours never moves the wheel.
+              const minuteItems: string[] = [];
+              for (let i = 0; i <= 55; i += 5) minuteItems.push(i.toString().padStart(2, '0'));
+              const validMinutesFor = (hour: string) => {
+                if (hour === '06') return ['00'];
+                const lo = parseInt(hour) === curH ? minM_calc : 0;
+                return minuteItems.filter(m => parseInt(m) >= lo);
+              };
+              const disabledMinutes = minuteItems.filter(m => !validMinutesFor(tempHour).includes(m));
+              const clampMinute = (hour: string, minute: string) => {
+                const valid = validMinutesFor(hour);
+                return valid.includes(minute) ? minute : valid[0];
+              };
 
               return (
                 <View style={{ marginTop: 8, backgroundColor: tokens.colors.background, padding: 12, borderRadius: 12, alignItems: 'center' }}>
@@ -522,15 +610,18 @@ export const ExploreScreen = () => {
                     <WheelPicker
                       items={hourItems}
                       selectedValue={tempHour}
-                      onValueChange={setTempHour}
-                      key={hourItems.join(',')}
+                      onValueChange={(h) => {
+                        setTempHour(h);
+                        const m = clampMinute(h, tempMinute);
+                        if (m !== tempMinute) setTempMinute(m);
+                      }}
                     />
                     <Text style={{ fontSize: 24, fontWeight: 'bold', marginHorizontal: 8 }}>:</Text>
                     <WheelPicker
                       items={minuteItems}
+                      disabledItems={disabledMinutes}
                       selectedValue={tempMinute}
-                      onValueChange={setTempMinute}
-                      key={minuteItems.join(',')}
+                      onValueChange={(m) => setTempMinute(clampMinute(tempHour, m))}
                     />
                   </View>
                   
@@ -543,6 +634,8 @@ export const ExploreScreen = () => {
                 </View>
               );
             })()}
+            </>
+            )}
           </GlassPanel>
         </View>
     </>
