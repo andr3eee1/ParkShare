@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard } from 'react-native';
+import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -270,7 +270,55 @@ export const ExploreScreen = () => {
       return passes;
     });
   }, [activeFilters, maxPrice, timeLimit]);
-  const searchResults = searchDemoLocations(searchQuery);
+  const [searchResults, setSearchResults] = useState<DemoLocation[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const localResults = searchDemoLocations(searchQuery);
+    
+    if (searchQuery.trim().length < 3) {
+      setSearchResults(localResults);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const prefixes = ['', 'Strada ', 'Calea ', 'Bulevardul ', 'Intrarea '];
+        const fetchPromises = prefixes.map(prefix => 
+          fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(prefix + searchQuery + ' Bucharest')}&limit=4`).then(r => r.json())
+        );
+        const responses = await Promise.all(fetchPromises);
+        const features = responses.flatMap(data => data.features || []);
+        
+        const apiResults: DemoLocation[] = features.map((item: any) => ({
+          id: (item.properties.osm_id || Math.random()).toString(),
+          name: item.properties.name || item.properties.street || item.properties.locality || 'Unknown',
+          shortName: item.properties.name || item.properties.street || 'Unknown',
+          subtitle: [item.properties.locality, item.properties.district].filter(Boolean).join(', ') || item.properties.city || 'Bucharest',
+          latitude: item.geometry.coordinates[1],
+          longitude: item.geometry.coordinates[0],
+          aliases: []
+        }));
+
+        const combined = [...localResults];
+        apiResults.forEach(apiRes => {
+          if (!combined.find(c => c.name.toLowerCase() === apiRes.name.toLowerCase())) {
+            combined.push(apiRes);
+          }
+        });
+        setSearchResults(combined.slice(0, 8));
+      } catch (err) {
+        console.warn("Geocoding failed", err);
+        setSearchResults(localResults);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   const handleLocationSelect = (location: DemoLocation) => {
     setActiveLocation(location);
@@ -373,7 +421,9 @@ export const ExploreScreen = () => {
   const billableParkingCost = (billableDurationMinutes / 60) * (selectedSpot?.price || 0);
   const parkPlusDiscount = isParkPlusActive ? billableParkingCost * 0.15 : 0;
   const parkingCost = billableParkingCost - parkPlusDiscount;
-  const securityDeposit = appliedPass ? 0 : (selectedSpot?.price || 0) * 5;
+  const { activePasses } = usePasses();
+  const hasAnyPass = activePasses.length > 0;
+  const securityDeposit = hasAnyPass ? 0 : (selectedSpot?.price || 0) * 5;
 
   const handleZoomIn = () => {
     mapRef.current?.zoomIn();
@@ -402,18 +452,19 @@ export const ExploreScreen = () => {
     </>
   );
 
-  const renderSearchPanel = () => (
+  const renderSearchPanel = () => {
+    if (selectedSpot) return null;
+    return (
     <>
       <View pointerEvents="box-none" style={styles.headerContainer}>
           <GlassPanel borderRadius={tokens.radii.topPanel} style={styles.headerPanel}>
             <View style={styles.headerTopRow}>
               <Text style={styles.wordmark}>ParkShare</Text>
-              <View style={styles.locationBadge}>
-                <Ionicons name="location" size={14} color={tokens.colors.availabilityGreen} />
-                <Text style={styles.locationText}>{activeLocation ? activeLocation.shortName : 'My Location'}</Text>
+              <View style={[styles.locationBadge, { flexShrink: 1, marginHorizontal: 8 }]}>
+                <Ionicons name="location" size={14} color={tokens.colors.availabilityGreen} style={{ flexShrink: 0 }} />
+                <Text style={[styles.locationText, { flexShrink: 1 }]} numberOfLines={1}>{activeLocation ? activeLocation.shortName : 'My Location'}</Text>
               </View>
               <View style={styles.headerRight}>
-                <Text style={styles.passesShortcut}>Passes</Text>
                 <View style={styles.avatar} />
               </View>
             </View>
@@ -466,14 +517,21 @@ export const ExploreScreen = () => {
                     >
                       <Ionicons name="location-outline" size={18} color={tokens.colors.availabilityGreen} />
                       <View style={styles.suggestionTextContainer}>
-                        <Text style={styles.suggestionName}>{location.name}</Text>
-                        <Text style={styles.suggestionSubtitle}>{location.subtitle}</Text>
+                        <Text style={styles.suggestionName} numberOfLines={1}>{location.name}</Text>
+                        <Text style={styles.suggestionSubtitle} numberOfLines={1}>{location.subtitle}</Text>
                       </View>
                     </TouchableOpacity>
                   ))
                 ) : (
                   <View style={styles.noResultsRow}>
-                    <Text style={styles.noResultsText}>No demo locations found</Text>
+                    {isSearching ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color={tokens.colors.primaryText} style={{ marginRight: 8 }} />
+                        <Text style={styles.noResultsText}>Searching...</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.noResultsText}>No locations found</Text>
+                    )}
                   </View>
                 )}
               </View>
@@ -678,7 +736,8 @@ export const ExploreScreen = () => {
           </GlassPanel>
         </View>
     </>
-  );
+    );
+  };
 
   const renderMapControls = () => (
     <>
@@ -832,7 +891,7 @@ export const ExploreScreen = () => {
                 )}
                 <View style={styles.receiptRow}>
                   <Text style={styles.receiptLabel}>Security Deposit (Refundable)</Text>
-                  <Text style={[styles.receiptValue, appliedPass && styles.waivedValue]}>{appliedPass ? 'WAIVED' : `${securityDeposit} RON`}</Text>
+                  <Text style={[styles.receiptValue, hasAnyPass && styles.waivedValue]}>{hasAnyPass ? 'WAIVED' : `${securityDeposit} RON`}</Text>
                 </View>
                 {appliedPass && (
                   <Text style={styles.passAppliedText}>{appliedPass.name} applied · GPS check-in enabled</Text>
@@ -972,6 +1031,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   wordmark: {
+    flexShrink: 0,
     fontFamily: tokens.typography.heading,
     fontSize: 20,
     fontWeight: '800',
@@ -1005,6 +1065,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   avatar: {
+    flexShrink: 0,
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -1026,6 +1087,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    minWidth: 0,
     fontFamily: tokens.typography.body,
     fontSize: 16,
     color: tokens.colors.primaryText,
@@ -1049,6 +1111,7 @@ const styles = StyleSheet.create({
   suggestionTextContainer: {
     marginLeft: 10,
     flex: 1,
+    minWidth: 0,
   },
   suggestionName: {
     fontFamily: tokens.typography.bodyMedium,

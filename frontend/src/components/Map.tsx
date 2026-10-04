@@ -228,7 +228,7 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
             position={cluster.center as any}
             icon={icon}
             eventHandlers={{
-              click: () => map.setView(cluster.center, Math.min(map.getZoom() + 2, 18)),
+              click: () => map.setView(cluster.center, Math.min(map.getZoom() + 2, 22)),
             }}
           />
         );
@@ -320,9 +320,9 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
     },
     centerOnLocation: (loc: { latitude: number; longitude: number }) => {
       if (Platform.OS === 'web' && webMapRef.current) {
-        webMapRef.current.setView([loc.latitude, loc.longitude], 16);
+        webMapRef.current.setView([loc.latitude, loc.longitude], 19);
       } else if (webviewRef.current) {
-        webviewRef.current.injectJavaScript(`if (typeof map !== 'undefined') { map.setView([${loc.latitude}, ${loc.longitude}], 16); } true;`);
+        webviewRef.current.injectJavaScript(`if (typeof map !== 'undefined') { map.setView([${loc.latitude}, ${loc.longitude}], 19); } true;`);
       }
     }
   }));
@@ -493,11 +493,16 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
         <MapContainer 
           center={getDestinationCoordinates(destination)}
           zoom={14.5} 
+          maxZoom={22}
           zoomControl={false}
           style={{ width: '100%', height: '100%', position: 'absolute' }}
           ref={webMapRef}
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer 
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+            maxZoom={22}
+            maxNativeZoom={19}
+          />
           <WebMapEvents />
           {destination && (
             <WebDestinationMarker key="destination" destination={destination} />
@@ -592,7 +597,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
       <body>
         <div id="map"></div>
         <script>
-          var map = L.map('map', { zoomControl: false }).setView([44.4820, 26.1130], 14.5);
+          var map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView([44.4820, 26.1130], 14.5);
           var destinationMarker = null;
           var userLocationMarker = null;
           
@@ -644,7 +649,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
               userLocationMarker = null;
             }
           }
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19 }).addTo(map);
           var spotData = ${spotsJson};
           var selectedId = null;
           var markersLayer = L.layerGroup().addTo(map);
@@ -773,7 +778,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
                   })
                 }).addTo(markersLayer).on('click', function(e) {
                   L.DomEvent.stopPropagation(e);
-                  map.setView(cluster.center, Math.min(map.getZoom() + 2, 18));
+                  map.setView(cluster.center, Math.min(map.getZoom() + 2, 22));
                 });
                 return;
               }
