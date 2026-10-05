@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { GlassPanel } from '../components/GlassPanel';
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -116,6 +117,7 @@ const WheelPicker = ({ items, selectedValue, onValueChange, disabledItems = [], 
 };
 
 export const ExploreScreen = () => {
+  const navigation = useNavigation<any>();
   const { user } = useContext(AuthContext);
   const { getPassForSpot, isParkPlusActive } = usePasses();
   const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
