@@ -1,25 +1,28 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 // Safe cross-platform storage wrapper
 const Storage = {
   getItem: async (key: string): Promise<string | null> => {
-    if (Platform.OS === 'web') return window.localStorage.getItem(key);
-    return await Storage.getItem(key);
+    if (Platform.OS === 'web') {
+      return window.localStorage.getItem(key);
+    }
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    return await AsyncStorage.getItem(key);
   },
   setItem: async (key: string, value: string) => {
     if (Platform.OS === 'web') {
       window.localStorage.setItem(key, value);
     } else {
-      await Storage.setItem(key, value);
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.setItem(key, value);
     }
   },
   removeItem: async (key: string) => {
     if (Platform.OS === 'web') {
       window.localStorage.removeItem(key);
     } else {
-      await Storage.removeItem(key);
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.removeItem(key);
     }
   }
 };
