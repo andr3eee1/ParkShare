@@ -1,5 +1,28 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Safe cross-platform storage wrapper
+const Storage = {
+  getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === 'web') return window.localStorage.getItem(key);
+    return await Storage.getItem(key);
+  },
+  setItem: async (key: string, value: string) => {
+    if (Platform.OS === 'web') {
+      window.localStorage.setItem(key, value);
+    } else {
+      await Storage.setItem(key, value);
+    }
+  },
+  removeItem: async (key: string) => {
+    if (Platform.OS === 'web') {
+      window.localStorage.removeItem(key);
+    } else {
+      await Storage.removeItem(key);
+    }
+  }
+};
 
 type User = {
   id: string;
@@ -37,8 +60,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem('userToken');
-        const storedUser = await AsyncStorage.getItem('userData');
+        const storedToken = await Storage.getItem('userToken');
+        const storedUser = await Storage.getItem('userData');
         if (storedToken && storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
@@ -48,8 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (parseError) {
             // Corrupted data, clear it
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('userData');
+            await Storage.removeItem('userToken');
+            await Storage.removeItem('userData');
           }
         }
       } catch (e) {
@@ -64,20 +87,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (userData: User, tokenData: string) => {
     setUser(userData);
     setToken(tokenData);
-    await AsyncStorage.setItem('userToken', tokenData);
-    await AsyncStorage.setItem('userData', JSON.stringify(userData));
+    await Storage.setItem('userToken', tokenData);
+    await Storage.setItem('userData', JSON.stringify(userData));
   };
 
   const updateUser = async (userData: User) => {
     setUser(userData);
-    await AsyncStorage.setItem('userData', JSON.stringify(userData));
+    await Storage.setItem('userData', JSON.stringify(userData));
   };
 
   const logout = async () => {
     setUser(null);
     setToken(null);
-    await AsyncStorage.removeItem('userToken');
-    await AsyncStorage.removeItem('userData');
+    await Storage.removeItem('userToken');
+    await Storage.removeItem('userData');
   };
 
   return (
