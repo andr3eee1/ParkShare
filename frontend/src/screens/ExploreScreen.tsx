@@ -238,7 +238,18 @@ export const ExploreScreen = () => {
 
   const mapRef = useRef<any>(null);
   const parkingSpots = useMemo(() => {
-    return createAllParkingSpots().filter(spot => {
+    const backendSpots = spots.map((s: any) => ({
+      ...s,
+      type: 'driveway',
+      host: 'Provider',
+      distance: '0.1 km',
+      available: 'Available Now',
+      reservations: []
+    }));
+    
+    const allSpots = [...createAllParkingSpots(), ...backendSpots];
+
+    return allSpots.filter((spot: any) => {
       // First, always filter out currently active spots if the request implied availability? 
       // The prompt didn't say "don't filter unavailable", just "remove the verified only and available [buttons]".
       // I'll keep the base availability check (unless the user meant to see ALL spots including unavailable ones).
@@ -289,7 +300,7 @@ export const ExploreScreen = () => {
       
       return passes;
     });
-  }, [activeFilters, maxPrice, timeLimit]);
+  }, [activeFilters, maxPrice, timeLimit, spots]);
   const [searchResults, setSearchResults] = useState<DemoLocation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
