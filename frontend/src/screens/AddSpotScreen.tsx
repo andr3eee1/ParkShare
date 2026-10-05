@@ -77,19 +77,21 @@ export const AddSpotScreen = () => {
           <Text style={styles.label}>Price (RON / hr) *</Text>
           <TextInput style={styles.input} keyboardType="numeric" value={price} onChangeText={setPrice} placeholder="5.00" />
 
-          <Text style={styles.label}>Location * (Tap to place pin)</Text>
+          <Text style={styles.label}>Location * (Pan and zoom to place pin)</Text>
           <View style={styles.mapContainer}>
             <Map 
               spots={[]}
-              selectedSpot={{ latitude, longitude }}
+              selectedSpot={null}
               onSelectSpot={() => {}}
-              onMapClick={(coords) => {
-                if (coords) {
-                  setLatitude(coords.latitude);
-                  setLongitude(coords.longitude);
-                }
+              onMapMoveEnd={(coords) => {
+                setLatitude(coords.latitude);
+                setLongitude(coords.longitude);
               }}
             />
+            {/* Center fixed pin */}
+            <View style={styles.centerPin} pointerEvents="none">
+              <Ionicons name="location" size={40} color={tokens.colors.municipalTeal} style={{ marginTop: -20 }} />
+            </View>
           </View>
 
 
@@ -132,5 +134,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   submitText: { color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 },
-  mapContainer: { height: 250, borderRadius: 12, overflow: 'hidden', marginBottom: 20, borderWidth: 1, borderColor: '#E5E7EB' }
+  mapContainer: { height: 250, borderRadius: 12, overflow: 'hidden', marginBottom: 20, borderWidth: 1, borderColor: '#E5E7EB', position: 'relative' },
+  centerPin: { position: 'absolute', top: '50%', left: '50%', marginLeft: -20, marginTop: -20, zIndex: 10, alignItems: 'center', justifyContent: 'center' }
 });

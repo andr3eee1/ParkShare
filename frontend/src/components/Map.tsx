@@ -297,6 +297,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
   selectedSpot: any;
   onSelectSpot: (spot: any) => void;
   onMapClick?: (coords?: { latitude: number, longitude: number }) => void;
+  onMapMoveEnd?: (coords: { latitude: number, longitude: number }) => void;
   destination?: MapDestination;
   userLocation?: { latitude: number; longitude: number };
 }, ref) => {
@@ -803,10 +804,14 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             refreshTimer = setTimeout(renderSpots, 350);
           }
 
-          map.on('zoomend moveend', scheduleRefresh);
+          map.on('zoomend moveend', function() {
+            scheduleRefresh();
+            var center = map.getCenter();
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'map_moveend', latitude: center.lat, longitude: center.lng }));
+          });
           
-          map.on('click', function() {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'map_click' }));
+          map.on('click', function(e) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'mapClick', latitude: e.latlng.lat, longitude: e.latlng.lng }));
           });
 
           function updateSelection(nextSelectedId) {
