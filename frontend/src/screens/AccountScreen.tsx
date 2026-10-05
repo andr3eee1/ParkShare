@@ -17,7 +17,7 @@ export const AccountScreen = () => {
 
   const menuItems = [
     { icon: 'person-outline', title: 'Personal Information', subtitle: 'Name, Email, Phone', route: 'PersonalInformation' },
-    { icon: 'card-outline', title: 'Payment Methods', subtitle: 'Manage cards and billing', route: 'PaymentMethods' },
+    { icon: 'card-outline', title: 'Wallet', subtitle: 'Manage balance and cards', route: 'PaymentMethods' },
     { icon: 'car-outline', title: 'My Vehicles', subtitle: 'License plates and vehicle details', route: 'MyVehicles' },
     { icon: 'notifications-outline', title: 'Notifications', subtitle: 'Push and email preferences', route: 'Notifications' },
     { icon: 'shield-checkmark-outline', title: 'Security', subtitle: 'Password and 2FA settings', route: 'Security' },
