@@ -484,7 +484,7 @@ export const ExploreScreen = () => {
         spots={parkingSpots}
         selectedSpot={selectedSpot}
         onSelectSpot={setSelectedSpot}
-        onMapClick={() => {
+        onMapClick={(coords) => {
           setFiltersVisible(false);
           setActiveDropdown(null);
         }}

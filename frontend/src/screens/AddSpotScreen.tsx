@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { Map } from '../components/Map';
 
 export const AddSpotScreen = () => {
   const { token } = useContext(AuthContext);
@@ -13,12 +14,12 @@ export const AddSpotScreen = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+  const [latitude, setLatitude] = useState(44.4268);
+  const [longitude, setLongitude] = useState(26.1025);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!name || !price || !latitude || !longitude) {
+    if (!name || !price) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
@@ -35,8 +36,8 @@ export const AddSpotScreen = () => {
           name,
           description,
           price: parseFloat(price),
-          latitude: parseFloat(latitude),
-          longitude: parseFloat(longitude)
+          latitude,
+          longitude
         })
       });
 
@@ -76,11 +77,21 @@ export const AddSpotScreen = () => {
           <Text style={styles.label}>Price (RON / hr) *</Text>
           <TextInput style={styles.input} keyboardType="numeric" value={price} onChangeText={setPrice} placeholder="5.00" />
 
-          <Text style={styles.label}>Latitude *</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={latitude} onChangeText={setLatitude} placeholder="44.4325" />
+          <Text style={styles.label}>Location * (Tap to place pin)</Text>
+          <View style={styles.mapContainer}>
+            <Map 
+              spots={[]}
+              selectedSpot={{ latitude, longitude }}
+              onSelectSpot={() => {}}
+              onMapClick={(coords) => {
+                if (coords) {
+                  setLatitude(coords.latitude);
+                  setLongitude(coords.longitude);
+                }
+              }}
+            />
+          </View>
 
-          <Text style={styles.label}>Longitude *</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={longitude} onChangeText={setLongitude} placeholder="26.1039" />
 
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
             {loading ? <ActivityIndicator color={tokens.colors.white} /> : <Text style={styles.submitText}>Create Spot</Text>}
@@ -120,5 +131,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
   },
-  submitText: { color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 }
+  submitText: { color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 },
+  mapContainer: { height: 250, borderRadius: 12, overflow: 'hidden', marginBottom: 20, borderWidth: 1, borderColor: '#E5E7EB' }
 });

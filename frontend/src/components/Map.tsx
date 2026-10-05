@@ -296,7 +296,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
   spots: any[];
   selectedSpot: any;
   onSelectSpot: (spot: any) => void;
-  onMapClick?: () => void;
+  onMapClick?: (coords?: { latitude: number, longitude: number }) => void;
   destination?: MapDestination;
   userLocation?: { latitude: number; longitude: number };
 }, ref) => {
