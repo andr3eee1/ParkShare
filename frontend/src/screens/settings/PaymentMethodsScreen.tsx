@@ -73,21 +73,21 @@ export const PaymentMethodsScreen = () => {
   };
 
   const handleTopUp = async () => {
-    Alert.alert('Top Up', 'Added 100 RON to wallet for demo purposes.', [
-      {
-        text: 'OK', onPress: async () => {
-          const res = await fetch('http://pana.com.ro:8745/wallet/deposit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ amount: 100 })
-          });
-          const data = await res.json();
-          if (res.ok) {
-            updateUser(data.user);
-          }
-        }
+    try {
+      const res = await fetch('http://pana.com.ro:8745/wallet/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount: 100 })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await updateUser(data.user);
+        Alert.alert('Top Up', 'Added 100 RON to wallet for demo purposes.');
       }
-    ]);
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to top up wallet.');
+    }
   };
 
   return (

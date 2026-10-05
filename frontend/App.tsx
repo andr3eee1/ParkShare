@@ -25,6 +25,8 @@ import { tokens } from './src/theme/tokens';
 import { ExploreScreen } from './src/screens/ExploreScreen';
 import { HistoryScreen } from './src/screens/HistoryScreen';
 import { PassesScreen } from './src/screens/PassesScreen';
+import { MySpotsScreen } from './src/screens/MySpotsScreen';
+import { AddSpotScreen } from './src/screens/AddSpotScreen';
 import { PassProvider } from './src/context/PassContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -53,6 +55,8 @@ export default function App() {
   }
 
   const MainNavigator = () => {
+    const { user } = useContext(AuthContext);
+    const isProvider = user?.role === 'PROVIDER' || user?.role === 'ADMIN';
     const insets = require('react-native-safe-area-context').useSafeAreaInsets();
     const bottomPadding = Math.max(insets.bottom, 12);
     
@@ -85,9 +89,18 @@ export default function App() {
             }
           })}
         >
-          <Tab.Screen name="Explore" component={ExploreScreen} />
-          <Tab.Screen name="History" component={HistoryScreen} />
-          <Tab.Screen name="Passes" component={PassesScreen} />
+          {!isProvider ? (
+            <>
+              <Tab.Screen name="Explore" component={ExploreScreen} />
+              <Tab.Screen name="History" component={HistoryScreen} />
+              <Tab.Screen name="Passes" component={PassesScreen} />
+            </>
+          ) : (
+            <>
+              <Tab.Screen name="My Spots" component={MySpotsScreen} />
+              <Tab.Screen name="History" component={HistoryScreen} />
+            </>
+          )}
           <Tab.Screen name="Account" component={AccountScreen} />
         </Tab.Navigator>
     );
@@ -120,7 +133,8 @@ export default function App() {
               <Stack.Screen name="MyVehicles" component={MyVehiclesScreen} />
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="Security" component={SecurityScreen} />
-              <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+                            <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+              <Stack.Screen name="AddSpot" component={AddSpotScreen} options={{ presentation: "modal" }} />
               <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} options={{ presentation: "transparentModal", animation: "slide_from_bottom" }} />
             </>
           )}

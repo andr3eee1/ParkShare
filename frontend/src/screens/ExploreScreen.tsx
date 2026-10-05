@@ -120,7 +120,8 @@ export const ExploreScreen = () => {
   const navigation = useNavigation<any>();
   const { user } = useContext(AuthContext);
   const { getPassForSpot, isParkPlusActive } = usePasses();
-  const [selectedSpot, setSelectedSpot] = useState<DemoParkingSpot | null>(null);
+  const [selectedSpot, setSelectedSpot] = useState<any | null>(null);
+  const [spots, setSpots] = useState<any[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [isDetailsVisible, setDetailsVisible] = useState(false);
   const [isPhotoZoomed, setPhotoZoomed] = useState(false);
@@ -128,6 +129,20 @@ export const ExploreScreen = () => {
   const [searchedLocation, setSearchedLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+
+  useEffect(() => {
+    const fetchSpots = async () => {
+      try {
+        const res = await fetch('http://pana.com.ro:8745/spots');
+        const data = await res.json();
+        if (res.ok) setSpots(data.spots);
+      } catch (err) {
+        console.error('Failed to fetch spots:', err);
+      }
+    };
+    fetchSpots();
+  }, []);
+
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>(['All']);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);

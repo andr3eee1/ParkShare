@@ -23,6 +23,8 @@ model User {
   role         Role       @default(USER)
   walletBalance Float     @default(0.0)
   cards        CreditCard[]
+  ownedSpots   ParkingSpot[]
+  reservations Reservation[]
   passes       UserPass[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -51,4 +53,34 @@ model CreditCard {
   brand     String
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+
+model ParkingSpot {
+  id          String   @id @default(uuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  name        String
+  description String?
+  latitude    Float
+  longitude   Float
+  price       Float
+  isAvailable Boolean  @default(true)
+  imageUrl    String?
+  reservations Reservation[]
+  createdAt   DateTime @default(now())
+}
+
+
+model Reservation {
+  id          String   @id @default(uuid())
+  spotId      String
+  spot        ParkingSpot @relation(fields: [spotId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  startTime   DateTime
+  endTime     DateTime
+  totalPrice  Float
+  status      String   @default("ACTIVE") // 'ACTIVE', 'COMPLETED', 'CANCELLED'
+  createdAt   DateTime @default(now())
 }
