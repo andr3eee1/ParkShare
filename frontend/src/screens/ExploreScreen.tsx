@@ -240,11 +240,13 @@ export const ExploreScreen = () => {
   const parkingSpots = useMemo(() => {
     const backendSpots = spots.map((s: any) => ({
       ...s,
-      type: 'driveway',
-      host: 'Provider',
-      distance: '0.1 km',
+      type: 'private',
+      host: s.owner ? `${s.owner.firstName} ${s.owner.lastName}` : 'ParkShare User',
+      distance: 'Live location',
       available: 'Available Now',
-      reservations: []
+      reservations: [],
+      address: s.description ? s.description : `GPS: ${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}`,
+      evCharging: false,
     }));
     
     const allSpots = [...createAllParkingSpots(), ...backendSpots];

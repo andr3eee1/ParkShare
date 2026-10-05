@@ -19,7 +19,8 @@ const SpotSchema = z.object({
 router.get('/', async (req, res): Promise<any> => {
   try {
     const spots = await prisma.parkingSpot.findMany({
-      where: { isAvailable: true }
+      where: { isAvailable: true },
+      include: { owner: { select: { firstName: true, lastName: true } } }
     });
     res.json({ spots });
   } catch (error) {
