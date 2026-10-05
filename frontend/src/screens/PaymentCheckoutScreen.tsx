@@ -10,7 +10,7 @@ import { usePasses } from '../context/PassContext';
 export const PaymentCheckoutScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { amount, title, actionType, targetId } = route.params; // actionType: 'BOOKING' | 'PASS'
+  const { amount, title, actionType, targetId, startTime, endTime } = route.params as any;
 
   const { user, token, updateUser } = useContext(AuthContext);
   const { togglePass } = usePasses();
@@ -74,8 +74,26 @@ export const PaymentCheckoutScreen = () => {
       if (actionType === 'PASS') {
         await togglePass(targetId);
       } else if (actionType === 'BOOKING') {
-        // In a real app, call POST /bookings here
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        const res = await fetch('http://pana.com.ro:8745/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            spotId: targetId,
+            startTime,
+            endTime,
+            totalPrice: amount,
+            paymentMethod: selectedMethod === 'wallet' ? 'wallet' : 'card'
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Booking failed');
+        
+        if (selectedMethod === 'wallet' && user) {
+          updateUser({ ...user, walletBalance: (user.walletBalance || 0) - amount });
+        }
       }
 
       Alert.alert('Payment Successful!', `You successfully paid ${amount.toFixed(2)} RON.`, [
