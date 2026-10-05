@@ -292,7 +292,7 @@ const WebUserLocationMarker = ({ userLocation }: { userLocation?: { latitude: nu
   );
 };
 
-export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, destination, userLocation }: {
+export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, onMapMoveStart, onMapMoveEnd, destination, userLocation }: {
   spots: any[];
   selectedSpot: any;
   onSelectSpot: (spot: any) => void;
@@ -413,10 +413,20 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
 
   if (Platform.OS === 'web') {
     const WebMapEvents = () => {
+      const map = useMap();
       useMapEvents({
-        click: () => {
+        click: (e: any) => {
           onSelectSpot(null);
-          if (onMapClick) onMapClick();
+          if (onMapClick) onMapClick({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+        },
+        movestart: () => {
+          if (onMapMoveStart) onMapMoveStart();
+        },
+        moveend: () => {
+          if (onMapMoveEnd) {
+            const center = map.getCenter();
+            onMapMoveEnd({ latitude: center.lat, longitude: center.lng });
+          }
         }
       });
       return null;
