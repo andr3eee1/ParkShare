@@ -18,7 +18,7 @@ export const SecurityScreen = () => {
         <View style={{ width: 40 }} />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.placeholder}>Change your password and enable 2FA.</Text>
+        <Text style={styles.placeholder}>Coming soon</Text>
       </ScrollView>
     </SafeAreaView>
   );
