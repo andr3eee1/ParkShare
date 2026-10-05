@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -59,6 +60,7 @@ const HeroPerk = ({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: 
 
 const PassCard = ({ pass }: { pass: ParkingPass }) => {
   const { isPassActive, togglePass } = usePasses();
+  const navigation = useNavigation<any>();
   const isActive = isPassActive(pass.id);
 
   return (
@@ -100,7 +102,18 @@ const PassCard = ({ pass }: { pass: ParkingPass }) => {
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityState={{ selected: isActive }}
-        onPress={() => togglePass(pass.id)}
+        onPress={() => {
+          if (isActive) {
+            togglePass(pass.id); // Cancel it directly
+          } else {
+            (navigation as any).navigate('PaymentCheckout', {
+              amount: pass.price,
+              title: pass.name,
+              actionType: 'PASS',
+              targetId: pass.id
+            });
+          }
+        }}
         style={[styles.actionButton, isActive && styles.actionButtonActive]}
       >
         <Ionicons name={isActive ? 'checkmark-circle-outline' : 'add-circle-outline'} size={18} color={isActive ? tokens.colors.availabilityGreen : tokens.colors.white} />

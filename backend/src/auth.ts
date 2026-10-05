@@ -48,7 +48,8 @@ router.post('/register', async (req, res): Promise<any> => {
       }
     });
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user.id, role: user.role,
+        walletBalance: user.walletBalance }, JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
       message: 'User created successfully',
@@ -59,7 +60,8 @@ router.post('/register', async (req, res): Promise<any> => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarUrl: user.avatarUrl,
-        role: user.role
+        role: user.role,
+        walletBalance: user.walletBalance
       }
     });
   } catch (error: any) {
@@ -85,7 +87,8 @@ router.post('/login', async (req, res): Promise<any> => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: user.id, role: user.role,
+        walletBalance: user.walletBalance }, JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
       message: 'Login successful',
@@ -96,7 +99,8 @@ router.post('/login', async (req, res): Promise<any> => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarUrl: user.avatarUrl,
-        role: user.role
+        role: user.role,
+        walletBalance: user.walletBalance
       }
     });
   } catch (error: any) {
@@ -139,7 +143,8 @@ router.put('/profile', requireAuth, async (req: AuthRequest, res: any): Promise<
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
         avatarUrl: updatedUser.avatarUrl,
-        role: updatedUser.role
+        role: updatedUser.role,
+        walletBalance: updatedUser.walletBalance
       }
     });
   } catch (error: any) {

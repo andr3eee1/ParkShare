@@ -14,6 +14,7 @@ import { MyVehiclesScreen } from './src/screens/settings/MyVehiclesScreen';
 import { NotificationsScreen } from './src/screens/settings/NotificationsScreen';
 import { SecurityScreen } from './src/screens/settings/SecurityScreen';
 import { HelpSupportScreen } from './src/screens/settings/HelpSupportScreen';
+import { PaymentCheckoutScreen } from './src/screens/PaymentCheckoutScreen';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
@@ -120,6 +121,7 @@ export default function App() {
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="Security" component={SecurityScreen} />
               <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+              <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} options={{ presentation: "modal" }} />
             </>
           )}
         </Stack.Navigator>

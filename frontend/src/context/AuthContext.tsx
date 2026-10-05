@@ -7,6 +7,7 @@ type User = {
   firstName: string;
   lastName: string;
   avatarUrl?: string | null;
+  walletBalance?: number;
   role: string;
 };
 

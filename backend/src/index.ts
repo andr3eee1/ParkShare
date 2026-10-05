@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRouter from './auth';
 import passesRouter from './passes';
+import walletRouter from './wallet';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use('/uploads', express.static('uploads'));
 
 app.use('/auth', authRouter);
 app.use('/passes', passesRouter);
+app.use('/wallet', walletRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
