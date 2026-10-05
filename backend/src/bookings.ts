@@ -7,7 +7,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 const CreateBookingSchema = z.object({
-  spotId: z.string().uuid(),
+  spotId: z.string(),
   startTime: z.string().datetime(),
   endTime: z.string().datetime(),
   totalPrice: z.number().positive(),
@@ -25,7 +25,12 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
     const result = await prisma.$transaction(async (tx) => {
       // Verify spot exists
       const spot = await tx.parkingSpot.findUnique({ where: { id: data.spotId } });
-      if (!spot) throw new Error('Spot not found');
+      if (!spot) {
+        if (data.spotId.startsWith('spot-')) {
+          throw new Error('This is a demo spot! Please add a real spot to the map using the "My Spots" tab to test the booking engine.');
+        }
+        throw new Error('Spot not found');
+      }
 
       // Verify availability (simplistic check for overlapping reservations)
       const overlapping = await tx.reservation.findFirst({
