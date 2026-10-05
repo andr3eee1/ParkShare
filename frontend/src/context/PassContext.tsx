@@ -70,8 +70,30 @@ type PassContextValue = {
 
 const PassContext = createContext<PassContextValue | null>(null);
 
+import { AuthContext } from './AuthContext';
+
 export const PassProvider = ({ children }: { children: React.ReactNode }) => {
   const [activePassIds, setActivePassIds] = useState<PassKind[]>([]);
+  const { token, user } = useContext(AuthContext);
+
+  // Fetch passes from backend
+  React.useEffect(() => {
+    const fetchPasses = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch('http://pana.com.ro:8745/passes', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setActivePassIds(data.passes.map((p: any) => p.passKind as PassKind));
+        }
+      } catch (err) {
+        console.error('Failed to fetch passes:', err);
+      }
+    };
+    fetchPasses();
+  }, [token]);
 
   const value = useMemo<PassContextValue>(() => {
     const activePasses = PASS_CATALOG.filter((pass) => activePassIds.includes(pass.id));
@@ -86,15 +108,35 @@ export const PassProvider = ({ children }: { children: React.ReactNode }) => {
     return {
       activePasses,
       isPassActive,
-      togglePass: (passId) => {
+      togglePass: async (passId) => {
+        // Optimistic update
         setActivePassIds((current) => current.includes(passId)
           ? current.filter((id) => id !== passId)
           : [...current, passId]);
+          
+        // Sync with backend
+        if (token) {
+          try {
+            await fetch('http://pana.com.ro:8745/passes/toggle', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({ passKind: passId })
+            });
+          } catch (err) {
+            console.error('Failed to sync pass:', err);
+          }
+        }
       },
       getPassForSpot,
       isParkPlusActive: isPassActive('park-plus'),
     };
-  }, [activePassIds]);
+  }, [activePassIds, token]);
+
+  // If there's no user, we might optionally render nothing or empty context
+  // But returning the provider with empty passes is fine.
 
   return <PassContext.Provider value={value}>{children}</PassContext.Provider>;
 };
