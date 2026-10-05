@@ -107,9 +107,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: any): Promise<any> 
 router.get('/provider', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
   try {
     const userId = req.user?.userId;
-    if (req.user?.role !== 'PROVIDER' && req.user?.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
+
 
     const bookings = await prisma.reservation.findMany({
       where: { spot: { ownerId: userId } },
