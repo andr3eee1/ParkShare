@@ -49,7 +49,7 @@ export const AccountScreen = () => {
             <Text style={styles.profileName}>{user?.firstName} {user?.lastName}</Text>
             <Text style={styles.profileEmail}>{user?.email}</Text>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>{user?.role === 'PROVIDER' ? 'Parking Provider' : 'Verified User'}</Text>
+              <Text style={styles.roleText}>{'Verified User'}</Text>
             </View>
           </View>
         </View>
