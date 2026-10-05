@@ -914,7 +914,15 @@ export const ExploreScreen = () => {
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.reserveButton} onPress={() => setModalVisible(false)}>
+              <TouchableOpacity style={styles.reserveButton} onPress={() => {
+                setModalVisible(false);
+                (navigation as any).navigate('PaymentCheckout', {
+                  amount: parkingCost + securityDeposit,
+                  title: `Book ${selectedSpot.name}`,
+                  actionType: 'BOOKING',
+                  targetId: selectedSpot.id
+                });
+              }}>
                 <Text style={styles.reserveButtonText}>Proceed to Payment</Text>
               </TouchableOpacity>
             </GlassPanel>
