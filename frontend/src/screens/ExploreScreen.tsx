@@ -118,7 +118,7 @@ const WheelPicker = ({ items, selectedValue, onValueChange, disabledItems = [], 
 
 export const ExploreScreen = () => {
   const navigation = useNavigation<any>();
-  const { user } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const { getPassForSpot, isParkPlusActive } = usePasses();
   const [selectedSpot, setSelectedSpot] = useState<any | null>(null);
   const [spots, setSpots] = useState<any[]>([]);
@@ -359,6 +359,28 @@ export const ExploreScreen = () => {
 
   // Modal State
   const [vehiclePlate, setVehiclePlate] = useState('');
+  const [vehicles, setVehicles] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (token) {
+      fetch('http://pana.com.ro:8745/vehicles', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.vehicles && data.vehicles.length > 0) {
+          setVehicles(data.vehicles);
+          const defaultVehicle = data.vehicles.find((v: any) => v.isDefault);
+          if (defaultVehicle) {
+            setVehiclePlate(defaultVehicle.plate);
+          } else {
+            setVehiclePlate(data.vehicles[0].plate);
+          }
+        }
+      })
+      .catch(console.error);
+    }
+  }, [token]);
   
   // Real-time "Now" tracking
   const now = new Date();

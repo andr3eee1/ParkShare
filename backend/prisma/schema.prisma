@@ -26,6 +26,7 @@ model User {
   ownedSpots   ParkingSpot[]
   reservations Reservation[]
   passes       UserPass[]
+  vehicles     Vehicle[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -83,4 +84,14 @@ model Reservation {
   totalPrice  Float
   status      String   @default("ACTIVE") // 'ACTIVE', 'COMPLETED', 'CANCELLED'
   createdAt   DateTime @default(now())
+}
+
+model Vehicle {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String   // e.g. "My Car"
+  plate     String   // e.g. "B-12-ABC"
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
