@@ -360,6 +360,7 @@ export const ExploreScreen = () => {
   // Modal State
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | 'custom'>('custom');
 
   useEffect(() => {
     if (token) {
@@ -373,8 +374,10 @@ export const ExploreScreen = () => {
           const defaultVehicle = data.vehicles.find((v: any) => v.isDefault);
           if (defaultVehicle) {
             setVehiclePlate(defaultVehicle.plate);
+            setSelectedVehicleId(defaultVehicle.id);
           } else {
             setVehiclePlate(data.vehicles[0].plate);
+            setSelectedVehicleId(data.vehicles[0].id);
           }
         }
       })
@@ -879,15 +882,46 @@ export const ExploreScreen = () => {
 
               {/* Vehicle Input */}
               <View style={styles.modalSection}>
-                <Text style={styles.sectionLabel}>License Plate</Text>
-                <TextInput
-                  style={styles.plateInput}
-                  placeholder="e.g. B 10 PRK"
-                  value={vehiclePlate}
-                  onChangeText={setVehiclePlate}
-                  autoCapitalize="characters"
-                  placeholderTextColor={tokens.colors.secondaryText}
-                />
+                <Text style={styles.sectionLabel}>{vehicles.length > 0 ? 'Select Vehicle' : 'License Plate'}</Text>
+                {vehicles.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                    {vehicles.map((v) => (
+                      <TouchableOpacity 
+                        key={v.id} 
+                        style={[styles.vehicleChip, selectedVehicleId === v.id && styles.vehicleChipSelected]}
+                        onPress={() => {
+                          setSelectedVehicleId(v.id);
+                          setVehiclePlate(v.plate);
+                        }}
+                      >
+                        <Ionicons name="car" size={16} color={selectedVehicleId === v.id ? tokens.colors.white : tokens.colors.primaryText} style={{ marginRight: 6 }} />
+                        <Text style={[styles.vehicleChipText, selectedVehicleId === v.id && styles.vehicleChipTextSelected]}>
+                          {v.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity 
+                      style={[styles.vehicleChip, selectedVehicleId === 'custom' && styles.vehicleChipSelected]}
+                      onPress={() => setSelectedVehicleId('custom')}
+                    >
+                      <Ionicons name="pencil" size={16} color={selectedVehicleId === 'custom' ? tokens.colors.white : tokens.colors.primaryText} style={{ marginRight: 6 }} />
+                      <Text style={[styles.vehicleChipText, selectedVehicleId === 'custom' && styles.vehicleChipTextSelected]}>
+                        Custom
+                      </Text>
+                    </TouchableOpacity>
+                  </ScrollView>
+                )}
+
+                {selectedVehicleId === 'custom' && (
+                  <TextInput
+                    style={styles.plateInput}
+                    placeholder="e.g. B 10 PRK"
+                    value={vehiclePlate}
+                    onChangeText={setVehiclePlate}
+                    autoCapitalize="characters"
+                    placeholderTextColor={tokens.colors.secondaryText}
+                  />
+                )}
               </View>
 
               {/* Booking Time Range */}
@@ -1410,6 +1444,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: tokens.colors.secondaryText,
     marginBottom: 12,
+  },
+  vehicleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2F5',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  vehicleChipSelected: {
+    backgroundColor: tokens.colors.primaryText,
+  },
+  vehicleChipText: {
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
+    color: tokens.colors.primaryText,
+  },
+  vehicleChipTextSelected: {
+    color: tokens.colors.white,
+    fontWeight: '600',
   },
   plateInput: {
     backgroundColor: tokens.colors.white,
