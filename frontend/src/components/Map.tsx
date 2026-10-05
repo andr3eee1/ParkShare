@@ -298,6 +298,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
   onSelectSpot: (spot: any) => void;
   onMapClick?: (coords?: { latitude: number, longitude: number }) => void;
   onMapMoveEnd?: (coords: { latitude: number, longitude: number }) => void;
+  onMapMoveStart?: () => void;
   destination?: MapDestination;
   userLocation?: { latitude: number; longitude: number };
 }, ref) => {
@@ -804,6 +805,9 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             refreshTimer = setTimeout(renderSpots, 350);
           }
 
+          map.on('movestart zoomstart', function() {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'map_movestart' }));
+          });
           map.on('zoomend moveend', function() {
             scheduleRefresh();
             var center = map.getCenter();

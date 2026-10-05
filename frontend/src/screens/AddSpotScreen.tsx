@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState, useContext, useRef } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../theme/tokens';
@@ -17,6 +17,7 @@ export const AddSpotScreen = () => {
   const [latitude, setLatitude] = useState(44.4268);
   const [longitude, setLongitude] = useState(26.1025);
   const [loading, setLoading] = useState(false);
+  const pinAnimation = useRef(new Animated.Value(0)).current;
 
   const handleSubmit = async () => {
     if (!name || !price) {
@@ -83,15 +84,29 @@ export const AddSpotScreen = () => {
               spots={[]}
               selectedSpot={null}
               onSelectSpot={() => {}}
+              onMapMoveStart={() => {
+                Animated.spring(pinAnimation, {
+                  toValue: -20,
+                  useNativeDriver: true,
+                  speed: 20
+                }).start();
+              }}
               onMapMoveEnd={(coords) => {
                 setLatitude(coords.latitude);
                 setLongitude(coords.longitude);
+                Animated.spring(pinAnimation, {
+                  toValue: 0,
+                  useNativeDriver: true,
+                  bounciness: 20
+                }).start();
               }}
             />
-            {/* Center fixed pin */}
-            <View style={styles.centerPin} pointerEvents="none">
+            {/* Center fixed pin with drop animation */}
+            <Animated.View style={[styles.centerPin, { transform: [{ translateY: pinAnimation }] }]} pointerEvents="none">
               <Ionicons name="location" size={40} color={tokens.colors.municipalTeal} style={{ marginTop: -20 }} />
-            </View>
+              {/* Add a tiny shadow dot to show exactly where it's dropping */}
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.3)', position: 'absolute', bottom: -5 }} />
+            </Animated.View>
           </View>
 
 

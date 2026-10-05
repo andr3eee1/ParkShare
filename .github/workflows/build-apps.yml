@@ -1,0 +1,78 @@
+name: Build Frontend Apps
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Expo Prebuild (Android)
+        working-directory: ./frontend
+        run: npx expo prebuild --platform android --clean
+
+      - name: Build APK (Release)
+        working-directory: ./frontend/android
+        run: ./gradlew assembleRelease
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ParkShare-Android-APK
+          path: frontend/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 7
+
+  build-ios-simulator:
+    name: Build iOS (Simulator)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Expo Prebuild (iOS)
+        working-directory: ./frontend
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Install CocoaPods
+        working-directory: ./frontend/ios
+        run: pod install
+
+      - name: Build iOS App
+        working-directory: ./frontend/ios
+        # Note: We build for the Simulator because building a physical .ipa requires Apple Developer Certificates injected into GitHub Secrets.
+        run: xcodebuild -workspace frontend.xcworkspace -scheme frontend -configuration Release -sdk iphonesimulator -derivedDataPath build
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ParkShare-iOS-Simulator-App
+          path: frontend/ios/build/Build/Products/Release-iphonesimulator/frontend.app
+          retention-days: 7
