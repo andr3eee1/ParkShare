@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../theme/tokens';
@@ -88,8 +89,11 @@ export const PaymentCheckoutScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.overlay}>
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => navigation.goBack()} />
+      <View style={styles.sheetContainer}>
+        <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
+          <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="close" size={24} color={tokens.colors.primaryText} />
         </TouchableOpacity>
@@ -152,15 +156,32 @@ export const PaymentCheckoutScreen = () => {
             <Text style={styles.payButtonText}>Pay {amount.toFixed(2)} RON</Text>
           )}
         </TouchableOpacity>
+        </View>
+        </SafeAreaView>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  backdrop: {
+    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+  },
+  sheetContainer: {
     backgroundColor: '#EEF2F5',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '80%',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   header: {
     flexDirection: 'row',

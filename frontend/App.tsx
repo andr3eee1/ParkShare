@@ -121,7 +121,7 @@ export default function App() {
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="Security" component={SecurityScreen} />
               <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
-              <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} options={{ presentation: "modal" }} />
+              <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} options={{ presentation: "transparentModal", animation: "slide_from_bottom" }} />
             </>
           )}
         </Stack.Navigator>
