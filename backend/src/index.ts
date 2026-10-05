@@ -6,6 +6,7 @@ import passesRouter from './passes';
 import walletRouter from './wallet';
 import spotsRouter from './spots';
 import bookingsRouter from './bookings';
+import adminRouter from './admin';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use('/passes', passesRouter);
 app.use('/wallet', walletRouter);
 app.use('/spots', spotsRouter);
 app.use('/bookings', bookingsRouter);
+app.use('/admin', adminRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });

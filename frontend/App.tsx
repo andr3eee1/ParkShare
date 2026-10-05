@@ -27,6 +27,8 @@ import { HistoryScreen } from './src/screens/HistoryScreen';
 import { PassesScreen } from './src/screens/PassesScreen';
 import { MySpotsScreen } from './src/screens/MySpotsScreen';
 import { AddSpotScreen } from './src/screens/AddSpotScreen';
+import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
+import { AdminManagementScreen, AdminRecordScreen } from './src/screens/AdminManagementScreens';
 import { PassProvider } from './src/context/PassContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -134,6 +136,16 @@ export default function App() {
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="Security" component={SecurityScreen} />
                             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+              {user.role === 'ADMIN' ? (
+                <>
+                  <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
+                  <Stack.Screen name="AdminUsers" component={AdminManagementScreen} />
+                  <Stack.Screen name="AdminSpaces" component={AdminManagementScreen} />
+                  <Stack.Screen name="AdminBookings" component={AdminManagementScreen} />
+                  <Stack.Screen name="AdminReports" component={AdminManagementScreen} />
+                  <Stack.Screen name="AdminRecord" component={AdminRecordScreen} />
+                </>
+              ) : null}
               <Stack.Screen name="AddSpot" component={AddSpotScreen} options={{ presentation: "modal" }} />
               <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} options={{ presentation: "transparentModal", animation: "slide_from_bottom" }} />
             </>
