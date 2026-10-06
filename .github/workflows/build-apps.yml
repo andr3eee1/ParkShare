@@ -30,6 +30,8 @@ jobs:
 
       - name: Build APK (Release)
         working-directory: ./frontend/android
+        env:
+          EXPO_PUBLIC_API_URL: https://park-share.ro/api
         run: ./gradlew assembleRelease
 
       - name: Upload Android Artifact
@@ -68,6 +70,8 @@ jobs:
       - name: Build iOS App
         working-directory: ./frontend/ios
         # Note: We build for the Simulator because building a physical .ipa requires Apple Developer Certificates injected into GitHub Secrets.
+        env:
+          EXPO_PUBLIC_API_URL: https://park-share.ro/api
         run: xcodebuild -workspace frontend.xcworkspace -scheme frontend -configuration Release -sdk iphonesimulator -derivedDataPath build
 
       - name: Upload iOS Artifact
