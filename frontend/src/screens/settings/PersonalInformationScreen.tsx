@@ -52,7 +52,7 @@ export const PersonalInformationScreen = () => {
         formData.append('avatar', { uri, name: filename, type } as any);
       }
 
-      const res = await fetch('http://pana.com.ro:8745/auth/upload-avatar', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/upload-avatar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -66,7 +66,7 @@ export const PersonalInformationScreen = () => {
       setAvatarUrl(data.url);
 
       // Auto-save the new avatar URL to the profile
-      const profileRes = await fetch('http://pana.com.ro:8745/auth/profile', {
+      const profileRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export const PersonalInformationScreen = () => {
     setSuccess(false);
 
     try {
-      const res = await fetch('http://pana.com.ro:8745/auth/profile', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

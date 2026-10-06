@@ -133,7 +133,7 @@ export const ExploreScreen = () => {
   useEffect(() => {
     const fetchSpots = async () => {
       try {
-        const res = await fetch('http://pana.com.ro:8745/spots');
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
         const data = await res.json();
         if (res.ok) setSpots(data.spots);
       } catch (err) {
@@ -377,7 +377,7 @@ export const ExploreScreen = () => {
 
   useEffect(() => {
     if (token) {
-      fetch('http://pana.com.ro:8745/vehicles', {
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/vehicles`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => res.json())

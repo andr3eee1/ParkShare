@@ -25,7 +25,7 @@ export const PaymentMethodsScreen = () => {
 
   const fetchCards = async () => {
     try {
-      const res = await fetch('http://pana.com.ro:8745/wallet/cards', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/wallet/cards`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -46,7 +46,7 @@ export const PaymentMethodsScreen = () => {
     }
     setSubmitting(true);
     try {
-      const res = await fetch('http://pana.com.ro:8745/wallet/cards', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/wallet/cards`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export const PaymentMethodsScreen = () => {
 
   const handleTopUp = async () => {
     try {
-      const res = await fetch('http://pana.com.ro:8745/wallet/deposit', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/wallet/deposit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ amount: 100 })

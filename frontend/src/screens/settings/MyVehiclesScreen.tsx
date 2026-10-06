@@ -27,7 +27,7 @@ export const MyVehiclesScreen = () => {
 
   const fetchVehicles = async () => {
     try {
-      const res = await fetch('http://pana.com.ro:8745/vehicles', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/vehicles`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -58,8 +58,8 @@ export const MyVehiclesScreen = () => {
     setSubmitting(true);
     
     const url = editingVehicleId 
-      ? `http://pana.com.ro:8745/vehicles/${editingVehicleId}` 
-      : 'http://pana.com.ro:8745/vehicles';
+      ? `${process.env.EXPO_PUBLIC_API_URL}/vehicles/${editingVehicleId}` 
+      : `${process.env.EXPO_PUBLIC_API_URL}/vehicles`;
     const method = editingVehicleId ? 'PUT' : 'POST';
 
     try {
@@ -91,7 +91,7 @@ export const MyVehiclesScreen = () => {
   const handleDeleteVehicle = async (id: string) => {
     const processDelete = async () => {
       try {
-        const res = await fetch(`http://pana.com.ro:8745/vehicles/${id}`, {
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/vehicles/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         });

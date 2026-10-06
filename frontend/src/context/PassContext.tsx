@@ -81,7 +81,7 @@ export const PassProvider = ({ children }: { children: React.ReactNode }) => {
     const fetchPasses = async () => {
       if (!token) return;
       try {
-        const res = await fetch('http://pana.com.ro:8745/passes', {
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/passes`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
@@ -117,7 +117,7 @@ export const PassProvider = ({ children }: { children: React.ReactNode }) => {
         // Sync with backend
         if (token) {
           try {
-            await fetch('http://pana.com.ro:8745/passes/toggle', {
+            await fetch(`${process.env.EXPO_PUBLIC_API_URL}/passes/toggle`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',

@@ -94,7 +94,7 @@ export const HistoryScreen = () => {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch('http://pana.com.ro:8745/bookings/me', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/bookings/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();

@@ -27,7 +27,7 @@ export const AddSpotScreen = () => {
 
     setLoading(true);
     try {
-      const res = await fetch('http://pana.com.ro:8745/spots', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

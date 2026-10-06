@@ -18,7 +18,7 @@ export const MySpotsScreen = () => {
 
   const fetchSpots = async () => {
     try {
-      const res = await fetch('http://pana.com.ro:8745/spots/me', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();

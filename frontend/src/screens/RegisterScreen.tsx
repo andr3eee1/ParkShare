@@ -26,7 +26,7 @@ export const RegisterScreen = () => {
     setError('');
 
     try {
-      const res = await fetch('http://pana.com.ro:8745/auth/register', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, email, password })

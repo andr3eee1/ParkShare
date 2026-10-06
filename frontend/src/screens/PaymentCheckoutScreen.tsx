@@ -25,7 +25,7 @@ export const PaymentCheckoutScreen = () => {
   const handleTopUp = async () => {
     setTopUpLoading(true);
     try {
-      const res = await fetch('http://pana.com.ro:8745/wallet/deposit', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/wallet/deposit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ export const PaymentCheckoutScreen = () => {
     setProcessing(true);
     try {
       if (selectedMethod === 'wallet') {
-        const res = await fetch('http://pana.com.ro:8745/wallet/pay', {
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/wallet/pay`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export const PaymentCheckoutScreen = () => {
       if (actionType === 'PASS') {
         await togglePass(targetId);
       } else if (actionType === 'BOOKING') {
-        const res = await fetch('http://pana.com.ro:8745/bookings', {
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/bookings`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
