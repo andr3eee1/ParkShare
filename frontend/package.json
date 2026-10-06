@@ -17,6 +17,7 @@
     "@types/leaflet": "^1.9.22",
     "expo": "~57.0.26",
     "expo-blur": "~57.0.3",
+    "expo-build-properties": "^57.0.22",
     "expo-font": "~57.0.4",
     "expo-image-picker": "~57.0.20",
     "expo-location": "~57.0.20",
