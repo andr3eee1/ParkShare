@@ -46,11 +46,15 @@ jobs:
           retention-days: 7
 
       - name: Send Discord Notification (Android)
-        if: ${{ success() && secrets.DISCORD_WEBHOOK_URL != '' }}
+        if: success()
         run: |
-          curl -H "Content-Type: application/json" \
-               -d '{"content": "✅ **Android Build Successful!**\nDownload APK here: ${{ steps.upload-android.outputs.artifact-url }}"}' \
-               ${{ secrets.DISCORD_WEBHOOK_URL }}
+          if [ -n "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            curl -H "Content-Type: application/json" \
+                 -d '{"content": "✅ **Android Build Successful!**\nDownload APK here: ${{ steps.upload-android.outputs.artifact-url }}"}' \
+                 ${{ secrets.DISCORD_WEBHOOK_URL }}
+          else
+            echo "Discord Webhook URL not provided."
+          fi
 
   build-ios-simulator:
     name: Build iOS (Simulator)
@@ -102,8 +106,12 @@ jobs:
           retention-days: 7
 
       - name: Send Discord Notification (iOS)
-        if: ${{ success() && secrets.DISCORD_WEBHOOK_URL != '' }}
+        if: success()
         run: |
-          curl -H "Content-Type: application/json" \
-               -d '{"content": "✅ **iOS Build Successful!**\nDownload Simulator App here: ${{ steps.upload-ios.outputs.artifact-url }}"}' \
-               ${{ secrets.DISCORD_WEBHOOK_URL }}
+          if [ -n "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            curl -H "Content-Type: application/json" \
+                 -d '{"content": "✅ **iOS Build Successful!**\nDownload Simulator App here: ${{ steps.upload-ios.outputs.artifact-url }}"}' \
+                 ${{ secrets.DISCORD_WEBHOOK_URL }}
+          else
+            echo "Discord Webhook URL not provided."
+          fi
