@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { usePasses } from '../context/PassContext';
 import { apiClient } from '../api/client';
+import { SlideUpView } from '../components/SlideUpView';
 
 export const PaymentCheckoutScreen = () => {
   const navigation = useNavigation<any>();
@@ -29,9 +30,17 @@ export const PaymentCheckoutScreen = () => {
     try {
       const res = await apiClient.post('/wallet/deposit', { amount: 100 });
       await updateUser(res.data.user);
-      Alert.alert('Top Up Successful', 'Added 100.00 RON to your wallet.');
+      if (Platform.OS === 'web') {
+        window.alert('Top Up Successful\n\nAdded 100.00 RON to your wallet.');
+      } else {
+        Alert.alert('Top Up Successful', 'Added 100.00 RON to your wallet.');
+      }
     } catch (err) {
-      Alert.alert('Error', 'Failed to top up wallet.');
+      if (Platform.OS === 'web') {
+        window.alert('Error\n\nFailed to top up wallet.');
+      } else {
+        Alert.alert('Error', 'Failed to top up wallet.');
+      }
     } finally {
       setTopUpLoading(false);
     }
@@ -39,7 +48,11 @@ export const PaymentCheckoutScreen = () => {
 
   const handlePayment = async () => {
     if (selectedMethod === 'wallet' && !canAfford) {
-      Alert.alert('Insufficient Balance', 'Please top up your wallet or select a different payment method.');
+      if (Platform.OS === 'web') {
+        window.alert('Insufficient Balance\n\nPlease top up your wallet or select a different payment method.');
+      } else {
+        Alert.alert('Insufficient Balance', 'Please top up your wallet or select a different payment method.');
+      }
       return;
     }
 
@@ -79,7 +92,11 @@ export const PaymentCheckoutScreen = () => {
           ? err.response.data.error 
           : JSON.stringify(err.response.data.error);
       }
-      Alert.alert('Payment Error', errorMsg);
+      if (Platform.OS === 'web') {
+        window.alert('Payment Error\n\n' + errorMsg);
+      } else {
+        Alert.alert('Payment Error', errorMsg);
+      }
     } finally {
       setProcessing(false);
     }
@@ -107,7 +124,7 @@ export const PaymentCheckoutScreen = () => {
       ) : (
         <>
           <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => navigation.goBack()} disabled={processing} />
-          <View style={styles.sheetContainer}>
+          <SlideUpView style={styles.sheetContainer} draggable={true} minimizedOffset={600} initialMinimized={false}>
             <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
               <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} disabled={processing}>
@@ -174,7 +191,7 @@ export const PaymentCheckoutScreen = () => {
                 </TouchableOpacity>
               </View>
             </SafeAreaView>
-          </View>
+          </SlideUpView>
         </>
       )}
     </View>

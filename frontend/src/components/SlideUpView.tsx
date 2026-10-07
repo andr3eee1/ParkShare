@@ -11,7 +11,12 @@ interface SlideUpViewProps {
 
 export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, draggable, minimizedOffset = 200, initialMinimized = false }) => {
   const [isMinimized, setIsMinimized] = useState(initialMinimized);
+  const isMinimizedRef = useRef(isMinimized);
   const slideAnim = useRef(new Animated.Value(400)).current;
+
+  useEffect(() => {
+    isMinimizedRef.current = isMinimized;
+  }, [isMinimized]);
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -26,14 +31,21 @@ export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, dragg
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return !!draggable && Math.abs(gestureState.dy) > 10;
+        return !!draggable && Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (!draggable) return;
+        const baseOffset = isMinimizedRef.current ? minimizedOffset : 0;
+        let newOffset = baseOffset + gestureState.dy;
+        if (newOffset < 0) newOffset = 0; // Prevent dragging above original position
+        slideAnim.setValue(newOffset);
       },
       onPanResponderRelease: (_, gestureState) => {
         if (!draggable) return;
-        let minimize = isMinimized;
-        if (gestureState.dy > 50) {
+        let minimize = isMinimizedRef.current;
+        if (gestureState.dy > 50 || gestureState.vy > 0.5) {
           minimize = true;
-        } else if (gestureState.dy < -50) {
+        } else if (gestureState.dy < -50 || gestureState.vy < -0.5) {
           minimize = false;
         }
         setIsMinimized(minimize);
@@ -44,6 +56,14 @@ export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, dragg
           friction: 8
         }).start();
       },
+      onPanResponderTerminate: () => {
+        Animated.spring(slideAnim, {
+          toValue: isMinimizedRef.current ? minimizedOffset : 0,
+          useNativeDriver: true,
+          tension: 50,
+          friction: 8
+        }).start();
+      }
     })
   ).current;
 

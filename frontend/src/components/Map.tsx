@@ -54,6 +54,7 @@ export const getAvailability = (availableStr: string, reservations: {startTime: 
     }
   }
 
+  if (availableStr === 'Booked by you') return { isAvailable: false, text: 'Booked by you' };
   if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
   
   const parts = availableStr.split('-');
@@ -464,6 +465,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             transition: transform 0.2s;
             white-space: nowrap;
           }
+          .marker-content:hover { transform: scale(1.05); }
           .marker-price { margin-right: 4px; }
           .marker-badge {
             background-color: rgba(255,255,255,0.2);
@@ -567,6 +569,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             transition: transform 0.2s, background-color 0.2s;
             cursor: pointer;
           }
+          .marker-content:hover { transform: scale(1.05); }
           .marker-price { margin-right: 4px; }
           .marker-badge {
             background-color: rgba(255,255,255,0.2);
@@ -708,6 +711,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
               }
             }
 
+            if (availableStr === 'Booked by you') return { isAvailable: false, text: 'Booked by you' };
             if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
             var parts = availableStr.split('-');
             if (parts.length !== 2) return { isAvailable: true, text: '' };
