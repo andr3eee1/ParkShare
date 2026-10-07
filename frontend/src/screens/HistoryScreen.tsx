@@ -100,23 +100,31 @@ export const HistoryScreen = () => {
       // Transform backend bookings to UI format
       const transformed = res.data.bookings.map((b: any) => {
         const startDate = new Date(b.startTime);
-        const endDate = new Date(b.endTime);
+        const endDate = b.endTime ? new Date(b.endTime) : new Date();
         
         let status = 'Completed';
         if (b.status === 'ACTIVE') status = 'Upcoming';
         else if (b.status === 'CANCELLED') status = 'Cancelled';
           
-        const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+        let hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+        if (hours < 0) hours = 0;
+
+        let timeStr = `${startDate.getHours()}:${startDate.getMinutes().toString().padStart(2, '0')} - `;
+        if (b.endTime) {
+            timeStr += `${endDate.getHours()}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+        } else {
+            timeStr += 'Now';
+        }
 
         return {
           id: b.id.substring(0, 8).toUpperCase(),
           location: b.spot.name,
           address: 'Lat: ' + b.spot.latitude + ' Lng: ' + b.spot.longitude,
           date: startDate.toLocaleDateString(),
-          time: `${startDate.getHours()}:${startDate.getMinutes().toString().padStart(2, '0')} - ${endDate.getHours()}:${endDate.getMinutes().toString().padStart(2, '0')}`,
+          time: timeStr,
           duration: `${hours.toFixed(1)} hours`,
           vehicle: 'My Vehicle',
-          total: `${b.totalPrice.toFixed(2)} RON`,
+          total: b.totalPrice != null ? `${b.totalPrice.toFixed(2)} RON` : 'Pending',
           status: status as BookingStatus,
           type: 'Private'
         };

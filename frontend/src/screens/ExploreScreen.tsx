@@ -1130,7 +1130,7 @@ export const ExploreScreen = () => {
             updateUser(userRes.data.user);
           }
           
-          const msg = `Your final cost was ${finalCost.toFixed(2)} RON. Your security deposit has been refunded minus this cost.`;
+          const msg = `Your final cost was ${(finalCost || 0).toFixed(2)} RON. Your security deposit has been refunded minus this cost.`;
           if (Platform.OS === 'web') {
             window.alert('Parking Ended\n\n' + msg);
           } else {
