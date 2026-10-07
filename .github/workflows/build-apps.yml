@@ -34,6 +34,9 @@ jobs:
         working-directory: ./frontend
         run: npx expo prebuild --platform android --clean
 
+      - name: Install Android NDK
+        run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;27.1.12297006"
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
