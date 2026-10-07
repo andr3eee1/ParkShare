@@ -135,6 +135,7 @@ export const ExploreScreen = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [activeReservation, setActiveReservation] = useState<any | null>(null);
   const [currentTimer, setCurrentTimer] = useState<number>(0);
+  const searchInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     let interval: any;
@@ -634,10 +635,12 @@ export const ExploreScreen = () => {
           setFiltersVisible(false);
           setActiveDropdown(null);
           setSearchFocused(false);
+          searchInputRef.current?.blur();
           Keyboard.dismiss();
         }}
         onMapMoveStart={() => {
           setSearchFocused(false);
+          searchInputRef.current?.blur();
           Keyboard.dismiss();
         }}
         destination={searchedLocation ?? undefined}
@@ -674,6 +677,7 @@ export const ExploreScreen = () => {
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color={tokens.colors.secondaryText} style={styles.searchIcon} />
               <TextInput 
+                ref={searchInputRef}
                 placeholder="Where are you going?" 
                 placeholderTextColor={tokens.colors.secondaryText}
                 style={styles.searchInput}
@@ -684,6 +688,7 @@ export const ExploreScreen = () => {
                   setSearchFocused(true);
                 }}
                 onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
                 onSubmitEditing={handleSearchSubmit}
                 returnKeyType="search"
               />
@@ -709,7 +714,7 @@ export const ExploreScreen = () => {
             </View>
 
             {searchFocused && (searchQuery.trim().length > 0 || searchHistory.length > 0) && (
-              <View style={styles.suggestionsContainer}>
+              <ScrollView keyboardShouldPersistTaps="handled" style={styles.suggestionsContainer}>
                 {searchResults.length > 0 ? (
                   searchResults.slice(0, 5).map((location: any) => (
                     <TouchableOpacity
@@ -736,7 +741,7 @@ export const ExploreScreen = () => {
                     )}
                   </View>
                 )}
-              </View>
+              </ScrollView>
             )}
 
             {isFiltersVisible && (
