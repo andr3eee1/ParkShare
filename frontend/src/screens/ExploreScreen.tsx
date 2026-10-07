@@ -1174,7 +1174,10 @@ export const ExploreScreen = () => {
     const timeString = `${Math.floor(diffMins / 60).toString().padStart(2, '0')}:${(diffMins % 60).toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
     
     return (
-      <View style={styles.activeReservationContainer}>
+      <View style={[
+        styles.activeReservationContainer, 
+        !isDesktop && { position: 'absolute', margin: 0, left: 16, right: 72, bottom: selectedSpot ? 320 : 40 }
+      ]}>
         <GlassPanel style={styles.activeReservationPanel}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
