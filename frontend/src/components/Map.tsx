@@ -513,6 +513,8 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             left: 6px;
           }
           .leaflet-control-attribution { display: none; }
+          .leaflet-zoom-anim .leaflet-zoom-animated { transition-duration: 0.05s !important; }
+          .leaflet-fade-anim .leaflet-tile { transition-duration: 0.05s !important; }
         `}</style>
         
         <MapContainer 
@@ -520,9 +522,6 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           zoom={14.5} 
           maxZoom={22}
           zoomControl={false}
-          zoomAnimation={false}
-          fadeAnimation={false}
-          markerZoomAnimation={false}
           inertia={false}
           style={{ width: '100%', height: '100%', position: 'absolute' }}
           ref={webMapRef}
@@ -622,6 +621,8 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           }
           .leaflet-control-attribution { display: none; }
           .leaflet-control-zoom { display: none; }
+          .leaflet-zoom-anim .leaflet-zoom-animated { transition-duration: 0.05s !important; }
+          .leaflet-fade-anim .leaflet-tile { transition-duration: 0.05s !important; }
         </style>
       </head>
       <body>
@@ -630,9 +631,6 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           var map = L.map('map', { 
             zoomControl: false, 
             maxZoom: 22,
-            zoomAnimation: false,
-            fadeAnimation: false,
-            markerZoomAnimation: false,
             inertia: false
           }).setView([44.4820, 26.1130], 14.5);
           var destinationMarker = null;
