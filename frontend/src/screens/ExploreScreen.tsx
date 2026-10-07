@@ -11,6 +11,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { apiClient } from '../api/client';
 import { GlassPanel } from '../components/GlassPanel';
+import { SlideUpView } from "../components/SlideUpView";
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePasses } from '../context/PassContext';
@@ -894,7 +895,7 @@ export const ExploreScreen = () => {
     <>
       {/* Booking Sheet (Simplified) */}
         {selectedSpot && (
-          <View style={[isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper, { pointerEvents: 'box-none' as any }]}>
+          <SlideUpView style={[isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper, { pointerEvents: 'box-none' as any }]}>
             <GlassPanel borderRadius={tokens.radii.upperSheet} style={isDesktop ? [styles.bookingSheet, { marginBottom: 0, marginHorizontal: 0 }] : styles.bookingSheet}>
               <View style={styles.sheetHeader}>
                 <View style={{ flex: 1 }}>
@@ -941,7 +942,7 @@ export const ExploreScreen = () => {
                 <Text style={[styles.reserveButtonText, { color: tokens.colors.primaryText }]}>See Details</Text>
               </TouchableOpacity>
             </GlassPanel>
-          </View>
+          </SlideUpView>
         )}
     </>
   );
@@ -1194,41 +1195,43 @@ export const ExploreScreen = () => {
     const timeString = `${Math.floor(diffMins / 60).toString().padStart(2, '0')}:${(diffMins % 60).toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
     
     return (
-      <View style={[
+      <SlideUpView style={[
         styles.activeReservationContainer, 
-        !isDesktop && { position: 'absolute', margin: 0, left: 16, right: 72, bottom: selectedSpot ? 320 : 40 }
+        !isDesktop && { position: 'absolute', margin: 0, left: 16, right: 16, bottom: 40 }
       ]}>
-        <GlassPanel style={[styles.activeReservationPanel, { padding: 20, backgroundColor: tokens.colors.white }]}>
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.availabilityGreen, marginRight: 6 }} />
-              <Text style={{ fontFamily: tokens.typography.headingMedium, fontSize: 14, color: tokens.colors.availabilityGreen, textTransform: 'uppercase', letterSpacing: 1 }}>
+        <GlassPanel style={[styles.activeReservationPanel, { padding: 16, backgroundColor: tokens.colors.white }]}>
+          <View style={{ width: 32, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 12 }} />
+          
+          <View style={{ alignItems: 'center', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: tokens.colors.availabilityGreen, marginRight: 6 }} />
+              <Text style={{ fontFamily: tokens.typography.headingMedium, fontSize: 12, color: tokens.colors.availabilityGreen, textTransform: 'uppercase', letterSpacing: 1 }}>
                 Parking Active
               </Text>
             </View>
-            <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 40, color: tokens.colors.primaryText, marginVertical: 4, fontVariant: ['tabular-nums'] }}>
+            <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 32, color: tokens.colors.primaryText, marginVertical: 0, fontVariant: ['tabular-nums'] }}>
               {timeString}
             </Text>
-            <Text style={{ fontFamily: tokens.typography.bodyMedium, fontSize: 15, color: tokens.colors.secondaryText }}>
+            <Text style={{ fontFamily: tokens.typography.bodyMedium, fontSize: 13, color: tokens.colors.secondaryText }}>
               {activeReservation.spot?.name || 'Your spot'}
             </Text>
           </View>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 12, borderRadius: 12, marginBottom: 16 }}>
-             <Text style={{ fontFamily: tokens.typography.bodyMedium, color: tokens.colors.secondaryText }}>Current Cost</Text>
-             <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 18, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 10, borderRadius: 10, marginBottom: 12 }}>
+             <Text style={{ fontFamily: tokens.typography.bodyMedium, fontSize: 13, color: tokens.colors.secondaryText }}>Current Cost</Text>
+             <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 16, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
           </View>
 
           <TouchableOpacity 
             activeOpacity={0.8}
-            style={{ backgroundColor: tokens.colors.availabilityGreen, padding: 16, borderRadius: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+            style={{ backgroundColor: tokens.colors.availabilityGreen, padding: 14, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
             onPress={handleEndReservation}
           >
-            <Ionicons name="stop-circle" size={22} color={tokens.colors.white} style={{ marginRight: 8 }} />
-            <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.headingBold, fontSize: 16 }}>End Reservation</Text>
+            <Ionicons name="stop-circle" size={18} color={tokens.colors.white} style={{ marginRight: 6 }} />
+            <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.headingBold, fontSize: 15 }}>End Reservation</Text>
           </TouchableOpacity>
         </GlassPanel>
-      </View>
+      </SlideUpView>
     );
   };
 

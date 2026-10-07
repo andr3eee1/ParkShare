@@ -250,11 +250,12 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
         bgColor = isSelected ? '#7F1D1D' : '#EF4444';
       }
       
-      const contentHtml = isUnavail
+      const contentHtml = isUnavail && !spot.bookedByMe
         ? `<span class="marker-price" style="font-size:12px;">Unavailable</span>`
         : spot.bookedByMe
-        ? `<div style="display:flex;flex-direction:column;align-items:center;">
-             <span class="marker-price" style="font-size:14px;color:#FFFFFF">Your Spot</span>
+        ? `<div style="display:flex;align-items:center;">
+             <span class="marker-price" style="font-size:12px;color:#FFFFFF">Your Spot</span>
+             <span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span>
            </div>`
         : `<div style="display:flex;flex-direction:column;align-items:center;">
              <div><span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span></div>
@@ -747,7 +748,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             if (isUnavail && !spot.bookedByMe) {
               contentHtml = '<span class="marker-price" style="font-size:12px;">Unavailable</span>';
             } else if (spot.bookedByMe) {
-              contentHtml = '<span class="marker-price" style="font-size:12px;">Your Spot</span>';
+              contentHtml = '<div style="display:flex;align-items:center;"><span class="marker-price" style="font-size:12px;">Your Spot</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span></div>';
             } else {
               contentHtml = '<div style="display:flex;flex-direction:column;align-items:center;">' +
                 '<div><span class="marker-price">' + spot.price + ' RON</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span></div>' +
