@@ -1013,18 +1013,18 @@ export const ExploreScreen = () => {
                 )}
 
                 {selectedVehicleId === 'custom' && (
-                  <View style={{ gap: 8 }}>
+                  <View>
                     <TextInput
-                      style={styles.plateInput}
+                      style={[styles.plateInput, { marginBottom: 8 }]}
                       placeholder="License Plate (e.g. B 10 PRK)"
                       value={vehiclePlate}
                       onChangeText={setVehiclePlate}
                       autoCapitalize="characters"
                       placeholderTextColor={tokens.colors.secondaryText}
                     />
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <TextInput
-                        style={[styles.plateInput, { flex: 1 }]}
+                        style={[styles.plateInput, { flex: 1, marginRight: 8 }]}
                         placeholder="Vehicle Name (e.g. My Car)"
                         value={customVehicleName}
                         onChangeText={setCustomVehicleName}
