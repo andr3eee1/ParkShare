@@ -1118,6 +1118,7 @@ export const ExploreScreen = () => {
 
   const handleEndReservation = () => {
     if (!activeReservation) return;
+    console.log('End Reservation Tapped');
 
     Alert.alert(
       "End Reservation",
@@ -1196,7 +1197,7 @@ export const ExploreScreen = () => {
              <Text style={{ fontFamily: tokens.typography.heading, fontSize: 18, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
           </View>
           <TouchableOpacity 
-            style={{ backgroundColor: '#EF4444', padding: 16, borderRadius: 12, alignItems: 'center' }}
+            style={{ backgroundColor: tokens.colors.municipalTeal, padding: 16, borderRadius: 12, alignItems: 'center' }}
             onPress={handleEndReservation}
           >
             <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 }}>End Reservation</Text>
@@ -1255,7 +1256,6 @@ const styles = StyleSheet.create({
   activeReservationContainer: {
     margin: 16,
     zIndex: 100,
-    pointerEvents: 'box-none' as any,
   },
   activeReservationPanel: {
     padding: 20,
