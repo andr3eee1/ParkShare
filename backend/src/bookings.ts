@@ -141,7 +141,7 @@ router.put('/:id/status', requireAuth, async (req: AuthRequest, res: any): Promi
       if (status === 'COMPLETED') {
         const spot = reservation.spot;
         // Calculate duration in hours
-        const durationMs = endTime.getTime() - reservation.startTime.getTime();
+        const durationMs = Math.max(0, endTime.getTime() - reservation.startTime.getTime());
         const durationHours = durationMs / (1000 * 60 * 60);
         finalPrice = durationHours * spot.price;
         
