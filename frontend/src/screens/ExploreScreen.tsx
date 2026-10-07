@@ -190,7 +190,8 @@ export const ExploreScreen = () => {
     return spots.map(spot => {
       let activeRes = null;
       if (spot.reservations && spot.reservations.length > 0) {
-        activeRes = spot.reservations.find((r: any) => r.status === 'ACTIVE');
+        // Backend only returns ACTIVE reservations
+        activeRes = spot.reservations[0];
       }
       
       if (activeRes) {
@@ -305,7 +306,7 @@ export const ExploreScreen = () => {
       type: 'private',
       host: s.owner ? `${s.owner.firstName} ${s.owner.lastName}` : 'ParkShare User',
       distance: 'Live location',
-      available: 'Available Now',
+      available: s.bookedByMe ? 'Booked by you' : 'Available Now',
       reservations: [],
       address: s.description ? s.description : `GPS: ${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}`,
       evCharging: false,
@@ -912,7 +913,11 @@ export const ExploreScreen = () => {
                 </View>
               </View>
 
-              {(sliderMin > sliderMax || isCurrentlyOccupied) ? (
+              {selectedSpot.bookedByMe ? (
+                <View style={[styles.municipalWarning, { backgroundColor: '#E8F5E9', borderColor: '#A7F3D0' }]}>
+                  <Text style={[styles.municipalWarningText, { color: tokens.colors.availabilityGreen }]}>This is your active reservation.</Text>
+                </View>
+              ) : (sliderMin > sliderMax || isCurrentlyOccupied) ? (
                 <View style={styles.municipalWarning}>
                   <Text style={styles.municipalWarningText}>This spot is currently unavailable.</Text>
                 </View>
