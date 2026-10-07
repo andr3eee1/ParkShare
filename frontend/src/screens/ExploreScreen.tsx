@@ -120,7 +120,7 @@ const WheelPicker = ({ items, selectedValue, onValueChange, disabledItems = [], 
 
 export const ExploreScreen = () => {
   const navigation = useNavigation<any>();
-  const { user, token } = useContext(AuthContext);
+  const { user, token, updateUser } = useContext(AuthContext) as any;
   const { getPassForSpot, isParkPlusActive } = usePasses();
   const [selectedSpot, setSelectedSpot] = useState<any | null>(null);
   const [spots, setSpots] = useState<any[]>([]);
@@ -1115,17 +1115,45 @@ export const ExploreScreen = () => {
   );
 
 
-  const handleEndReservation = async () => {
+
+  const handleEndReservation = () => {
     if (!activeReservation) return;
-    try {
-      await apiClient.put(`/bookings/${activeReservation.id}/status`, { status: 'COMPLETED' });
-      setActiveReservation(null);
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
-      const data = await res.json();
-      if (res.ok) setSpots(data.spots);
-    } catch (err) {
-      console.error('Failed to end reservation', err);
-    }
+
+    Alert.alert(
+      "End Reservation",
+      `Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "End Parking",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const res = await apiClient.put(`/bookings/${activeReservation.id}/status`, { status: 'COMPLETED' });
+              setActiveReservation(null);
+              
+              if (res.data.reservation && updateUser && user) {
+                const finalCost = res.data.reservation.totalPrice;
+                // Fetch fresh user data to get updated wallet balance
+                const userRes = await apiClient.get('/auth/me'); // Or whatever endpoint gives user data
+                if (userRes.data.user) {
+                  updateUser(userRes.data.user);
+                }
+                
+                Alert.alert('Parking Ended', `Your final cost was ${finalCost.toFixed(2)} RON. Your security deposit has been refunded minus this cost.`);
+              }
+
+              const spotsRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
+              const data = await spotsRes.json();
+              if (spotsRes.ok) setSpots(data.spots);
+            } catch (err) {
+              console.error('Failed to end reservation', err);
+              Alert.alert('Error', 'Failed to end reservation');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const renderActiveReservation = () => {
@@ -1231,6 +1259,12 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.white,
     borderColor: tokens.colors.municipalTeal,
     borderWidth: 2,
+    borderRadius: 24,
+    shadowColor: tokens.colors.municipalTeal,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   headerContainer: {
     position: 'absolute',
