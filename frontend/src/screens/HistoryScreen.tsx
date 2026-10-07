@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../components/GlassPanel';
 import { tokens } from '../theme/tokens';
 import { apiClient } from '../api/client';
-import { fromBucharestDBTime } from '../utils/timezone';
+
 
 type BookingStatus = 'Upcoming' | 'Completed' | 'Cancelled';
 type HistoryFilter = 'All' | BookingStatus;
@@ -99,8 +99,8 @@ export const HistoryScreen = () => {
       const res = await apiClient.get('/bookings/me');
       // Transform backend bookings to UI format
       const transformed = res.data.bookings.map((b: any) => {
-        const startDate = fromBucharestDBTime(new Date(b.startTime));
-        const endDate = fromBucharestDBTime(new Date(b.endTime));
+        const startDate = new Date(b.startTime);
+        const endDate = new Date(b.endTime);
         
         let status = 'Completed';
         if (b.status === 'ACTIVE') status = 'Upcoming';

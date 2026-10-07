@@ -14,7 +14,7 @@ import { GlassPanel } from '../components/GlassPanel';
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePasses } from '../context/PassContext';
-import { toBucharestDBTime, fromBucharestDBTime } from '../utils/timezone';
+
 import {
   DEFAULT_LOCATION,
   searchDemoLocations,
@@ -1045,7 +1045,7 @@ export const ExploreScreen = () => {
                   startTime: (() => {
                     const d = new Date();
                     d.setHours(Math.floor(actualStartMinutes / 60), actualStartMinutes % 60, 0, 0);
-                    return toBucharestDBTime(d).toISOString();
+                    return d.toISOString();
                   })()
                 });
               }}>
@@ -1176,7 +1176,7 @@ export const ExploreScreen = () => {
     
     // Use currentTimer to ensure we get a fresh time if available
     const now = currentTimer ? new Date(currentTimer) : new Date();
-    const start = fromBucharestDBTime(new Date(activeReservation.startTime));
+    const start = new Date(activeReservation.startTime);
     const diffMs = Math.max(0, now.getTime() - start.getTime());
     const diffMins = Math.floor(diffMs / 60000);
     const diffSecs = Math.floor((diffMs % 60000) / 1000);
