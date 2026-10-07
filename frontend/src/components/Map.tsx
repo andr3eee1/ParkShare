@@ -520,6 +520,10 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           zoom={14.5} 
           maxZoom={22}
           zoomControl={false}
+          zoomAnimation={false}
+          fadeAnimation={false}
+          markerZoomAnimation={false}
+          inertia={false}
           style={{ width: '100%', height: '100%', position: 'absolute' }}
           ref={webMapRef}
         >
@@ -623,7 +627,14 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
       <body>
         <div id="map"></div>
         <script>
-          var map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView([44.4820, 26.1130], 14.5);
+          var map = L.map('map', { 
+            zoomControl: false, 
+            maxZoom: 22,
+            zoomAnimation: false,
+            fadeAnimation: false,
+            markerZoomAnimation: false,
+            inertia: false
+          }).setView([44.4820, 26.1130], 14.5);
           var destinationMarker = null;
           var userLocationMarker = null;
           
@@ -876,6 +887,18 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
         javaScriptEnabled={true}
         domStorageEnabled={true}
         mixedContentMode="always"
+        onLoadEnd={() => {
+          if (webviewRef.current) {
+            const spotsJson = JSON.stringify(spots);
+            webviewRef.current.injectJavaScript(`
+              if (typeof updateSpots !== 'undefined') updateSpots(${spotsJson});
+              if (typeof updateSelection !== 'undefined') updateSelection(${selectedSpot ? `'${selectedSpot.id}'` : 'null'});
+              if (typeof updateDestinationVisibility !== 'undefined') updateDestinationVisibility();
+              if (typeof setUserLocation !== 'undefined') setUserLocation(${userLocation ? userLocation.latitude : 'null'}, ${userLocation ? userLocation.longitude : 'null'});
+              true;
+            `);
+          }
+        }}
         onMessage={(event) => {
           try {
             const data = JSON.parse(event.nativeEvent.data);
