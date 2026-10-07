@@ -196,7 +196,7 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
       if (refreshTimer) {
         clearTimeout(refreshTimer);
       }
-      refreshTimer = setTimeout(() => setViewportVersion((version) => version + 1), 350);
+      refreshTimer = setTimeout(() => setViewportVersion((version) => version + 1), 20);
     };
 
     setViewportVersion((version) => version + 1);
@@ -836,7 +836,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
 
           function scheduleRefresh() {
             if (refreshTimer) clearTimeout(refreshTimer);
-            refreshTimer = setTimeout(renderSpots, 350);
+            refreshTimer = setTimeout(renderSpots, 20);
           }
 
           map.on('movestart zoomstart', function() {
