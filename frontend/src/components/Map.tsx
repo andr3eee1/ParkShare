@@ -229,7 +229,7 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
             position={cluster.center as any}
             icon={icon}
             eventHandlers={{
-              click: () => map.setView(cluster.center, Math.min(map.getZoom() + 2, 22)),
+              click: () => map.flyTo(cluster.center, Math.min(map.getZoom() + 2, 22), { duration: 0.5 }),
             }}
           />
         );
@@ -330,9 +330,9 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
     },
     centerOnLocation: (loc: { latitude: number; longitude: number }) => {
       if (Platform.OS === 'web' && webMapRef.current) {
-        webMapRef.current.setView([loc.latitude, loc.longitude], 19);
+        webMapRef.current.flyTo([loc.latitude, loc.longitude], 19, { duration: 1 });
       } else if (webviewRef.current) {
-        webviewRef.current.injectJavaScript(`if (typeof map !== 'undefined') { map.setView([${loc.latitude}, ${loc.longitude}], 19); } true;`);
+        webviewRef.current.injectJavaScript(`if (typeof map !== 'undefined') { map.flyTo([${loc.latitude}, ${loc.longitude}], 19, { duration: 1 }); } true;`);
       }
     }
   }));
@@ -393,13 +393,13 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
   useEffect(() => {
     if (Platform.OS === 'web' && webMapRef.current) {
       if (selectedSpot) {
-        webMapRef.current.panTo(getCoordinates(selectedSpot));
+        webMapRef.current.flyTo(getCoordinates(selectedSpot), webMapRef.current.getZoom(), { duration: 0.8 });
       }
     } else if (webviewRef.current) {
       let script = `if (typeof updateSelection === 'function') { updateSelection(${JSON.stringify(selectedSpot?.id || '')}); }`;
       if (selectedSpot) {
         const coords = getCoordinates(selectedSpot);
-        script += `if (typeof map !== 'undefined') { map.panTo([${coords[0]}, ${coords[1]}]); }`;
+        script += `if (typeof map !== 'undefined') { map.flyTo([${coords[0]}, ${coords[1]}], map.getZoom(), { duration: 0.8 }); }`;
       }
       script += 'true;';
       webviewRef.current.injectJavaScript(script);
@@ -806,7 +806,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
                   })
                 }).addTo(markersLayer).on('click', function(e) {
                   L.DomEvent.stopPropagation(e);
-                  map.setView(cluster.center, Math.min(map.getZoom() + 2, 22));
+                  map.flyTo(cluster.center, Math.min(map.getZoom() + 2, 22), { duration: 0.5 });
                 });
                 return;
               }
