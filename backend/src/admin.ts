@@ -201,7 +201,29 @@ router.get('/bookings', async (req: AuthRequest, res: any): Promise<any> => {
 });
 
 router.get('/reports', async (_req, res) => {
-  res.json({ available: false, reports: [], reason: 'Reports are not persisted in the current database schema.' });
+  try {
+    const reports = await prisma.report.findMany({
+      include: {
+        reporter: true,
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formatted = reports.map(r => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      status: r.status,
+      reporterName: `${r.reporter.firstName} ${r.reporter.lastName}`,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+
+    res.json({ available: true, reports: formatted });
+  } catch (error) {
+    console.error('Fetch reports error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;

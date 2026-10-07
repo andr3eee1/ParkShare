@@ -127,6 +127,16 @@ const mapRecords = (routeName: string, data: any): AdminRecord[] => {
     icon: 'business-outline',
     searchable: `${item.name} ${item.owner.email} ${item.owner.firstName} ${item.owner.lastName} ${item.isAvailable ? 'live' : 'unavailable'}`.toLowerCase(),
   }));
+  if (routeName === 'AdminReports') return (data.reports || []).map((item: any) => ({
+    id: item.id,
+    title: item.title,
+    subtitle: `Reported by ${item.reporterName}`,
+    meta: `Created ${formatDate(item.createdAt)}`,
+    status: item.status.charAt(0) + item.status.slice(1).toLowerCase(),
+    statusColor: item.status === 'OPEN' ? '#C24141' : item.status === 'RESOLVED' ? tokens.colors.availabilityGreen : tokens.colors.secondaryText,
+    icon: 'alert-circle-outline',
+    searchable: `${item.title} ${item.description} ${item.reporterName} ${item.status}`.toLowerCase(),
+  }));
   return (data.bookings || []).map((item: any) => ({
     id: item.id,
     title: `Booking ${item.id.slice(0, 8)}`,

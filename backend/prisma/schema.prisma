@@ -27,6 +27,7 @@ model User {
   reservations Reservation[]
   passes       UserPass[]
   vehicles     Vehicle[]
+  reportedIssues Report[]  @relation("Reporter")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -95,4 +96,16 @@ model Vehicle {
   plate     String   // e.g. "B-12-ABC"
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  status      String   @default("OPEN") // 'OPEN', 'RESOLVED', 'DISMISSED'
+  reporterId  String
+  reporter    User     @relation("Reporter", fields: [reporterId], references: [id])
+  targetId    String?  // Could be spot ID, user ID, or booking ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
