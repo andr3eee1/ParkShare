@@ -1193,29 +1193,34 @@ export const ExploreScreen = () => {
         styles.activeReservationContainer, 
         !isDesktop && { position: 'absolute', margin: 0, left: 16, right: 72, bottom: selectedSpot ? 320 : 40 }
       ]}>
-        <GlassPanel style={styles.activeReservationPanel}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="time" size={24} color={tokens.colors.municipalTeal} style={{ marginRight: 8 }} />
-              <Text style={{ fontFamily: tokens.typography.heading, fontSize: 18, color: tokens.colors.primaryText }}>Active Parking</Text>
+        <GlassPanel style={[styles.activeReservationPanel, { padding: 20, backgroundColor: tokens.colors.white }]}>
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: tokens.colors.availabilityGreen, marginRight: 6 }} />
+              <Text style={{ fontFamily: tokens.typography.headingMedium, fontSize: 14, color: tokens.colors.availabilityGreen, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Parking Active
+              </Text>
             </View>
-            <View style={{ backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-              <Text style={{ color: '#059669', fontFamily: tokens.typography.body, fontWeight: '600', width: 70, textAlign: 'center' }}>{timeString}</Text>
-            </View>
+            <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 40, color: tokens.colors.primaryText, marginVertical: 4, fontVariant: ['tabular-nums'] }}>
+              {timeString}
+            </Text>
+            <Text style={{ fontFamily: tokens.typography.bodyMedium, fontSize: 15, color: tokens.colors.secondaryText }}>
+              {activeReservation.spot?.name || 'Your spot'}
+            </Text>
           </View>
-          <Text style={{ fontFamily: tokens.typography.body, fontSize: 16, color: tokens.colors.secondaryText, marginBottom: 8 }}>
-            At {activeReservation.spot?.name || 'a spot'}
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-             <Text style={{ fontFamily: tokens.typography.body, color: tokens.colors.secondaryText }}>Current Cost:</Text>
-             <Text style={{ fontFamily: tokens.typography.heading, fontSize: 18, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
+
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 12, borderRadius: 12, marginBottom: 16 }}>
+             <Text style={{ fontFamily: tokens.typography.bodyMedium, color: tokens.colors.secondaryText }}>Current Cost</Text>
+             <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 18, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
           </View>
+
           <TouchableOpacity 
-            activeOpacity={0.7}
-            style={{ backgroundColor: tokens.colors.municipalTeal, padding: 16, borderRadius: 12, alignItems: 'center' }}
+            activeOpacity={0.8}
+            style={{ backgroundColor: tokens.colors.availabilityGreen, padding: 16, borderRadius: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
             onPress={handleEndReservation}
           >
-            <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 }}>End Reservation</Text>
+            <Ionicons name="stop-circle" size={22} color={tokens.colors.white} style={{ marginRight: 8 }} />
+            <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.headingBold, fontSize: 16 }}>End Reservation</Text>
           </TouchableOpacity>
         </GlassPanel>
       </View>
