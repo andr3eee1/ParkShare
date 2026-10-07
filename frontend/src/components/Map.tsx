@@ -735,14 +735,19 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             var isUnavail = !avail.isAvailable;
             
             var color = isMunicipal ? (isSelected ? '#1E3A8A' : '#3B82F6') : (isSelected ? '#14532D' : '#22C55E');
-            if (isUnavail) {
+            if (spot.bookedByMe) {
+              color = isSelected ? '#5B21B6' : '#8B5CF6';
+            } else if (isUnavail) {
               color = isSelected ? '#7F1D1D' : '#EF4444';
             }
             
             var scale = isSelected ? 'scale(1.2)' : 'scale(1)';
             var contentHtml = '';
-            if (isUnavail) {
+            
+            if (isUnavail && !spot.bookedByMe) {
               contentHtml = '<span class="marker-price" style="font-size:12px;">Unavailable</span>';
+            } else if (spot.bookedByMe) {
+              contentHtml = '<span class="marker-price" style="font-size:12px;">Your Spot</span>';
             } else {
               contentHtml = '<div style="display:flex;flex-direction:column;align-items:center;">' +
                 '<div><span class="marker-price">' + spot.price + ' RON</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span></div>' +
