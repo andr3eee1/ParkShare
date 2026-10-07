@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard, ActivityIndicator, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -367,14 +368,51 @@ export const ExploreScreen = () => {
       return passes;
     });
   }, [activeFilters, maxPrice, timeLimit, visibleSpots]);
-  const [searchResults, setSearchResults] = useState<DemoLocation[]>([]);
+  const [searchResults, setSearchResults] = useState<(DemoLocation & { isHistory?: boolean })[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<(DemoLocation & { isHistory?: boolean })[]>([]);
 
   useEffect(() => {
+    AsyncStorage.getItem('searchHistory').then(res => {
+      if (res) setSearchHistory(JSON.parse(res));
+    }).catch(console.error);
+  }, []);
+
+  const saveToHistory = async (location: DemoLocation) => {
+    try {
+      const historyStr = await AsyncStorage.getItem('searchHistory');
+      let history: (DemoLocation & { isHistory?: boolean })[] = historyStr ? JSON.parse(historyStr) : [];
+      history = history.filter(h => h.id !== location.id && h.name !== location.name);
+      history.unshift({ ...location, isHistory: true });
+      if (history.length > 5) history = history.slice(0, 5);
+      setSearchHistory(history);
+      await AsyncStorage.setItem('searchHistory', JSON.stringify(history));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(searchHistory);
+      setIsSearching(false);
+      return;
+    }
+
+    const lowerQuery = searchQuery.trim().toLowerCase();
+    const historyMatches = searchHistory.filter(h => 
+      h.name.toLowerCase().includes(lowerQuery) || 
+      h.subtitle.toLowerCase().includes(lowerQuery)
+    );
+
     const localResults = searchDemoLocations(searchQuery);
-    
+    const combinedInitial = [...historyMatches];
+    localResults.forEach(lr => {
+      if (!combinedInitial.find(c => c.name.toLowerCase() === lr.name.toLowerCase())) combinedInitial.push(lr);
+    });
+
     if (searchQuery.trim().length < 3) {
-      setSearchResults(localResults);
+      setSearchResults(combinedInitial);
       setIsSearching(false);
       return;
     }
@@ -399,7 +437,7 @@ export const ExploreScreen = () => {
           aliases: []
         }));
 
-        const combined = [...localResults];
+        const combined = [...combinedInitial];
         apiResults.forEach(apiRes => {
           if (!combined.find(c => c.name.toLowerCase() === apiRes.name.toLowerCase())) {
             combined.push(apiRes);
@@ -408,14 +446,14 @@ export const ExploreScreen = () => {
         setSearchResults(combined.slice(0, 8));
       } catch (err) {
         console.warn("Geocoding failed", err);
-        setSearchResults(localResults);
+        setSearchResults(combinedInitial);
       } finally {
         setIsSearching(false);
       }
     }, 250);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, searchHistory]);
 
   const handleLocationSelect = (location: DemoLocation) => {
     setActiveLocation(location);
@@ -425,6 +463,7 @@ export const ExploreScreen = () => {
     setSearchFocused(false);
     setSelectedSpot(null);
     Keyboard.dismiss();
+    saveToHistory(location);
   };
 
   const handleSearchSubmit = () => {
@@ -663,16 +702,16 @@ export const ExploreScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {searchFocused && searchQuery.trim().length > 0 && (
+            {searchFocused && (searchQuery.trim().length > 0 || searchHistory.length > 0) && (
               <View style={styles.suggestionsContainer}>
                 {searchResults.length > 0 ? (
-                  searchResults.slice(0, 5).map((location) => (
+                  searchResults.slice(0, 5).map((location: any) => (
                     <TouchableOpacity
                       key={location.id}
                       style={styles.suggestionRow}
                       onPress={() => handleLocationSelect(location)}
                     >
-                      <Ionicons name="location-outline" size={18} color={tokens.colors.availabilityGreen} />
+                      <Ionicons name={location.isHistory ? "time-outline" : "location-outline"} size={18} color={location.isHistory ? tokens.colors.secondaryText : tokens.colors.availabilityGreen} />
                       <View style={styles.suggestionTextContainer}>
                         <Text style={styles.suggestionName} numberOfLines={1}>{location.name}</Text>
                         <Text style={styles.suggestionSubtitle} numberOfLines={1}>{location.subtitle}</Text>
