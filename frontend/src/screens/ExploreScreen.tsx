@@ -148,6 +148,11 @@ export const ExploreScreen = () => {
               b.status === 'ACTIVE' && fromBucharestDBTime(new Date(b.endTime)) > now
             );
             setActiveReservation(active || null);
+            if (active && active.spot) {
+              setTimeout(() => {
+                mapRef.current?.centerOnLocation({ latitude: active.spot.latitude, longitude: active.spot.longitude });
+              }, 500);
+            }
           }
         } catch (err) {
           console.error('Failed to fetch reservations:', err);
