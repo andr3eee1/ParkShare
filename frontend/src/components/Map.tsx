@@ -265,9 +265,9 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
         
       const icon = new DivIcon({
         className: 'custom-leaflet-marker',
-        html: `<div class="marker-content" style="background-color: ${bgColor}; transform: scale(${isSelected ? 1.2 : 1});">${contentHtml}</div>`,
-        iconSize: [80, 30],
-        iconAnchor: [40, 15],
+        html: `<div class="marker-content" style="background-color: ${bgColor}; transform: translate(-50%, -50%) scale(${isSelected ? 1.2 : 1});">${contentHtml}</div>`,
+        iconSize: null as any,
+        iconAnchor: [0, 0],
       });
 
       return (
@@ -454,7 +454,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           .marker-content {
             display: flex;
             align-items: center;
-            padding: 6px 8px;
+            padding: 6px 12px;
             border-radius: 9999px;
             color: white;
             font-family: 'Space Grotesk', sans-serif;
@@ -465,7 +465,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             transition: transform 0.2s;
             white-space: nowrap;
           }
-          .marker-content:hover { transform: scale(1.05); }
+          .marker-content:hover { transform: translate(-50%, -50%) scale(1.05) !important; }
           .marker-price { margin-right: 4px; }
           .marker-badge {
             background-color: rgba(255,255,255,0.2);
@@ -558,7 +558,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           .marker-content {
             display: flex;
             align-items: center;
-            padding: 6px 8px;
+            padding: 6px 12px;
             border-radius: 9999px;
             color: white;
             font-family: sans-serif;
@@ -569,7 +569,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             transition: transform 0.2s, background-color 0.2s;
             cursor: pointer;
           }
-          .marker-content:hover { transform: scale(1.05); }
+          .marker-content:hover { transform: translate(-50%, -50%) scale(1.05) !important; }
           .marker-price { margin-right: 4px; }
           .marker-badge {
             background-color: rgba(255,255,255,0.2);
@@ -746,7 +746,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
               color = isSelected ? '#7F1D1D' : '#EF4444';
             }
             
-            var scale = isSelected ? 'scale(1.2)' : 'scale(1)';
+            var scale = isSelected ? 'translate(-50%, -50%) scale(1.2)' : 'translate(-50%, -50%) scale(1)';
             var contentHtml = '';
             
             if (isUnavail && !spot.bookedByMe) {
@@ -816,8 +816,8 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
                 icon: L.divIcon({
                   className: 'custom-leaflet-marker',
                   html: markerHtml(spot),
-                  iconSize: [80, 30],
-                  iconAnchor: [40, 15]
+                  iconSize: null,
+                  iconAnchor: [0, 0]
                 })
               }).addTo(markersLayer).on('click', function(e) {
                 L.DomEvent.stopPropagation(e);
