@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard, ActivityIndicator, Image } from 'react-native';
+import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard, ActivityIndicator, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -1196,7 +1196,7 @@ export const ExploreScreen = () => {
              <Text style={{ fontFamily: tokens.typography.heading, fontSize: 18, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
           </View>
           <TouchableOpacity 
-            style={{ backgroundColor: tokens.colors.accentAction, padding: 16, borderRadius: 12, alignItems: 'center' }}
+            style={{ backgroundColor: '#EF4444', padding: 16, borderRadius: 12, alignItems: 'center' }}
             onPress={handleEndReservation}
           >
             <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 }}>End Reservation</Text>
