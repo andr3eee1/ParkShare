@@ -244,12 +244,18 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
         ? (isSelected ? '#1E3A8A' : '#3B82F6')
         : (isSelected ? '#14532D' : '#22C55E');
         
-      if (isUnavail) {
+      if (spot.bookedByMe) {
+        bgColor = isSelected ? '#5B21B6' : '#8B5CF6'; // Purple for user's own active booking
+      } else if (isUnavail) {
         bgColor = isSelected ? '#7F1D1D' : '#EF4444';
       }
       
       const contentHtml = isUnavail
         ? `<span class="marker-price" style="font-size:12px;">Unavailable</span>`
+        : spot.bookedByMe
+        ? `<div style="display:flex;flex-direction:column;align-items:center;">
+             <span class="marker-price" style="font-size:14px;color:#FFFFFF">Your Spot</span>
+           </div>`
         : `<div style="display:flex;flex-direction:column;align-items:center;">
              <div><span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span></div>
              ${avail.text ? `<span style="font-size:11px;font-weight:600;opacity:1;margin-top:2px;">${avail.text}</span>` : ''}

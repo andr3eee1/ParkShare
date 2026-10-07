@@ -157,18 +157,40 @@ export const ExploreScreen = () => {
     }, [token])
   );
 
-  useEffect(() => {
-    const fetchSpots = async () => {
-      try {
-        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
-        const data = await res.json();
-        if (res.ok) setSpots(data.spots);
-      } catch (err) {
-        console.error('Failed to fetch spots:', err);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchSpots = async () => {
+        try {
+          const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
+          const data = await res.json();
+          if (res.ok) setSpots(data.spots);
+        } catch (err) {
+          console.error('Failed to fetch spots:', err);
+        }
+      };
+      fetchSpots();
+    }, [])
+  );
+
+  const visibleSpots = useMemo(() => {
+    const now = new Date();
+    return spots.map(spot => {
+      let activeRes = null;
+      if (spot.reservations && spot.reservations.length > 0) {
+        activeRes = spot.reservations.find((r: any) => fromBucharestDBTime(new Date(r.endTime)) > now);
       }
-    };
-    fetchSpots();
-  }, []);
+      
+      if (activeRes) {
+        // If it's booked by someone else, hide it
+        if (!user || activeRes.userId !== user.id) {
+          return null;
+        }
+        // If it's booked by me, mark it
+        return { ...spot, bookedByMe: true };
+      }
+      return spot;
+    }).filter(Boolean);
+  }, [spots, user]);
 
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>(['All']);
@@ -265,7 +287,7 @@ export const ExploreScreen = () => {
 
   const mapRef = useRef<any>(null);
   const parkingSpots = useMemo(() => {
-    const backendSpots = spots.map((s: any) => ({
+    const backendSpots = visibleSpots.map((s: any) => ({
       ...s,
       type: 'private',
       host: s.owner ? `${s.owner.firstName} ${s.owner.lastName}` : 'ParkShare User',
@@ -329,7 +351,7 @@ export const ExploreScreen = () => {
       
       return passes;
     });
-  }, [activeFilters, maxPrice, timeLimit, spots]);
+  }, [activeFilters, maxPrice, timeLimit, visibleSpots]);
   const [searchResults, setSearchResults] = useState<DemoLocation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -1122,6 +1144,9 @@ export const ExploreScreen = () => {
     try {
       await apiClient.put(`/bookings/${activeReservation.id}/status`, { status: 'COMPLETED' });
       setActiveReservation(null);
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
+      const data = await res.json();
+      if (res.ok) setSpots(data.spots);
     } catch (err) {
       console.error('Failed to end reservation', err);
     }

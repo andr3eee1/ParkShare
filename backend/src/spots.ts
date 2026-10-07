@@ -20,7 +20,13 @@ router.get('/', async (req, res): Promise<any> => {
   try {
     const spots = await prisma.parkingSpot.findMany({
       where: { isAvailable: true },
-      include: { owner: { select: { firstName: true, lastName: true } } }
+      include: { 
+        owner: { select: { firstName: true, lastName: true } },
+        reservations: {
+          where: { status: 'ACTIVE' },
+          select: { userId: true, endTime: true }
+        }
+      }
     });
     res.json({ spots });
   } catch (error) {
