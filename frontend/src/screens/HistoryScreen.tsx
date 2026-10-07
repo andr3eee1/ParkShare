@@ -106,22 +106,22 @@ export const HistoryScreen = () => {
         if (b.status === 'ACTIVE') status = 'Upcoming';
         else if (b.status === 'CANCELLED') status = 'Cancelled';
           
-          const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+        const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
 
-          return {
-            id: b.id.substring(0, 8).toUpperCase(),
-            location: b.spot.name,
-            address: 'Lat: ' + b.spot.latitude + ' Lng: ' + b.spot.longitude,
-            date: startDate.toLocaleDateString(),
-            time: `${startDate.getHours()}:${startDate.getMinutes().toString().padStart(2, '0')} - ${endDate.getHours()}:${endDate.getMinutes().toString().padStart(2, '0')}`,
-            duration: `${hours.toFixed(1)} hours`,
-            vehicle: 'My Vehicle',
-            total: `${b.totalPrice.toFixed(2)} RON`,
-            status: status as BookingStatus,
-            type: 'Private'
-          };
-        });
-        setBookings(transformed);
+        return {
+          id: b.id.substring(0, 8).toUpperCase(),
+          location: b.spot.name,
+          address: 'Lat: ' + b.spot.latitude + ' Lng: ' + b.spot.longitude,
+          date: startDate.toLocaleDateString(),
+          time: `${startDate.getHours()}:${startDate.getMinutes().toString().padStart(2, '0')} - ${endDate.getHours()}:${endDate.getMinutes().toString().padStart(2, '0')}`,
+          duration: `${hours.toFixed(1)} hours`,
+          vehicle: 'My Vehicle',
+          total: `${b.totalPrice.toFixed(2)} RON`,
+          status: status as BookingStatus,
+          type: 'Private'
+        };
+      });
+      setBookings(transformed);
     } catch (err) {
       console.error(err);
     } finally {

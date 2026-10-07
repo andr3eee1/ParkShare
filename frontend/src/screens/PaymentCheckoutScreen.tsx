@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     height: '80%',
     overflow: 'hidden',
-    boxShadow: '0px -2px 10px rgba(0,0,0,0.1)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5,
   },
   header: {
     flexDirection: 'row',
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     marginBottom: 32,
-    boxShadow: '0px 2px 8px rgba(0,0,0,0.05)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
   summaryTitle: {
     fontFamily: tokens.typography.body,

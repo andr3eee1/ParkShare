@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexDirection: 'row',
     overflow: 'hidden',
-    boxShadow: '0px 2px 5px rgba(0,0,0,0.05)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2,
   },
   spotImage: {
     width: 100,
@@ -154,6 +154,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0px 3px 5px rgba(0,0,0,0.3)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 3,
   }
 });

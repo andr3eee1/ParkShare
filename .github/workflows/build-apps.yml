@@ -24,6 +24,12 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
+      - name: Auto-Increment Version Code
+        working-directory: ./frontend
+        run: |
+          npm install -g json
+          json -I -f app.json -e "this.expo.android.versionCode = ${{ github.run_number }}"
+
       - name: Expo Prebuild (Android)
         working-directory: ./frontend
         run: npx expo prebuild --platform android --clean
