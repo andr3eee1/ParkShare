@@ -438,6 +438,8 @@ export const ExploreScreen = () => {
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | 'custom'>('custom');
+  const [customVehicleName, setCustomVehicleName] = useState('');
+  const [isSavingVehicle, setIsSavingVehicle] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -461,6 +463,31 @@ export const ExploreScreen = () => {
       .catch(console.error);
     }
   }, [token]);
+
+  const saveCustomVehicle = async () => {
+    if (!vehiclePlate.trim() || !customVehicleName.trim()) {
+      Alert.alert('Missing Info', 'Please provide a name and license plate to save.');
+      return;
+    }
+    setIsSavingVehicle(true);
+    try {
+      const res = await apiClient.post('/vehicles', {
+        name: customVehicleName.trim(),
+        plate: vehiclePlate.trim(),
+        isDefault: vehicles.length === 0
+      });
+      if (res.data.vehicle) {
+        setVehicles(prev => [res.data.vehicle, ...prev]);
+        setSelectedVehicleId(res.data.vehicle.id);
+        setCustomVehicleName('');
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to save vehicle');
+    } finally {
+      setIsSavingVehicle(false);
+    }
+  };
   
   // Real-time "Now" tracking
   const now = new Date();
@@ -986,14 +1013,36 @@ export const ExploreScreen = () => {
                 )}
 
                 {selectedVehicleId === 'custom' && (
-                  <TextInput
-                    style={styles.plateInput}
-                    placeholder="e.g. B 10 PRK"
-                    value={vehiclePlate}
-                    onChangeText={setVehiclePlate}
-                    autoCapitalize="characters"
-                    placeholderTextColor={tokens.colors.secondaryText}
-                  />
+                  <View style={{ gap: 8 }}>
+                    <TextInput
+                      style={styles.plateInput}
+                      placeholder="License Plate (e.g. B 10 PRK)"
+                      value={vehiclePlate}
+                      onChangeText={setVehiclePlate}
+                      autoCapitalize="characters"
+                      placeholderTextColor={tokens.colors.secondaryText}
+                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <TextInput
+                        style={[styles.plateInput, { flex: 1 }]}
+                        placeholder="Vehicle Name (e.g. My Car)"
+                        value={customVehicleName}
+                        onChangeText={setCustomVehicleName}
+                        placeholderTextColor={tokens.colors.secondaryText}
+                      />
+                      <TouchableOpacity 
+                        style={styles.saveVehicleBtn}
+                        onPress={saveCustomVehicle}
+                        disabled={isSavingVehicle}
+                      >
+                        {isSavingVehicle ? (
+                          <ActivityIndicator size="small" color={tokens.colors.white} />
+                        ) : (
+                          <Text style={styles.saveVehicleBtnText}>Save</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 )}
               </View>
 
@@ -1659,6 +1708,19 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 16,
     color: tokens.colors.primaryText,
+  },
+  saveVehicleBtn: {
+    backgroundColor: tokens.colors.primaryText,
+    borderRadius: tokens.radii.inputControl,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  saveVehicleBtnText: {
+    color: tokens.colors.white,
+    fontFamily: tokens.typography.bodySemiBold,
+    fontSize: 15,
   },
   timeScroll: {
     flexDirection: 'row',
