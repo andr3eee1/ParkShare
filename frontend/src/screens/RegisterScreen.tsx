@@ -1,50 +1,51 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
 import { tokens } from '../theme/tokens';
 import { Ionicons } from '@expo/vector-icons';
+import { apiClient } from '../api/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { FormInput } from '../components/FormInput';
+
+const registerSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export const RegisterScreen = () => {
   const navigation = useNavigation<any>();
   const { login } = useContext(AuthContext);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleRegister = async () => {
-    if (!firstName || !lastName || !email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-    
-    setLoading(true);
+  const { control, handleSubmit, formState: { isSubmitting } } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { firstName: '', lastName: '', email: '', password: '' }
+  });
+
+  const onSubmit = async (data: RegisterFormValues) => {
     setError('');
-
     try {
-      const res = await fetch('http://pana.com.ro:8745/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password })
-      });
-      const data = await res.json();
-      
-      if (!res.ok) {
-        if (Array.isArray(data.error)) {
-           throw new Error(data.error.map((e: any) => e.message).join(', '));
-        }
-        throw new Error(data.error || 'Registration failed');
-      }
-
-      await login(data.user, data.token);
+      const res = await apiClient.post('/auth/register', data);
+      await login(res.data.user, res.data.token);
     } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      if (err.response?.data?.error) {
+        const errorData = err.response.data.error;
+        if (Array.isArray(errorData)) {
+          setError(errorData.map((e: any) => e.message).join(', '));
+        } else {
+          setError(errorData);
+        }
+      } else {
+        setError(err.message || 'Registration failed');
+      }
     }
   };
 
@@ -69,57 +70,45 @@ export const RegisterScreen = () => {
           ) : null}
 
           <View style={styles.row}>
-            <View style={[styles.formGroup, { flex: 1, marginRight: 12 }]}>
-              <Text style={styles.label}>First name</Text>
-              <TextInput
-                style={styles.input}
+            <View style={{ flex: 1, marginRight: 6 }}>
+              <FormInput
+                control={control}
+                name="firstName"
+                label="First name"
                 placeholder="Jane"
-                placeholderTextColor={tokens.colors.secondaryText}
-                value={firstName}
-                onChangeText={setFirstName}
               />
             </View>
-            <View style={[styles.formGroup, { flex: 1 }]}>
-              <Text style={styles.label}>Last name</Text>
-              <TextInput
-                style={styles.input}
+            <View style={{ flex: 1, marginLeft: 6 }}>
+              <FormInput
+                control={control}
+                name="lastName"
+                label="Last name"
                 placeholder="Doe"
-                placeholderTextColor={tokens.colors.secondaryText}
-                value={lastName}
-                onChangeText={setLastName}
               />
             </View>
           </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Email address</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="name@example.com"
-              placeholderTextColor={tokens.colors.secondaryText}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
+          <FormInput
+            control={control}
+            name="email"
+            label="Email address"
+            placeholder="name@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Min 6 characters"
-              placeholderTextColor={tokens.colors.secondaryText}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onSubmitEditing={handleRegister}
-              returnKeyType="go"
-            />
-          </View>
+          <FormInput
+            control={control}
+            name="password"
+            label="Password"
+            placeholder="Min 6 characters"
+            secureTextEntry
+            onSubmitEditing={handleSubmit(onSubmit)}
+            returnKeyType="go"
+          />
 
-          <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-            {loading ? (
+          <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)} disabled={isSubmitting}>
+            {isSubmitting ? (
               <ActivityIndicator color={tokens.colors.white} />
             ) : (
               <Text style={styles.buttonText}>Create Account</Text>

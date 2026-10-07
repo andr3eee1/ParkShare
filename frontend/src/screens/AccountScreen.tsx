@@ -49,7 +49,7 @@ export const AccountScreen = () => {
             <Text style={styles.profileName}>{user?.firstName} {user?.lastName}</Text>
             <Text style={styles.profileEmail}>{user?.email}</Text>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>{user?.role === 'PROVIDER' ? 'Parking Provider' : 'Verified User'}</Text>
+              <Text style={styles.roleText}>{'Verified User'}</Text>
             </View>
           </View>
         </View>
@@ -112,10 +112,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: tokens.colors.white,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
   editButtonText: {
     fontFamily: tokens.typography.body,
@@ -129,10 +126,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 4,
   },
   avatarContainer: {
     width: 64,
@@ -186,10 +180,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 4,
   },
   menuItem: {
     flexDirection: 'row',

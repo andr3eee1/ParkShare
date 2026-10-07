@@ -1,0 +1,123 @@
+name: Build Frontend Apps
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Auto-Increment Version Code
+        working-directory: ./frontend
+        run: |
+          npm install -g json
+          json -I -f app.json -e "this.expo.android.versionCode = ${{ github.run_number }}"
+
+      - name: Expo Prebuild (Android)
+        working-directory: ./frontend
+        run: npx expo prebuild --platform android --clean
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK (Release)
+        working-directory: ./frontend/android
+        env:
+          EXPO_PUBLIC_API_URL: https://park-share.ro/api
+        run: ./gradlew assembleRelease --parallel --build-cache
+
+      - name: Upload Android Artifact
+        id: upload-android
+        uses: actions/upload-artifact@v4
+        with:
+          name: ParkShare-Android-APK
+          path: frontend/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 7
+
+      - name: Send Discord Notification (Android)
+        if: success()
+        run: |
+          if [ -n "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            curl -H "Content-Type: application/json" \
+                 -d '{"content": "✅ **Android Build Successful!**\nDownload APK here: ${{ steps.upload-android.outputs.artifact-url }}"}' \
+                 ${{ secrets.DISCORD_WEBHOOK_URL }}
+          else
+            echo "Discord Webhook URL not provided."
+          fi
+
+  build-ios-simulator:
+    name: Build iOS (Simulator)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Expo Prebuild (iOS)
+        working-directory: ./frontend
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: frontend/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('frontend/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install CocoaPods
+        working-directory: ./frontend/ios
+        run: pod install
+
+      - name: Build iOS App
+        working-directory: ./frontend/ios
+        # Note: We build for the Simulator because building a physical .ipa requires Apple Developer Certificates injected into GitHub Secrets.
+        env:
+          EXPO_PUBLIC_API_URL: https://park-share.ro/api
+        run: xcodebuild -workspace frontend.xcworkspace -scheme frontend -configuration Release -sdk iphonesimulator -derivedDataPath build
+
+      - name: Upload iOS Artifact
+        id: upload-ios
+        uses: actions/upload-artifact@v4
+        with:
+          name: ParkShare-iOS-Simulator-App
+          path: frontend/ios/build/Build/Products/Release-iphonesimulator/frontend.app
+          retention-days: 7
+
+      - name: Send Discord Notification (iOS)
+        if: success()
+        run: |
+          if [ -n "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
+            curl -H "Content-Type: application/json" \
+                 -d '{"content": "✅ **iOS Build Successful!**\nDownload Simulator App here: ${{ steps.upload-ios.outputs.artifact-url }}"}' \
+                 ${{ secrets.DISCORD_WEBHOOK_URL }}
+          else
+            echo "Discord Webhook URL not provided."
+          fi

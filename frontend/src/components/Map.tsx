@@ -54,6 +54,7 @@ export const getAvailability = (availableStr: string, reservations: {startTime: 
     }
   }
 
+  if (availableStr === 'Booked by you') return { isAvailable: false, text: 'Booked by you' };
   if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
   
   const parts = availableStr.split('-');
@@ -215,9 +216,13 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
   return <>
     {clusters.map((cluster) => {
       if (isClusteredView || cluster.spots.length > 1) {
+        const hasMySpot = cluster.spots.some((s: any) => s.bookedByMe);
+        const clusterBg = hasMySpot ? '#8B5CF6' : '#86EFAC';
+        const clusterColor = hasMySpot ? '#FFFFFF' : '#14532D';
+
         const icon = new DivIcon({
           className: 'cluster-leaflet-marker',
-          html: `<div class="cluster-marker">${cluster.spots.length}</div>`,
+          html: `<div class="cluster-marker" style="background-color: ${clusterBg}; color: ${clusterColor};">${cluster.spots.length}</div>`,
           iconSize: [44, 44],
           iconAnchor: [22, 22],
         });
@@ -228,7 +233,7 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
             position={cluster.center as any}
             icon={icon}
             eventHandlers={{
-              click: () => map.setView(cluster.center, Math.min(map.getZoom() + 2, 22)),
+              click: () => map.flyTo(cluster.center, Math.min(map.getZoom() + 2, 22), { duration: 0.5 }),
             }}
           />
         );
@@ -244,12 +249,19 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
         ? (isSelected ? '#1E3A8A' : '#3B82F6')
         : (isSelected ? '#14532D' : '#22C55E');
         
-      if (isUnavail) {
+      if (spot.bookedByMe) {
+        bgColor = isSelected ? '#5B21B6' : '#8B5CF6'; // Purple for user's own active booking
+      } else if (isUnavail) {
         bgColor = isSelected ? '#7F1D1D' : '#EF4444';
       }
       
-      const contentHtml = isUnavail
+      const contentHtml = isUnavail && !spot.bookedByMe
         ? `<span class="marker-price" style="font-size:12px;">Unavailable</span>`
+        : spot.bookedByMe
+        ? `<div style="display:flex;align-items:center;">
+             <span class="marker-price" style="font-size:12px;color:#FFFFFF">Your Spot</span>
+             <span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span>
+           </div>`
         : `<div style="display:flex;flex-direction:column;align-items:center;">
              <div><span class="marker-price">${spot.price} RON</span><span class="marker-badge">${isMunicipal ? 'M' : 'P'}</span></div>
              ${avail.text ? `<span style="font-size:11px;font-weight:600;opacity:1;margin-top:2px;">${avail.text}</span>` : ''}
@@ -257,9 +269,9 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
         
       const icon = new DivIcon({
         className: 'custom-leaflet-marker',
-        html: `<div class="marker-content" style="background-color: ${bgColor}; transform: scale(${isSelected ? 1.2 : 1});">${contentHtml}</div>`,
-        iconSize: [80, 30],
-        iconAnchor: [40, 15],
+        html: `<div class="marker-content" style="background-color: ${bgColor}; transform: translate(-50%, -50%) scale(${isSelected ? 1.2 : 1});">${contentHtml}</div>`,
+        iconSize: null as any,
+        iconAnchor: [0, 0],
       });
 
       return (
@@ -292,11 +304,13 @@ const WebUserLocationMarker = ({ userLocation }: { userLocation?: { latitude: nu
   );
 };
 
-export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, destination, userLocation }: {
+export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, onMapMoveStart, onMapMoveEnd, destination, userLocation }: {
   spots: any[];
   selectedSpot: any;
   onSelectSpot: (spot: any) => void;
-  onMapClick?: () => void;
+  onMapClick?: (coords?: { latitude: number, longitude: number }) => void;
+  onMapMoveEnd?: (coords: { latitude: number, longitude: number }) => void;
+  onMapMoveStart?: () => void;
   destination?: MapDestination;
   userLocation?: { latitude: number; longitude: number };
 }, ref) => {
@@ -320,9 +334,9 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
     },
     centerOnLocation: (loc: { latitude: number; longitude: number }) => {
       if (Platform.OS === 'web' && webMapRef.current) {
-        webMapRef.current.setView([loc.latitude, loc.longitude], 19);
+        webMapRef.current.flyTo([loc.latitude, loc.longitude], 19, { duration: 1 });
       } else if (webviewRef.current) {
-        webviewRef.current.injectJavaScript(`if (typeof map !== 'undefined') { map.setView([${loc.latitude}, ${loc.longitude}], 19); } true;`);
+        webviewRef.current.injectJavaScript(`if (typeof map !== 'undefined') { map.flyTo([${loc.latitude}, ${loc.longitude}], 19, { duration: 1 }); } true;`);
       }
     }
   }));
@@ -383,13 +397,13 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
   useEffect(() => {
     if (Platform.OS === 'web' && webMapRef.current) {
       if (selectedSpot) {
-        webMapRef.current.panTo(getCoordinates(selectedSpot));
+        webMapRef.current.flyTo(getCoordinates(selectedSpot), webMapRef.current.getZoom(), { duration: 0.8 });
       }
     } else if (webviewRef.current) {
       let script = `if (typeof updateSelection === 'function') { updateSelection(${JSON.stringify(selectedSpot?.id || '')}); }`;
       if (selectedSpot) {
         const coords = getCoordinates(selectedSpot);
-        script += `if (typeof map !== 'undefined') { map.panTo([${coords[0]}, ${coords[1]}]); }`;
+        script += `if (typeof map !== 'undefined') { map.flyTo([${coords[0]}, ${coords[1]}], map.getZoom(), { duration: 0.8 }); }`;
       }
       script += 'true;';
       webviewRef.current.injectJavaScript(script);
@@ -411,10 +425,20 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
 
   if (Platform.OS === 'web') {
     const WebMapEvents = () => {
+      const map = useMap();
       useMapEvents({
-        click: () => {
+        click: (e: any) => {
           onSelectSpot(null);
-          if (onMapClick) onMapClick();
+          if (onMapClick) onMapClick({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+        },
+        movestart: () => {
+          if (onMapMoveStart) onMapMoveStart();
+        },
+        moveend: () => {
+          if (onMapMoveEnd) {
+            const center = map.getCenter();
+            onMapMoveEnd({ latitude: center.lat, longitude: center.lng });
+          }
         }
       });
       return null;
@@ -434,7 +458,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           .marker-content {
             display: flex;
             align-items: center;
-            padding: 6px 8px;
+            padding: 6px 12px;
             border-radius: 9999px;
             color: white;
             font-family: 'Space Grotesk', sans-serif;
@@ -445,6 +469,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             transition: transform 0.2s;
             white-space: nowrap;
           }
+          .marker-content:hover { transform: translate(-50%, -50%) scale(1.05) !important; }
           .marker-price { margin-right: 4px; }
           .marker-badge {
             background-color: rgba(255,255,255,0.2);
@@ -537,7 +562,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           .marker-content {
             display: flex;
             align-items: center;
-            padding: 6px 8px;
+            padding: 6px 12px;
             border-radius: 9999px;
             color: white;
             font-family: sans-serif;
@@ -548,6 +573,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             transition: transform 0.2s, background-color 0.2s;
             cursor: pointer;
           }
+          .marker-content:hover { transform: translate(-50%, -50%) scale(1.05) !important; }
           .marker-price { margin-right: 4px; }
           .marker-badge {
             background-color: rgba(255,255,255,0.2);
@@ -689,6 +715,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
               }
             }
 
+            if (availableStr === 'Booked by you') return { isAvailable: false, text: 'Booked by you' };
             if (!availableStr || availableStr === '24/7') return { isAvailable: true, text: '' };
             var parts = availableStr.split('-');
             if (parts.length !== 2) return { isAvailable: true, text: '' };
@@ -717,14 +744,19 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             var isUnavail = !avail.isAvailable;
             
             var color = isMunicipal ? (isSelected ? '#1E3A8A' : '#3B82F6') : (isSelected ? '#14532D' : '#22C55E');
-            if (isUnavail) {
+            if (spot.bookedByMe) {
+              color = isSelected ? '#5B21B6' : '#8B5CF6';
+            } else if (isUnavail) {
               color = isSelected ? '#7F1D1D' : '#EF4444';
             }
             
-            var scale = isSelected ? 'scale(1.2)' : 'scale(1)';
+            var scale = isSelected ? 'translate(-50%, -50%) scale(1.2)' : 'translate(-50%, -50%) scale(1)';
             var contentHtml = '';
-            if (isUnavail) {
+            
+            if (isUnavail && !spot.bookedByMe) {
               contentHtml = '<span class="marker-price" style="font-size:12px;">Unavailable</span>';
+            } else if (spot.bookedByMe) {
+              contentHtml = '<div style="display:flex;align-items:center;"><span class="marker-price" style="font-size:12px;">Your Spot</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span></div>';
             } else {
               contentHtml = '<div style="display:flex;flex-direction:column;align-items:center;">' +
                 '<div><span class="marker-price">' + spot.price + ' RON</span><span class="marker-badge">' + (isMunicipal ? 'M' : 'P') + '</span></div>' +
@@ -769,16 +801,20 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
 
             clusters.forEach(function(cluster) {
               if (zoom < ${CLUSTER_ZOOM_THRESHOLD} || cluster.spots.length > 1) {
+                var hasMySpot = cluster.spots.some(function(s) { return s.bookedByMe; });
+                var clusterBg = hasMySpot ? '#8B5CF6' : '#86EFAC';
+                var clusterColor = hasMySpot ? '#FFFFFF' : '#14532D';
+
                 L.marker(cluster.center, {
                   icon: L.divIcon({
                     className: 'cluster-leaflet-marker',
-                    html: '<div class="cluster-marker">' + cluster.spots.length + '</div>',
+                    html: '<div class="cluster-marker" style="background-color: ' + clusterBg + '; color: ' + clusterColor + ';">' + cluster.spots.length + '</div>',
                     iconSize: [44, 44],
                     iconAnchor: [22, 22]
                   })
                 }).addTo(markersLayer).on('click', function(e) {
                   L.DomEvent.stopPropagation(e);
-                  map.setView(cluster.center, Math.min(map.getZoom() + 2, 22));
+                  map.flyTo(cluster.center, Math.min(map.getZoom() + 2, 22), { duration: 0.5 });
                 });
                 return;
               }
@@ -788,8 +824,8 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
                 icon: L.divIcon({
                   className: 'custom-leaflet-marker',
                   html: markerHtml(spot),
-                  iconSize: [80, 30],
-                  iconAnchor: [40, 15]
+                  iconSize: null,
+                  iconAnchor: [0, 0]
                 })
               }).addTo(markersLayer).on('click', function(e) {
                 L.DomEvent.stopPropagation(e);
@@ -803,10 +839,17 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             refreshTimer = setTimeout(renderSpots, 350);
           }
 
-          map.on('zoomend moveend', scheduleRefresh);
+          map.on('movestart zoomstart', function() {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'map_movestart' }));
+          });
+          map.on('zoomend moveend', function() {
+            scheduleRefresh();
+            var center = map.getCenter();
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'map_moveend', latitude: center.lat, longitude: center.lng }));
+          });
           
-          map.on('click', function() {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'map_click' }));
+          map.on('click', function(e) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'mapClick', latitude: e.latlng.lat, longitude: e.latlng.lng }));
           });
 
           function updateSelection(nextSelectedId) {

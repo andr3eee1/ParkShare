@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard, ActivityIndicator, Image } from 'react-native';
+import { Keyboard, View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Platform, Modal, useWindowDimensions, Pressable, Clipboard, ActivityIndicator, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -7,13 +7,16 @@ import * as Location from 'expo-location';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+import { apiClient } from '../api/client';
 import { GlassPanel } from '../components/GlassPanel';
+import { SlideUpView } from "../components/SlideUpView";
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePasses } from '../context/PassContext';
+
 import {
-  createAllParkingSpots,
   DEFAULT_LOCATION,
   searchDemoLocations,
   DemoLocation,
@@ -118,7 +121,7 @@ const WheelPicker = ({ items, selectedValue, onValueChange, disabledItems = [], 
 
 export const ExploreScreen = () => {
   const navigation = useNavigation<any>();
-  const { user, token } = useContext(AuthContext);
+  const { user, token, updateUser } = useContext(AuthContext) as any;
   const { getPassForSpot, isParkPlusActive } = usePasses();
   const [selectedSpot, setSelectedSpot] = useState<any | null>(null);
   const [spots, setSpots] = useState<any[]>([]);
@@ -129,19 +132,80 @@ export const ExploreScreen = () => {
   const [searchedLocation, setSearchedLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [activeReservation, setActiveReservation] = useState<any | null>(null);
+  const [currentTimer, setCurrentTimer] = useState<number>(0);
 
   useEffect(() => {
-    const fetchSpots = async () => {
-      try {
-        const res = await fetch('http://pana.com.ro:8745/spots');
-        const data = await res.json();
-        if (res.ok) setSpots(data.spots);
-      } catch (err) {
-        console.error('Failed to fetch spots:', err);
+    let interval: any;
+    if (activeReservation) {
+      interval = setInterval(() => {
+        setCurrentTimer(Date.now());
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeReservation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchActiveReservation = async () => {
+        if (!token) {
+          setActiveReservation(null);
+          return;
+        }
+        try {
+          const res = await apiClient.get('/bookings/me');
+          if (res.data.bookings) {
+            const active = res.data.bookings.find((b: any) => b.status === 'ACTIVE');
+            setActiveReservation(active || null);
+            if (active && active.spot) {
+              setTimeout(() => {
+                mapRef.current?.centerOnLocation({ latitude: active.spot.latitude, longitude: active.spot.longitude });
+              }, 500);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch reservations:', err);
+        }
+      };
+      fetchActiveReservation();
+    }, [token])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchSpots = async () => {
+        try {
+          const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
+          const data = await res.json();
+          if (res.ok) setSpots(data.spots);
+        } catch (err) {
+          console.error('Failed to fetch spots:', err);
+        }
+      };
+      fetchSpots();
+    }, [])
+  );
+
+  const visibleSpots = useMemo(() => {
+    const now = new Date();
+    return spots.map(spot => {
+      let activeRes = null;
+      if (spot.reservations && spot.reservations.length > 0) {
+        // Backend only returns ACTIVE reservations
+        activeRes = spot.reservations[0];
       }
-    };
-    fetchSpots();
-  }, []);
+      
+      if (activeRes) {
+        // If it's booked by someone else, hide it
+        if (!user || activeRes.userId !== user.id) {
+          return null;
+        }
+        // If it's booked by me, mark it
+        return { ...spot, bookedByMe: true };
+      }
+      return spot;
+    }).filter(Boolean);
+  }, [spots, user]);
 
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>(['All']);
@@ -238,12 +302,25 @@ export const ExploreScreen = () => {
 
   const mapRef = useRef<any>(null);
   const parkingSpots = useMemo(() => {
-    return createAllParkingSpots().filter(spot => {
+    const backendSpots = visibleSpots.map((s: any) => ({
+      ...s,
+      type: 'private',
+      host: s.owner ? `${s.owner.firstName} ${s.owner.lastName}` : 'ParkShare User',
+      distance: 'Live location',
+      available: s.bookedByMe ? 'Booked by you' : 'Available Now',
+      reservations: [],
+      address: s.description ? s.description : `GPS: ${s.latitude.toFixed(4)}, ${s.longitude.toFixed(4)}`,
+      evCharging: false,
+    }));
+    
+    const allSpots = [...backendSpots];
+
+    return allSpots.filter((spot: any) => {
       // First, always filter out currently active spots if the request implied availability? 
       // The prompt didn't say "don't filter unavailable", just "remove the verified only and available [buttons]".
       // I'll keep the base availability check (unless the user meant to see ALL spots including unavailable ones).
       const avail = getAvailability(spot.available, spot.reservations || []);
-      if (!avail.isAvailable) return false;
+      if (!avail.isAvailable && !spot.bookedByMe) return false;
 
       // Filter by max price
       if (maxPrice !== null && spot.price > maxPrice) return false;
@@ -289,7 +366,7 @@ export const ExploreScreen = () => {
       
       return passes;
     });
-  }, [activeFilters, maxPrice, timeLimit]);
+  }, [activeFilters, maxPrice, timeLimit, visibleSpots]);
   const [searchResults, setSearchResults] = useState<DemoLocation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -360,10 +437,11 @@ export const ExploreScreen = () => {
   // Modal State
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | 'custom'>('custom');
 
   useEffect(() => {
     if (token) {
-      fetch('http://pana.com.ro:8745/vehicles', {
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/vehicles`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => res.json())
@@ -373,8 +451,10 @@ export const ExploreScreen = () => {
           const defaultVehicle = data.vehicles.find((v: any) => v.isDefault);
           if (defaultVehicle) {
             setVehiclePlate(defaultVehicle.plate);
+            setSelectedVehicleId(defaultVehicle.id);
           } else {
             setVehiclePlate(data.vehicles[0].plate);
+            setSelectedVehicleId(data.vehicles[0].id);
           }
         }
       })
@@ -484,7 +564,7 @@ export const ExploreScreen = () => {
         spots={parkingSpots}
         selectedSpot={selectedSpot}
         onSelectSpot={setSelectedSpot}
-        onMapClick={() => {
+        onMapClick={(coords) => {
           setFiltersVisible(false);
           setActiveDropdown(null);
         }}
@@ -498,7 +578,7 @@ export const ExploreScreen = () => {
     if (selectedSpot) return null;
     return (
     <>
-      <View pointerEvents="box-none" style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { pointerEvents: 'box-none' as any }]}>
           <GlassPanel borderRadius={tokens.radii.topPanel} style={styles.headerPanel}>
             <View style={styles.headerTopRow}>
               <Text style={styles.wordmark}>ParkShare</Text>
@@ -792,16 +872,8 @@ export const ExploreScreen = () => {
   const renderMapControls = () => (
     <>
       {/* Map Controls */}
-        <View pointerEvents="box-none" style={[styles.mapControls, !isDesktop && selectedSpot && { bottom: 300 }]}>
-          <GlassPanel borderRadius={12} style={styles.controlGroup}>
-            <TouchableOpacity style={styles.controlButton} onPress={handleZoomIn}>
-              <Ionicons name="add" size={24} color={tokens.colors.primaryText} />
-            </TouchableOpacity>
-            <View style={styles.controlDivider} />
-            <TouchableOpacity style={styles.controlButton} onPress={handleZoomOut}>
-              <Ionicons name="remove" size={24} color={tokens.colors.primaryText} />
-            </TouchableOpacity>
-          </GlassPanel>
+        <View style={[styles.mapControls, !isDesktop && selectedSpot && { bottom: 300 }, { pointerEvents: 'box-none' as any }]}>
+
           <GlassPanel borderRadius={12} style={styles.controlSingle}>
             <TouchableOpacity style={styles.controlButton} onPress={() => mapRef.current?.centerOnLocation(userLocation || DEFAULT_USER_LOCATION)}>
               <Ionicons name="navigate" size={20} color={tokens.colors.primaryText} />
@@ -815,7 +887,7 @@ export const ExploreScreen = () => {
     <>
       {/* Booking Sheet (Simplified) */}
         {selectedSpot && (
-          <View pointerEvents="box-none" style={isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper}>
+          <SlideUpView style={[isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper, { pointerEvents: 'box-none' as any }]}>
             <GlassPanel borderRadius={tokens.radii.upperSheet} style={isDesktop ? [styles.bookingSheet, { marginBottom: 0, marginHorizontal: 0 }] : styles.bookingSheet}>
               <View style={styles.sheetHeader}>
                 <View style={{ flex: 1 }}>
@@ -834,7 +906,11 @@ export const ExploreScreen = () => {
                 </View>
               </View>
 
-              {(sliderMin > sliderMax || isCurrentlyOccupied) ? (
+              {selectedSpot.bookedByMe ? (
+                <View style={[styles.municipalWarning, { backgroundColor: '#E8F5E9', borderColor: '#A7F3D0' }]}>
+                  <Text style={[styles.municipalWarningText, { color: tokens.colors.availabilityGreen }]}>This is your active reservation.</Text>
+                </View>
+              ) : (sliderMin > sliderMax || isCurrentlyOccupied) ? (
                 <View style={styles.municipalWarning}>
                   <Text style={styles.municipalWarningText}>This spot is currently unavailable.</Text>
                 </View>
@@ -858,7 +934,7 @@ export const ExploreScreen = () => {
                 <Text style={[styles.reserveButtonText, { color: tokens.colors.primaryText }]}>See Details</Text>
               </TouchableOpacity>
             </GlassPanel>
-          </View>
+          </SlideUpView>
         )}
     </>
   );
@@ -879,87 +955,96 @@ export const ExploreScreen = () => {
 
               {/* Vehicle Input */}
               <View style={styles.modalSection}>
-                <Text style={styles.sectionLabel}>License Plate</Text>
-                <TextInput
-                  style={styles.plateInput}
-                  placeholder="e.g. B 10 PRK"
-                  value={vehiclePlate}
-                  onChangeText={setVehiclePlate}
-                  autoCapitalize="characters"
-                  placeholderTextColor={tokens.colors.secondaryText}
-                />
+                <Text style={styles.sectionLabel}>{vehicles.length > 0 ? 'Select Vehicle' : 'License Plate'}</Text>
+                {vehicles.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                    {vehicles.map((v) => (
+                      <TouchableOpacity 
+                        key={v.id} 
+                        style={[styles.vehicleChip, selectedVehicleId === v.id && styles.vehicleChipSelected]}
+                        onPress={() => {
+                          setSelectedVehicleId(v.id);
+                          setVehiclePlate(v.plate);
+                        }}
+                      >
+                        <Ionicons name="car" size={16} color={selectedVehicleId === v.id ? tokens.colors.white : tokens.colors.primaryText} style={{ marginRight: 6 }} />
+                        <Text style={[styles.vehicleChipText, selectedVehicleId === v.id && styles.vehicleChipTextSelected]}>
+                          {v.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity 
+                      style={[styles.vehicleChip, selectedVehicleId === 'custom' && styles.vehicleChipSelected]}
+                      onPress={() => setSelectedVehicleId('custom')}
+                    >
+                      <Ionicons name="pencil" size={16} color={selectedVehicleId === 'custom' ? tokens.colors.white : tokens.colors.primaryText} style={{ marginRight: 6 }} />
+                      <Text style={[styles.vehicleChipText, selectedVehicleId === 'custom' && styles.vehicleChipTextSelected]}>
+                        Custom
+                      </Text>
+                    </TouchableOpacity>
+                  </ScrollView>
+                )}
+
+                {selectedVehicleId === 'custom' && (
+                  <TextInput
+                    style={styles.plateInput}
+                    placeholder="e.g. B 10 PRK"
+                    value={vehiclePlate}
+                    onChangeText={setVehiclePlate}
+                    autoCapitalize="characters"
+                    placeholderTextColor={tokens.colors.secondaryText}
+                  />
+                )}
               </View>
 
-              {/* Booking Time Range */}
+              {/* Booking Info */}
               <View style={styles.modalSection}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <View>
-                    <Text style={styles.sectionLabel}>Starting</Text>
-                    <Text style={[styles.arrivalSliderValue, { color: tokens.colors.availabilityGreen }]}>Right Now</Text>
-                  </View>
-                  <Ionicons name="arrow-forward" size={24} color={tokens.colors.secondaryText} />
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.sectionLabel}>Leaving By</Text>
-                    <Text style={styles.arrivalSliderValue}>{formatMinutes(departureMinutes)}</Text>
-                  </View>
-                </View>
-
-                <Slider
-                  style={{ width: '100%', height: 40 }}
-                  minimumValue={sliderMin}
-                  maximumValue={sliderMax}
-                  step={5}
-                  value={departureMinutes}
-                  onValueChange={setDepartureMinutes}
-                  minimumTrackTintColor={tokens.colors.primaryText}
-                  maximumTrackTintColor="#D1D5DB"
-                  thumbTintColor={tokens.colors.primaryText}
-                />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 }}>
-                  <Text style={styles.sliderLabel}>{formatMinutes(sliderMin)}</Text>
-                  <Text style={styles.sliderLabel}>{formatMinutes(sliderMax)}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                  <Ionicons name="time-outline" size={24} color={tokens.colors.availabilityGreen} style={{ marginRight: 8 }} />
+                  <Text style={{ fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.primaryText, flex: 1 }}>
+                    Pay-as-you-go. Timer starts when you book. You'll only be charged for the time you use when you leave.
+                  </Text>
                 </View>
               </View>
 
               {/* Receipt */}
               <View style={styles.receiptContainer}>
                 <View style={styles.receiptRow}>
-                  <Text style={styles.receiptLabel}>Parking ({formatDurationDisplay(totalDurationMinutes)} × {selectedSpot.price} RON/hr)</Text>
-                  <Text style={styles.receiptValue}>{baseParkingCost.toFixed(2)} RON</Text>
+                  <Text style={styles.receiptLabel}>Rate</Text>
+                  <Text style={styles.receiptValue}>{selectedSpot.price} RON/hr</Text>
                 </View>
-                {parkPlusTimeDeductionMinutes > 0 && (
-                  <View style={styles.receiptRow}>
-                    <Text style={styles.receiptLabel}>Park Plus time benefit (15 min)</Text>
-                    <Text style={styles.discountValue}>-{timeDeductionValue.toFixed(2)} RON</Text>
-                  </View>
-                )}
                 {isParkPlusActive && (
                   <View style={styles.receiptRow}>
-                    <Text style={styles.receiptLabel}>Park Plus discount (15%)</Text>
-                    <Text style={styles.discountValue}>-{parkPlusDiscount.toFixed(2)} RON</Text>
+                    <Text style={styles.receiptLabel}>Park Plus Discount</Text>
+                    <Text style={styles.discountValue}>-15% on final price</Text>
                   </View>
                 )}
                 <View style={styles.receiptRow}>
                   <Text style={styles.receiptLabel}>Security Deposit (Refundable)</Text>
-                  <Text style={[styles.receiptValue, hasAnyPass && styles.waivedValue]}>{hasAnyPass ? 'WAIVED' : `${securityDeposit} RON`}</Text>
+                  <Text style={[styles.receiptValue, hasAnyPass && styles.waivedValue]}>{hasAnyPass ? 'WAIVED' : `50.00 RON`}</Text>
                 </View>
                 {appliedPass && (
                   <Text style={styles.passAppliedText}>{appliedPass.name} applied · GPS check-in enabled</Text>
                 )}
                 <View style={styles.receiptDivider} />
                 <View style={styles.receiptRow}>
-                  <Text style={styles.receiptTotalLabel}>Total</Text>
-                  <Text style={styles.receiptTotalValue}>{(parkingCost + securityDeposit).toFixed(2)} RON</Text>
+                  <Text style={styles.receiptTotalLabel}>Total Due Now</Text>
+                  <Text style={styles.receiptTotalValue}>{hasAnyPass ? '0.00' : '50.00'} RON</Text>
                 </View>
               </View>
 
               <TouchableOpacity style={styles.reserveButton} onPress={() => {
                 setModalVisible(false);
                 (navigation as any).navigate('PaymentCheckout', {
-                  amount: parkingCost + securityDeposit,
+                  amount: hasAnyPass ? 0 : 50,
                   title: `Book ${selectedSpot.name}`,
                   actionType: 'BOOKING',
-                  targetId: selectedSpot.id
+                  targetId: selectedSpot.id,
+                  startTime: (() => {
+                    const d = new Date();
+                    d.setHours(Math.floor(actualStartMinutes / 60), actualStartMinutes % 60, 0, 0);
+                    return d.toISOString();
+                  })()
                 });
               }}>
                 <Text style={styles.reserveButtonText}>Proceed to Payment</Text>
@@ -1028,13 +1113,138 @@ export const ExploreScreen = () => {
   );
 
 
+
+  const handleEndReservation = async () => {
+    if (!activeReservation) return;
+    console.log('End Reservation Tapped');
+
+    const endParking = async () => {
+      try {
+        const res = await apiClient.put(`/bookings/${activeReservation.id}/status`, { status: 'COMPLETED' });
+        setActiveReservation(null);
+        
+        if (res.data.reservation && updateUser && user) {
+          const finalCost = res.data.reservation.totalPrice;
+          const userRes = await apiClient.get('/auth/me');
+          if (userRes.data.user) {
+            updateUser(userRes.data.user);
+          }
+          
+          const msg = `Your final cost was ${finalCost.toFixed(2)} RON. Your security deposit has been refunded minus this cost.`;
+          if (Platform.OS === 'web') {
+            window.alert('Parking Ended\n\n' + msg);
+          } else {
+            Alert.alert('Parking Ended', msg);
+          }
+        }
+
+        const spotsRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
+        const data = await spotsRes.json();
+        if (spotsRes.ok) setSpots(data.spots);
+
+      } catch (err) {
+        console.error('Failed to end reservation', err);
+        if (Platform.OS === 'web') {
+          window.alert('Error: Failed to end reservation');
+        } else {
+          Alert.alert('Error', 'Failed to end reservation');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmEnd = window.confirm(`Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`);
+      if (confirmEnd) {
+        endParking();
+      }
+    } else {
+      Alert.alert(
+        "End Reservation",
+        `Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "End Parking", style: "destructive", onPress: endParking }
+        ]
+      );
+    }
+  };
+
+  const renderActiveReservation = () => {
+    if (!activeReservation) return null;
+    
+    // Use currentTimer to ensure we get a fresh time if available
+    const now = currentTimer ? new Date(currentTimer) : new Date();
+    const start = new Date(activeReservation.startTime);
+    const diffMs = Math.max(0, now.getTime() - start.getTime());
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffSecs = Math.floor((diffMs % 60000) / 1000);
+    
+    // Calculate live cost
+    const spotPrice = activeReservation.spot?.price || 0;
+    const durationHours = diffMs / (1000 * 60 * 60);
+    const liveCost = durationHours * spotPrice;
+
+    const timeString = `${Math.floor(diffMins / 60).toString().padStart(2, '0')}:${(diffMins % 60).toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
+    
+    return (
+      <SlideUpView draggable minimizedOffset={160} style={[
+        styles.activeReservationContainer, 
+        !isDesktop && { position: 'absolute', margin: 0, left: 0, right: 0, bottom: 0 }
+      ]}>
+        <GlassPanel style={[styles.activeReservationPanel, { padding: 16, backgroundColor: tokens.colors.white }]}>
+          <View style={{ width: 32, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 12 }} />
+          
+          <View style={{ alignItems: 'center', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: tokens.colors.availabilityGreen, marginRight: 6 }} />
+              <Text style={{ fontFamily: tokens.typography.headingMedium, fontSize: 12, color: tokens.colors.availabilityGreen, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Parking Active
+              </Text>
+            </View>
+            <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 32, color: tokens.colors.primaryText, marginVertical: 0, fontVariant: ['tabular-nums'] }}>
+              {timeString}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontFamily: tokens.typography.bodyMedium, fontSize: 13, color: tokens.colors.secondaryText }}>
+                {activeReservation.spot?.name || 'Your spot'}
+              </Text>
+              {activeReservation.spot && (
+                <TouchableOpacity 
+                  style={{ marginLeft: 6, padding: 4, backgroundColor: '#EEF2F5', borderRadius: 12 }}
+                  onPress={() => mapRef.current?.centerOnLocation({ latitude: activeReservation.spot.latitude, longitude: activeReservation.spot.longitude })}
+                >
+                  <Ionicons name="navigate" size={14} color={tokens.colors.municipalTeal} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 10, borderRadius: 10, marginBottom: 12 }}>
+             <Text style={{ fontFamily: tokens.typography.bodyMedium, fontSize: 13, color: tokens.colors.secondaryText }}>Current Cost</Text>
+             <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 16, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
+          </View>
+
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            style={{ backgroundColor: tokens.colors.availabilityGreen, padding: 14, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+            onPress={handleEndReservation}
+          >
+            <Ionicons name="stop-circle" size={18} color={tokens.colors.white} style={{ marginRight: 6 }} />
+            <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.headingBold, fontSize: 15 }}>End Reservation</Text>
+          </TouchableOpacity>
+        </GlassPanel>
+      </SlideUpView>
+    );
+  };
+
   return (
     <>
       {isDesktop ? (
         <View style={[styles.container, { flexDirection: 'row' }]}>
-          <View style={{ width: 420, height: '100%', backgroundColor: tokens.colors.paleMapBackground, zIndex: 10, shadowColor: '#000', shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.1, shadowRadius: 12, padding: 16 }}>
+          <View style={{ width: 420, height: '100%', backgroundColor: tokens.colors.paleMapBackground, zIndex: 10, boxShadow: '4px 0px 12px rgba(0,0,0,0.1)', padding: 16 }}>
             <SafeAreaView style={{ flex: 1 }}>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+                {renderActiveReservation()}
                 {renderSearchPanel()}
                 {renderBookingSheet()}
               </ScrollView>
@@ -1048,9 +1258,10 @@ export const ExploreScreen = () => {
       ) : (
         <View style={styles.container}>
           {renderMap()}
-          <SafeAreaView pointerEvents="box-none" style={styles.safeArea}>
+          <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any }]}>
             {renderSearchPanel()}
             {renderMapControls()}
+            {renderActiveReservation()}
             {renderBookingSheet()}
           </SafeAreaView>
         </View>
@@ -1071,6 +1282,22 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  activeReservationContainer: {
+    zIndex: 100,
+  },
+  activeReservationPanel: {
+    padding: 20,
+    backgroundColor: tokens.colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    shadowColor: tokens.colors.primaryText,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   headerContainer: {
     position: 'absolute',
@@ -1243,6 +1470,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    zIndex: 200,
   },
   bookingSheet: {
     marginHorizontal: 16,
@@ -1399,6 +1627,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: tokens.colors.secondaryText,
     marginBottom: 12,
+  },
+  vehicleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2F5',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  vehicleChipSelected: {
+    backgroundColor: tokens.colors.primaryText,
+  },
+  vehicleChipText: {
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
+    color: tokens.colors.primaryText,
+  },
+  vehicleChipTextSelected: {
+    color: tokens.colors.white,
+    fontWeight: '600',
   },
   plateInput: {
     backgroundColor: tokens.colors.white,

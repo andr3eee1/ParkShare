@@ -1,10 +1,11 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState, useContext, useRef } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { Map } from '../components/Map';
 
 export const AddSpotScreen = () => {
   const { token } = useContext(AuthContext);
@@ -13,19 +14,20 @@ export const AddSpotScreen = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+  const [latitude, setLatitude] = useState(44.4268);
+  const [longitude, setLongitude] = useState(26.1025);
   const [loading, setLoading] = useState(false);
+  const pinAnimation = useRef(new Animated.Value(0)).current;
 
   const handleSubmit = async () => {
-    if (!name || !price || !latitude || !longitude) {
+    if (!name || !price) {
       Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch('http://pana.com.ro:8745/spots', {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,8 +37,8 @@ export const AddSpotScreen = () => {
           name,
           description,
           price: parseFloat(price),
-          latitude: parseFloat(latitude),
-          longitude: parseFloat(longitude)
+          latitude,
+          longitude
         })
       });
 
@@ -76,11 +78,37 @@ export const AddSpotScreen = () => {
           <Text style={styles.label}>Price (RON / hr) *</Text>
           <TextInput style={styles.input} keyboardType="numeric" value={price} onChangeText={setPrice} placeholder="5.00" />
 
-          <Text style={styles.label}>Latitude *</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={latitude} onChangeText={setLatitude} placeholder="44.4325" />
+          <Text style={styles.label}>Location * (Pan and zoom to place pin)</Text>
+          <View style={styles.mapContainer}>
+            <Map 
+              spots={[]}
+              selectedSpot={null}
+              onSelectSpot={() => {}}
+              onMapMoveStart={() => {
+                Animated.spring(pinAnimation, {
+                  toValue: -20,
+                  useNativeDriver: true,
+                  speed: 20
+                }).start();
+              }}
+              onMapMoveEnd={(coords) => {
+                setLatitude(coords.latitude);
+                setLongitude(coords.longitude);
+                Animated.spring(pinAnimation, {
+                  toValue: 0,
+                  useNativeDriver: true,
+                  bounciness: 20
+                }).start();
+              }}
+            />
+            {/* Center fixed pin with drop animation */}
+            <Animated.View style={[styles.centerPin, { transform: [{ translateY: pinAnimation }], pointerEvents: 'none' }]}>
+              <Ionicons name="location" size={40} color={tokens.colors.municipalTeal} style={{ marginTop: -20 }} />
+              {/* Add a tiny shadow dot to show exactly where it's dropping */}
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.3)', position: 'absolute', bottom: -5 }} />
+            </Animated.View>
+          </View>
 
-          <Text style={styles.label}>Longitude *</Text>
-          <TextInput style={styles.input} keyboardType="numeric" value={longitude} onChangeText={setLongitude} placeholder="26.1039" />
 
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
             {loading ? <ActivityIndicator color={tokens.colors.white} /> : <Text style={styles.submitText}>Create Spot</Text>}
@@ -120,5 +148,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
   },
-  submitText: { color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 }
+  submitText: { color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 },
+  mapContainer: { height: 250, borderRadius: 12, overflow: 'hidden', marginBottom: 20, borderWidth: 1, borderColor: '#E5E7EB', position: 'relative' },
+  centerPin: { position: 'absolute', top: '50%', left: '50%', marginLeft: -20, marginTop: -20, zIndex: 10, alignItems: 'center', justifyContent: 'center' }
 });

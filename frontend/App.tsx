@@ -56,7 +56,6 @@ export default function App() {
 
   const MainNavigator = () => {
     const { user } = useContext(AuthContext);
-    const isProvider = user?.role === 'PROVIDER' || user?.role === 'ADMIN';
     const insets = require('react-native-safe-area-context').useSafeAreaInsets();
     const bottomPadding = Math.max(insets.bottom, 12);
     
@@ -89,18 +88,10 @@ export default function App() {
             }
           })}
         >
-          {!isProvider ? (
-            <>
-              <Tab.Screen name="Explore" component={ExploreScreen} />
-              <Tab.Screen name="History" component={HistoryScreen} />
-              <Tab.Screen name="Passes" component={PassesScreen} />
-            </>
-          ) : (
-            <>
-              <Tab.Screen name="My Spots" component={MySpotsScreen} />
-              <Tab.Screen name="History" component={HistoryScreen} />
-            </>
-          )}
+          <Tab.Screen name="Explore" component={ExploreScreen} />
+          <Tab.Screen name="My Spots" component={MySpotsScreen} />
+          <Tab.Screen name="History" component={HistoryScreen} />
+          <Tab.Screen name="Passes" component={PassesScreen} />
           <Tab.Screen name="Account" component={AccountScreen} />
         </Tab.Navigator>
     );

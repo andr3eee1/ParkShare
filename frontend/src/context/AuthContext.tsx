@@ -1,31 +1,5 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { Platform } from 'react-native';
-// Safe cross-platform storage wrapper
-const Storage = {
-  getItem: async (key: string): Promise<string | null> => {
-    if (Platform.OS === 'web') {
-      return window.localStorage.getItem(key);
-    }
-    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-    return await AsyncStorage.getItem(key);
-  },
-  setItem: async (key: string, value: string) => {
-    if (Platform.OS === 'web') {
-      window.localStorage.setItem(key, value);
-    } else {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      await AsyncStorage.setItem(key, value);
-    }
-  },
-  removeItem: async (key: string) => {
-    if (Platform.OS === 'web') {
-      window.localStorage.removeItem(key);
-    } else {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      await AsyncStorage.removeItem(key);
-    }
-  }
-};
+import React, { createContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type User = {
   id: string;
@@ -63,19 +37,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
-        const storedToken = await Storage.getItem('userToken');
-        const storedUser = await Storage.getItem('userData');
+        const storedToken = await AsyncStorage.getItem('userToken');
+        const storedUser = await AsyncStorage.getItem('userData');
         if (storedToken && storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
             if (parsedUser && typeof parsedUser === 'object') {
               setToken(storedToken);
               setUser(parsedUser);
+
+              // Fetch the latest user profile to sync wallet balance and other data
+              const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+              try {
+                const response = await fetch(`${apiUrl}/auth/me`, {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${storedToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                });
+
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.user) {
+                    setUser(data.user);
+                    await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+                  }
+                } else if (response.status === 404) {
+                  // Fallback: If /auth/me is not deployed yet, use PUT /profile with empty body
+                  const fallbackResponse = await fetch(`${apiUrl}/auth/profile`, {
+                    method: 'PUT',
+                    headers: {
+                      'Authorization': `Bearer ${storedToken}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({}),
+                  });
+                  if (fallbackResponse.ok) {
+                    const fallbackData = await fallbackResponse.json();
+                    if (fallbackData.user) {
+                      setUser(fallbackData.user);
+                      await AsyncStorage.setItem('userData', JSON.stringify(fallbackData.user));
+                    }
+                  }
+                }
+              } catch (networkError) {
+                console.warn('Could not sync user profile from server:', networkError);
+              }
             }
           } catch (parseError) {
             // Corrupted data, clear it
-            await Storage.removeItem('userToken');
-            await Storage.removeItem('userData');
+            await AsyncStorage.removeItem('userToken');
+            await AsyncStorage.removeItem('userData');
           }
         }
       } catch (e) {
@@ -90,24 +103,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (userData: User, tokenData: string) => {
     setUser(userData);
     setToken(tokenData);
-    await Storage.setItem('userToken', tokenData);
-    await Storage.setItem('userData', JSON.stringify(userData));
+    await AsyncStorage.setItem('userToken', tokenData);
+    await AsyncStorage.setItem('userData', JSON.stringify(userData));
   };
 
   const updateUser = async (userData: User) => {
     setUser(userData);
-    await Storage.setItem('userData', JSON.stringify(userData));
+    await AsyncStorage.setItem('userData', JSON.stringify(userData));
   };
 
   const logout = async () => {
     setUser(null);
     setToken(null);
-    await Storage.removeItem('userToken');
-    await Storage.removeItem('userData');
+    await AsyncStorage.removeItem('userToken');
+    await AsyncStorage.removeItem('userData');
   };
 
+  const authContextValue = useMemo(() => ({
+    user,
+    token,
+    isLoading,
+    login,
+    updateUser,
+    logout
+  }), [user, token, isLoading]);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUser }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );

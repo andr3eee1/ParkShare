@@ -79,11 +79,12 @@ model Reservation {
   spot        ParkingSpot @relation(fields: [spotId], references: [id])
   userId      String
   user        User     @relation(fields: [userId], references: [id])
-  startTime   DateTime
-  endTime     DateTime
-  totalPrice  Float
-  status      String   @default("ACTIVE") // 'ACTIVE', 'COMPLETED', 'CANCELLED'
-  createdAt   DateTime @default(now())
+  startTime       DateTime
+  endTime         DateTime?
+  totalPrice      Float?
+  securityDeposit Float       @default(50.0)
+  status          String      @default("ACTIVE") // 'ACTIVE', 'COMPLETED', 'CANCELLED'
+  createdAt       DateTime    @default(now())
 }
 
 model Vehicle {

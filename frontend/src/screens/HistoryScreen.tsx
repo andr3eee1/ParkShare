@@ -1,9 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { ActivityIndicator } from 'react-native';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../components/GlassPanel';
 import { tokens } from '../theme/tokens';
+import { apiClient } from '../api/client';
+
 
 type BookingStatus = 'Upcoming' | 'Completed' | 'Cancelled';
 type HistoryFilter = 'All' | BookingStatus;
@@ -81,11 +85,53 @@ const statusColors: Record<BookingStatus, { background: string; text: string; ic
 };
 
 export const HistoryScreen = () => {
+  const { token } = useContext(AuthContext);
   const [activeFilter, setActiveFilter] = useState<HistoryFilter>('All');
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      const res = await apiClient.get('/bookings/me');
+      // Transform backend bookings to UI format
+      const transformed = res.data.bookings.map((b: any) => {
+        const startDate = new Date(b.startTime);
+        const endDate = new Date(b.endTime);
+        
+        let status = 'Completed';
+        if (b.status === 'ACTIVE') status = 'Upcoming';
+        else if (b.status === 'CANCELLED') status = 'Cancelled';
+          
+        const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+
+        return {
+          id: b.id.substring(0, 8).toUpperCase(),
+          location: b.spot.name,
+          address: 'Lat: ' + b.spot.latitude + ' Lng: ' + b.spot.longitude,
+          date: startDate.toLocaleDateString(),
+          time: `${startDate.getHours()}:${startDate.getMinutes().toString().padStart(2, '0')} - ${endDate.getHours()}:${endDate.getMinutes().toString().padStart(2, '0')}`,
+          duration: `${hours.toFixed(1)} hours`,
+          vehicle: 'My Vehicle',
+          total: `${b.totalPrice.toFixed(2)} RON`,
+          status: status as BookingStatus,
+          type: 'Private'
+        };
+      });
+      setBookings(transformed);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const visibleBookings = useMemo(
-    () => activeFilter === 'All' ? mockBookings : mockBookings.filter((booking) => booking.status === activeFilter),
-    [activeFilter],
+    () => activeFilter === 'All' ? bookings : bookings.filter((booking) => booking.status === activeFilter),
+    [activeFilter, bookings],
   );
 
   return (

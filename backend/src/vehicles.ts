@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authMiddleware } from './middleware';
+import { requireAuth } from './middleware';
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // Get user's vehicles
-router.get('/', authMiddleware, async (req: any, res: any) => {
+router.get('/', requireAuth, async (req: any, res: any) => {
   try {
     const vehicles = await prisma.vehicle.findMany({
       where: { userId: req.user.userId },
@@ -20,7 +20,7 @@ router.get('/', authMiddleware, async (req: any, res: any) => {
 });
 
 // Add a vehicle
-router.post('/', authMiddleware, async (req: any, res: any) => {
+router.post('/', requireAuth, async (req: any, res: any) => {
   try {
     const { name, plate, isDefault } = req.body;
     if (!name || !plate) {
@@ -51,7 +51,7 @@ router.post('/', authMiddleware, async (req: any, res: any) => {
 });
 
 // Update a vehicle
-router.put('/:id', authMiddleware, async (req: any, res: any) => {
+router.put('/:id', requireAuth, async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const { name, plate, isDefault } = req.body;
@@ -81,7 +81,7 @@ router.put('/:id', authMiddleware, async (req: any, res: any) => {
 });
 
 // Delete a vehicle
-router.delete('/:id', authMiddleware, async (req: any, res: any) => {
+router.delete('/:id', requireAuth, async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const existing = await prisma.vehicle.findUnique({ where: { id } });

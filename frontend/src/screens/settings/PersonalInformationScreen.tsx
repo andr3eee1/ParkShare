@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
+import { apiClient } from '../../api/client';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
 
@@ -52,36 +53,21 @@ export const PersonalInformationScreen = () => {
         formData.append('avatar', { uri, name: filename, type } as any);
       }
 
-      const res = await fetch('http://pana.com.ro:8745/auth/upload-avatar', {
-        method: 'POST',
+      const res = await apiClient.post('/auth/upload-avatar', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: formData,
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
       
-      setAvatarUrl(data.url);
+      setAvatarUrl(res.data.url);
 
       // Auto-save the new avatar URL to the profile
-      const profileRes = await fetch('http://pana.com.ro:8745/auth/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ firstName, lastName, avatarUrl: data.url })
-      });
-      const profileData = await profileRes.json();
-      if (profileRes.ok) {
-        await updateUser(profileData.user);
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      }
+      const profileRes = await apiClient.put('/auth/profile', { firstName, lastName, avatarUrl: res.data.url });
+      await updateUser(profileRes.data.user);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message || 'Upload failed');
     } finally {
       setUploadingAvatar(false);
     }
@@ -98,29 +84,22 @@ export const PersonalInformationScreen = () => {
     setSuccess(false);
 
     try {
-      const res = await fetch('http://pana.com.ro:8745/auth/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ firstName, lastName, avatarUrl })
-      });
-      const data = await res.json();
-      
-      if (!res.ok) {
-        if (Array.isArray(data.error)) {
-           throw new Error(data.error.map((e: any) => e.message).join(', '));
-        }
-        throw new Error(data.error || 'Failed to update profile');
-      }
-
-      await updateUser(data.user);
+      const res = await apiClient.put('/auth/profile', { firstName, lastName, avatarUrl });
+      await updateUser(res.data.user);
       setSuccess(true);
       
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message);
+      if (err.response?.data?.error) {
+        const errorData = err.response.data.error;
+        if (Array.isArray(errorData)) {
+          setError(errorData.map((e: any) => e.message).join(', '));
+        } else {
+          setError(errorData);
+        }
+      } else {
+        setError(err.message || 'Failed to update profile');
+      }
     } finally {
       setLoading(false);
     }

@@ -19,7 +19,14 @@ const SpotSchema = z.object({
 router.get('/', async (req, res): Promise<any> => {
   try {
     const spots = await prisma.parkingSpot.findMany({
-      where: { isAvailable: true }
+      where: { isAvailable: true },
+      include: { 
+        owner: { select: { firstName: true, lastName: true } },
+        reservations: {
+          where: { status: 'ACTIVE' },
+          select: { userId: true, endTime: true }
+        }
+      }
     });
     res.json({ spots });
   } catch (error) {
@@ -47,9 +54,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
     const userId = req.user?.userId;
     const role = req.user?.role;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    if (role !== 'PROVIDER' && role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Only providers can add parking spots' });
-    }
+
 
     const data = SpotSchema.parse(req.body);
 

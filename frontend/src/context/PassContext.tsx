@@ -71,6 +71,7 @@ type PassContextValue = {
 const PassContext = createContext<PassContextValue | null>(null);
 
 import { AuthContext } from './AuthContext';
+import { apiClient } from '../api/client';
 
 export const PassProvider = ({ children }: { children: React.ReactNode }) => {
   const [activePassIds, setActivePassIds] = useState<PassKind[]>([]);
@@ -81,13 +82,8 @@ export const PassProvider = ({ children }: { children: React.ReactNode }) => {
     const fetchPasses = async () => {
       if (!token) return;
       try {
-        const res = await fetch('http://pana.com.ro:8745/passes', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setActivePassIds(data.passes.map((p: any) => p.passKind as PassKind));
-        }
+        const res = await apiClient.get('/passes');
+        setActivePassIds(res.data.passes.map((p: any) => p.passKind as PassKind));
       } catch (err) {
         console.error('Failed to fetch passes:', err);
       }
@@ -117,14 +113,7 @@ export const PassProvider = ({ children }: { children: React.ReactNode }) => {
         // Sync with backend
         if (token) {
           try {
-            await fetch('http://pana.com.ro:8745/passes/toggle', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-              },
-              body: JSON.stringify({ passKind: passId })
-            });
+            await apiClient.post('/passes/toggle', { passKind: passId });
           } catch (err) {
             console.error('Failed to sync pass:', err);
           }
