@@ -320,7 +320,7 @@ export const ExploreScreen = () => {
       // The prompt didn't say "don't filter unavailable", just "remove the verified only and available [buttons]".
       // I'll keep the base availability check (unless the user meant to see ALL spots including unavailable ones).
       const avail = getAvailability(spot.available, spot.reservations || []);
-      if (!avail.isAvailable) return false;
+      if (!avail.isAvailable && !spot.bookedByMe) return false;
 
       // Filter by max price
       if (maxPrice !== null && spot.price > maxPrice) return false;
@@ -1204,9 +1204,19 @@ export const ExploreScreen = () => {
             <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 32, color: tokens.colors.primaryText, marginVertical: 0, fontVariant: ['tabular-nums'] }}>
               {timeString}
             </Text>
-            <Text style={{ fontFamily: tokens.typography.bodyMedium, fontSize: 13, color: tokens.colors.secondaryText }}>
-              {activeReservation.spot?.name || 'Your spot'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontFamily: tokens.typography.bodyMedium, fontSize: 13, color: tokens.colors.secondaryText }}>
+                {activeReservation.spot?.name || 'Your spot'}
+              </Text>
+              {activeReservation.spot && (
+                <TouchableOpacity 
+                  style={{ marginLeft: 6, padding: 4, backgroundColor: '#EEF2F5', borderRadius: 12 }}
+                  onPress={() => mapRef.current?.centerOnLocation({ latitude: activeReservation.spot.latitude, longitude: activeReservation.spot.longitude })}
+                >
+                  <Ionicons name="navigate" size={14} color={tokens.colors.municipalTeal} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 10, borderRadius: 10, marginBottom: 12 }}>
