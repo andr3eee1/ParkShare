@@ -1357,7 +1357,17 @@ export const ExploreScreen = () => {
       ) : (
         <View style={styles.container}>
           {renderMap()}
-          <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any }]}>
+          {searchFocused && (
+            <Pressable 
+              style={[StyleSheet.absoluteFill, { zIndex: 1 }]} 
+              onPress={() => {
+                Keyboard.dismiss();
+                setSearchFocused(false);
+                searchInputRef.current?.blur();
+              }}
+            />
+          )}
+          <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any, zIndex: 2 }]}>
             {renderSearchPanel()}
             {renderMapControls()}
             {renderActiveReservation()}
