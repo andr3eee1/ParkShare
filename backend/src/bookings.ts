@@ -9,9 +9,8 @@ const prisma = new PrismaClient();
 const CreateBookingSchema = z.object({
   spotId: z.string(),
   startTime: z.string().datetime(),
-  endTime: z.string().datetime(),
-  totalPrice: z.number().positive(),
-  paymentMethod: z.enum(['wallet', 'card']) // for logging/logic
+  paymentMethod: z.enum(['wallet', 'card']), // for logging/logic
+  securityDeposit: z.number().optional().default(50.0)
 });
 
 // Create a new booking
@@ -32,38 +31,29 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
         throw new Error('Spot not found');
       }
 
-      // Verify availability (simplistic check for overlapping reservations)
+      // Verify availability: any active reservation means it's occupied
       const overlapping = await tx.reservation.findFirst({
         where: {
           spotId: data.spotId,
-          status: 'ACTIVE',
-          AND: [
-            { startTime: { lt: new Date(data.endTime) } },
-            { endTime: { gt: new Date(data.startTime) } }
-          ]
+          status: 'ACTIVE'
         }
       });
-      if (overlapping) throw new Error('Spot is already booked for this time period');
+      if (overlapping) throw new Error('Spot is currently occupied by an active reservation');
 
-      // If paying with wallet, deduct from user and add to provider
+      // Deduct security deposit if paying with wallet
       if (data.paymentMethod === 'wallet') {
         const user = await tx.user.findUnique({ where: { id: userId } });
-        if (!user || user.walletBalance < data.totalPrice) {
-          throw new Error('Insufficient wallet balance');
+        if (!user || user.walletBalance < data.securityDeposit) {
+          throw new Error('Insufficient wallet balance for security deposit');
         }
 
-        // Deduct from buyer
+        // Deduct deposit from buyer
         await tx.user.update({
           where: { id: userId },
-          data: { walletBalance: { decrement: data.totalPrice } }
+          data: { walletBalance: { decrement: data.securityDeposit } }
         });
-
-        // Add to provider (assuming 10% platform fee)
-        const providerCut = data.totalPrice * 0.9;
-        await tx.user.update({
-          where: { id: spot.ownerId },
-          data: { walletBalance: { increment: providerCut } }
-        });
+        
+        // We do not add to provider yet. That happens at completion.
       }
 
       // Create reservation
@@ -72,8 +62,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
           spotId: data.spotId,
           userId,
           startTime: new Date(data.startTime),
-          endTime: new Date(data.endTime),
-          totalPrice: data.totalPrice,
+          securityDeposit: data.securityDeposit,
           status: 'ACTIVE'
         },
         include: { spot: true }
@@ -85,7 +74,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
     res.json({ message: 'Booking successful', reservation: result });
   } catch (error: any) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
-    if (error.message === 'Insufficient wallet balance' || error.message === 'Spot is already booked for this time period' || error.message === 'Spot not found') {
+    if (error.message === 'Insufficient wallet balance for security deposit' || error.message === 'Spot is currently occupied by an active reservation' || error.message === 'Spot not found') {
       return res.status(400).json({ error: error.message });
     }
     console.error('Booking error:', error);
@@ -137,18 +126,77 @@ router.put('/:id/status', requireAuth, async (req: AuthRequest, res: any): Promi
       return res.status(400).json({ error: 'Invalid status' });
     }
 
-    const reservation = await prisma.reservation.findUnique({ where: { id: req.params.id as string } });
-    if (!reservation) return res.status(404).json({ error: 'Reservation not found' });
-    if (reservation.userId !== userId) return res.status(403).json({ error: 'Forbidden' });
-    
-    const updated = await prisma.reservation.update({
-      where: { id: req.params.id as string },
-      data: { status }
+    const updated = await prisma.$transaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({ 
+        where: { id: req.params.id as string },
+        include: { spot: true }
+      });
+      if (!reservation) throw new Error('Reservation not found');
+      if (reservation.userId !== userId) throw new Error('Forbidden');
+      if (reservation.status !== 'ACTIVE') throw new Error('Reservation is not active');
+      
+      let finalPrice = 0;
+      let endTime = new Date();
+      
+      if (status === 'COMPLETED') {
+        const spot = reservation.spot;
+        // Calculate duration in hours
+        const durationMs = endTime.getTime() - reservation.startTime.getTime();
+        const durationHours = durationMs / (1000 * 60 * 60);
+        finalPrice = durationHours * spot.price;
+        
+        const user = await tx.user.findUnique({ where: { id: userId } });
+        if (!user) throw new Error('User not found');
+        
+        // Add back the security deposit, then subtract final cost
+        let newBalance = user.walletBalance + reservation.securityDeposit - finalPrice;
+        
+        // If they don't have enough, we'd normally charge the card here
+        // We'll just update the balance (it can go negative as debt if no card)
+        // We could also check if they have a default card.
+        const defaultCard = await tx.creditCard.findFirst({ where: { userId, isDefault: true } });
+        if (newBalance < 0 && defaultCard) {
+           // Simulate charging the card to cover the difference
+           // Then balance goes back to what it was before finalPrice, up to 0.
+           // Actually, simpler: we just charge the card the missing amount.
+           newBalance = 0; 
+        }
+
+        await tx.user.update({
+          where: { id: userId },
+          data: { walletBalance: newBalance }
+        });
+        
+        // Give provider their 90% cut
+        const providerCut = finalPrice * 0.9;
+        await tx.user.update({
+          where: { id: spot.ownerId },
+          data: { walletBalance: { increment: providerCut } }
+        });
+      } else if (status === 'CANCELLED') {
+        // Refund the deposit entirely
+        await tx.user.update({
+          where: { id: userId },
+          data: { walletBalance: { increment: reservation.securityDeposit } }
+        });
+      }
+
+      return await tx.reservation.update({
+        where: { id: req.params.id as string },
+        data: { 
+          status, 
+          endTime, 
+          totalPrice: finalPrice 
+        }
+      });
     });
     
     res.json({ message: 'Reservation updated', reservation: updated });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update booking error:', error);
+    if (error.message === 'Reservation not found') return res.status(404).json({ error: error.message });
+    if (error.message === 'Forbidden') return res.status(403).json({ error: error.message });
+    if (error.message === 'Reservation is not active') return res.status(400).json({ error: error.message });
     res.status(500).json({ error: 'Internal server error' });
   }
 });

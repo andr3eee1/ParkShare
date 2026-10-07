@@ -61,8 +61,7 @@ export const PaymentCheckoutScreen = () => {
         await apiClient.post('/bookings', {
           spotId: targetId,
           startTime,
-          endTime,
-          totalPrice: amount,
+          securityDeposit: amount,
           paymentMethod: selectedMethod === 'wallet' ? 'wallet' : 'card'
         });
         

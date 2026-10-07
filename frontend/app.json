@@ -17,7 +17,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.andr3eee1.parkshare"
+      "package": "com.andr3eee1.parkshare",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -4,7 +4,9 @@ export function getBucharestOffset(date: Date): number {
     const utcDateStr = date.toLocaleString('en-US', { timeZone: 'UTC' });
     const tzDate = new Date(tzDateStr);
     const utcDate = new Date(utcDateStr);
-    return (tzDate.getTime() - utcDate.getTime()) / 60000;
+    const diff = (tzDate.getTime() - utcDate.getTime()) / 60000;
+    if (isNaN(diff)) return 180;
+    return diff;
   } catch (e) {
     return 180;
   }

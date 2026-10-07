@@ -132,6 +132,17 @@ export const ExploreScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [activeReservation, setActiveReservation] = useState<any | null>(null);
+  const [currentTimer, setCurrentTimer] = useState<number>(0);
+
+  useEffect(() => {
+    let interval: any;
+    if (activeReservation) {
+      interval = setInterval(() => {
+        setCurrentTimer(Date.now());
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeReservation]);
 
   useFocusEffect(
     useCallback(() => {
@@ -143,10 +154,7 @@ export const ExploreScreen = () => {
         try {
           const res = await apiClient.get('/bookings/me');
           if (res.data.bookings) {
-            const now = new Date();
-            const active = res.data.bookings.find((b: any) => 
-              b.status === 'ACTIVE' && fromBucharestDBTime(new Date(b.endTime)) > now
-            );
+            const active = res.data.bookings.find((b: any) => b.status === 'ACTIVE');
             setActiveReservation(active || null);
             if (active && active.spot) {
               setTimeout(() => {
@@ -182,7 +190,7 @@ export const ExploreScreen = () => {
     return spots.map(spot => {
       let activeRes = null;
       if (spot.reservations && spot.reservations.length > 0) {
-        activeRes = spot.reservations.find((r: any) => fromBucharestDBTime(new Date(r.endTime)) > now);
+        activeRes = spot.reservations.find((r: any) => r.status === 'ACTIVE');
       }
       
       if (activeRes) {
@@ -991,89 +999,52 @@ export const ExploreScreen = () => {
                 )}
               </View>
 
-              {/* Booking Time Range */}
+              {/* Booking Info */}
               <View style={styles.modalSection}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <View>
-                    <Text style={styles.sectionLabel}>Starting</Text>
-                    <Text style={[styles.arrivalSliderValue, { color: tokens.colors.availabilityGreen }]}>Right Now</Text>
-                  </View>
-                  <Ionicons name="arrow-forward" size={24} color={tokens.colors.secondaryText} />
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.sectionLabel}>Leaving By</Text>
-                    <Text style={styles.arrivalSliderValue}>{formatMinutes(departureMinutes)}</Text>
-                  </View>
-                </View>
-
-                <Slider
-                  style={{ width: '100%', height: 40 }}
-                  minimumValue={sliderMin}
-                  maximumValue={sliderMax}
-                  step={5}
-                  value={departureMinutes}
-                  onValueChange={setDepartureMinutes}
-                  minimumTrackTintColor={tokens.colors.primaryText}
-                  maximumTrackTintColor="#D1D5DB"
-                  thumbTintColor={tokens.colors.primaryText}
-                />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 }}>
-                  <Text style={styles.sliderLabel}>{formatMinutes(sliderMin)}</Text>
-                  <Text style={styles.sliderLabel}>{formatMinutes(sliderMax)}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                  <Ionicons name="time-outline" size={24} color={tokens.colors.availabilityGreen} style={{ marginRight: 8 }} />
+                  <Text style={{ fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.primaryText, flex: 1 }}>
+                    Pay-as-you-go. Timer starts when you book. You'll only be charged for the time you use when you leave.
+                  </Text>
                 </View>
               </View>
 
               {/* Receipt */}
               <View style={styles.receiptContainer}>
                 <View style={styles.receiptRow}>
-                  <Text style={styles.receiptLabel}>Parking ({formatDurationDisplay(totalDurationMinutes)} × {selectedSpot.price} RON/hr)</Text>
-                  <Text style={styles.receiptValue}>{baseParkingCost.toFixed(2)} RON</Text>
+                  <Text style={styles.receiptLabel}>Rate</Text>
+                  <Text style={styles.receiptValue}>{selectedSpot.price} RON/hr</Text>
                 </View>
-                {parkPlusTimeDeductionMinutes > 0 && (
-                  <View style={styles.receiptRow}>
-                    <Text style={styles.receiptLabel}>Park Plus time benefit (15 min)</Text>
-                    <Text style={styles.discountValue}>-{timeDeductionValue.toFixed(2)} RON</Text>
-                  </View>
-                )}
                 {isParkPlusActive && (
                   <View style={styles.receiptRow}>
-                    <Text style={styles.receiptLabel}>Park Plus discount (15%)</Text>
-                    <Text style={styles.discountValue}>-{parkPlusDiscount.toFixed(2)} RON</Text>
+                    <Text style={styles.receiptLabel}>Park Plus Discount</Text>
+                    <Text style={styles.discountValue}>-15% on final price</Text>
                   </View>
                 )}
                 <View style={styles.receiptRow}>
                   <Text style={styles.receiptLabel}>Security Deposit (Refundable)</Text>
-                  <Text style={[styles.receiptValue, hasAnyPass && styles.waivedValue]}>{hasAnyPass ? 'WAIVED' : `${securityDeposit} RON`}</Text>
+                  <Text style={[styles.receiptValue, hasAnyPass && styles.waivedValue]}>{hasAnyPass ? 'WAIVED' : `50.00 RON`}</Text>
                 </View>
                 {appliedPass && (
                   <Text style={styles.passAppliedText}>{appliedPass.name} applied · GPS check-in enabled</Text>
                 )}
                 <View style={styles.receiptDivider} />
                 <View style={styles.receiptRow}>
-                  <Text style={styles.receiptTotalLabel}>Total</Text>
-                  <Text style={styles.receiptTotalValue}>{(parkingCost + securityDeposit).toFixed(2)} RON</Text>
+                  <Text style={styles.receiptTotalLabel}>Total Due Now</Text>
+                  <Text style={styles.receiptTotalValue}>{hasAnyPass ? '0.00' : '50.00'} RON</Text>
                 </View>
               </View>
 
               <TouchableOpacity style={styles.reserveButton} onPress={() => {
                 setModalVisible(false);
                 (navigation as any).navigate('PaymentCheckout', {
-                  amount: parkingCost + securityDeposit,
+                  amount: hasAnyPass ? 0 : 50,
                   title: `Book ${selectedSpot.name}`,
                   actionType: 'BOOKING',
                   targetId: selectedSpot.id,
                   startTime: (() => {
                     const d = new Date();
                     d.setHours(Math.floor(actualStartMinutes / 60), actualStartMinutes % 60, 0, 0);
-                    return toBucharestDBTime(d).toISOString();
-                  })(),
-                  endTime: (() => {
-                    const startD = new Date();
-                    startD.setHours(Math.floor(actualStartMinutes / 60), actualStartMinutes % 60, 0, 0);
-                    const d = new Date();
-                    d.setHours(Math.floor(departureMinutes / 60), departureMinutes % 60, 0, 0);
-                    if (d <= startD) {
-                      d.setDate(d.getDate() + 1);
-                    }
                     return toBucharestDBTime(d).toISOString();
                   })()
                 });
@@ -1160,11 +1131,19 @@ export const ExploreScreen = () => {
   const renderActiveReservation = () => {
     if (!activeReservation) return null;
     
-    // time calculation
-    const end = fromBucharestDBTime(new Date(activeReservation.endTime));
-    const now = new Date();
-    const diffMs = end.getTime() - now.getTime();
-    const diffMins = Math.max(0, Math.floor(diffMs / 60000));
+    // Use currentTimer to ensure we get a fresh time if available
+    const now = currentTimer ? new Date(currentTimer) : new Date();
+    const start = fromBucharestDBTime(new Date(activeReservation.startTime));
+    const diffMs = Math.max(0, now.getTime() - start.getTime());
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffSecs = Math.floor((diffMs % 60000) / 1000);
+    
+    // Calculate live cost
+    const spotPrice = activeReservation.spot?.price || 0;
+    const durationHours = diffMs / (1000 * 60 * 60);
+    const liveCost = durationHours * spotPrice;
+
+    const timeString = `${Math.floor(diffMins / 60).toString().padStart(2, '0')}:${(diffMins % 60).toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
     
     return (
       <View style={styles.activeReservationContainer}>
@@ -1175,17 +1154,21 @@ export const ExploreScreen = () => {
               <Text style={{ fontFamily: tokens.typography.heading, fontSize: 18, color: tokens.colors.primaryText }}>Active Parking</Text>
             </View>
             <View style={{ backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-              <Text style={{ color: '#059669', fontFamily: tokens.typography.body, fontWeight: '600' }}>{diffMins} min left</Text>
+              <Text style={{ color: '#059669', fontFamily: tokens.typography.body, fontWeight: '600', width: 70, textAlign: 'center' }}>{timeString}</Text>
             </View>
           </View>
-          <Text style={{ fontFamily: tokens.typography.body, fontSize: 16, color: tokens.colors.secondaryText, marginBottom: 16 }}>
-            You have an active reservation at {activeReservation.spot?.name || 'a spot'}.
+          <Text style={{ fontFamily: tokens.typography.body, fontSize: 16, color: tokens.colors.secondaryText, marginBottom: 8 }}>
+            At {activeReservation.spot?.name || 'a spot'}
           </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+             <Text style={{ fontFamily: tokens.typography.body, color: tokens.colors.secondaryText }}>Current Cost:</Text>
+             <Text style={{ fontFamily: tokens.typography.heading, fontSize: 18, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
+          </View>
           <TouchableOpacity 
             style={{ backgroundColor: tokens.colors.accentAction, padding: 16, borderRadius: 12, alignItems: 'center' }}
             onPress={handleEndReservation}
           >
-            <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 }}>End Reservation Early</Text>
+            <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 }}>End Reservation</Text>
           </TouchableOpacity>
         </GlassPanel>
       </View>
