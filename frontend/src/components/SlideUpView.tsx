@@ -1,20 +1,54 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleProp, ViewStyle } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, PanResponder, StyleProp, ViewStyle, Dimensions } from 'react-native';
 
-export const SlideUpView: React.FC<{ children: React.ReactNode, style?: StyleProp<ViewStyle> }> = ({ children, style }) => {
+interface SlideUpViewProps {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+  draggable?: boolean;
+  minimizedOffset?: number; // How far down it translates when minimized
+  initialMinimized?: boolean;
+}
+
+export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, draggable, minimizedOffset = 200, initialMinimized = false }) => {
+  const [isMinimized, setIsMinimized] = useState(initialMinimized);
   const slideAnim = useRef(new Animated.Value(400)).current;
 
   useEffect(() => {
     Animated.spring(slideAnim, {
-      toValue: 0,
+      toValue: initialMinimized ? minimizedOffset : 0,
       useNativeDriver: true,
       tension: 50,
       friction: 8
     }).start();
   }, []);
 
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return !!draggable && Math.abs(gestureState.dy) > 10;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (!draggable) return;
+        let minimize = isMinimized;
+        if (gestureState.dy > 50) {
+          minimize = true;
+        } else if (gestureState.dy < -50) {
+          minimize = false;
+        }
+        setIsMinimized(minimize);
+        Animated.spring(slideAnim, {
+          toValue: minimize ? minimizedOffset : 0,
+          useNativeDriver: true,
+          tension: 50,
+          friction: 8
+        }).start();
+      },
+    })
+  ).current;
+
   return (
-    <Animated.View style={[style, { transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View {...(draggable ? panResponder.panHandlers : {})} style={[style, { transform: [{ translateY: slideAnim }] }]}>
       {children}
     </Animated.View>
   );

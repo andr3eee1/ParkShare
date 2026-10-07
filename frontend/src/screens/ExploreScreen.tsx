@@ -1195,9 +1195,9 @@ export const ExploreScreen = () => {
     const timeString = `${Math.floor(diffMins / 60).toString().padStart(2, '0')}:${(diffMins % 60).toString().padStart(2, '0')}:${diffSecs.toString().padStart(2, '0')}`;
     
     return (
-      <SlideUpView style={[
+      <SlideUpView draggable minimizedOffset={160} style={[
         styles.activeReservationContainer, 
-        !isDesktop && { position: 'absolute', margin: 0, left: 16, right: 16, bottom: 40 }
+        !isDesktop && { position: 'absolute', margin: 0, left: 0, right: 0, bottom: 0 }
       ]}>
         <GlassPanel style={[styles.activeReservationPanel, { padding: 16, backgroundColor: tokens.colors.white }]}>
           <View style={{ width: 32, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 12 }} />
@@ -1282,18 +1282,18 @@ const styles = StyleSheet.create({
     right: 0,
   },
   activeReservationContainer: {
-    margin: 16,
     zIndex: 100,
   },
   activeReservationPanel: {
     padding: 20,
     backgroundColor: tokens.colors.white,
-    borderColor: tokens.colors.municipalTeal,
-    borderWidth: 2,
-    borderRadius: 24,
-    shadowColor: tokens.colors.municipalTeal,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    shadowColor: tokens.colors.primaryText,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 8,
   },
