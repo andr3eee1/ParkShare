@@ -1116,45 +1116,59 @@ export const ExploreScreen = () => {
 
 
 
-  const handleEndReservation = () => {
+  const handleEndReservation = async () => {
     if (!activeReservation) return;
     console.log('End Reservation Tapped');
 
-    Alert.alert(
-      "End Reservation",
-      `Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "End Parking",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const res = await apiClient.put(`/bookings/${activeReservation.id}/status`, { status: 'COMPLETED' });
-              setActiveReservation(null);
-              
-              if (res.data.reservation && updateUser && user) {
-                const finalCost = res.data.reservation.totalPrice;
-                // Fetch fresh user data to get updated wallet balance
-                const userRes = await apiClient.get('/auth/me'); // Or whatever endpoint gives user data
-                if (userRes.data.user) {
-                  updateUser(userRes.data.user);
-                }
-                
-                Alert.alert('Parking Ended', `Your final cost was ${finalCost.toFixed(2)} RON. Your security deposit has been refunded minus this cost.`);
-              }
-
-              const spotsRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
-              const data = await spotsRes.json();
-              if (spotsRes.ok) setSpots(data.spots);
-            } catch (err) {
-              console.error('Failed to end reservation', err);
-              Alert.alert('Error', 'Failed to end reservation');
-            }
+    const endParking = async () => {
+      try {
+        const res = await apiClient.put(`/bookings/${activeReservation.id}/status`, { status: 'COMPLETED' });
+        setActiveReservation(null);
+        
+        if (res.data.reservation && updateUser && user) {
+          const finalCost = res.data.reservation.totalPrice;
+          const userRes = await apiClient.get('/auth/me');
+          if (userRes.data.user) {
+            updateUser(userRes.data.user);
+          }
+          
+          const msg = `Your final cost was ${finalCost.toFixed(2)} RON. Your security deposit has been refunded minus this cost.`;
+          if (Platform.OS === 'web') {
+            window.alert('Parking Ended\n\n' + msg);
+          } else {
+            Alert.alert('Parking Ended', msg);
           }
         }
-      ]
-    );
+
+        const spotsRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
+        const data = await spotsRes.json();
+        if (spotsRes.ok) setSpots(data.spots);
+
+      } catch (err) {
+        console.error('Failed to end reservation', err);
+        if (Platform.OS === 'web') {
+          window.alert('Error: Failed to end reservation');
+        } else {
+          Alert.alert('Error', 'Failed to end reservation');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmEnd = window.confirm(`Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`);
+      if (confirmEnd) {
+        endParking();
+      }
+    } else {
+      Alert.alert(
+        "End Reservation",
+        `Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "End Parking", style: "destructive", onPress: endParking }
+        ]
+      );
+    }
   };
 
   const renderActiveReservation = () => {
@@ -1197,6 +1211,7 @@ export const ExploreScreen = () => {
              <Text style={{ fontFamily: tokens.typography.heading, fontSize: 18, color: tokens.colors.primaryText }}>{liveCost.toFixed(2)} RON</Text>
           </View>
           <TouchableOpacity 
+            activeOpacity={0.7}
             style={{ backgroundColor: tokens.colors.municipalTeal, padding: 16, borderRadius: 12, alignItems: 'center' }}
             onPress={handleEndReservation}
           >
@@ -1229,10 +1244,10 @@ export const ExploreScreen = () => {
         <View style={styles.container}>
           {renderMap()}
           <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any }]}>
-            {renderActiveReservation()}
             {renderSearchPanel()}
             {renderMapControls()}
             {renderBookingSheet()}
+            {renderActiveReservation()}
           </SafeAreaView>
         </View>
       )}
