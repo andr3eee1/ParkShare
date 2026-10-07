@@ -125,4 +125,31 @@ router.get('/provider', requireAuth, async (req: AuthRequest, res: any): Promise
   }
 });
 
+
+// Cancel or End a booking
+router.put('/:id/status', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const { status } = req.body;
+    if (!['COMPLETED', 'CANCELLED'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const reservation = await prisma.reservation.findUnique({ where: { id: req.params.id as string } });
+    if (!reservation) return res.status(404).json({ error: 'Reservation not found' });
+    if (reservation.userId !== userId) return res.status(403).json({ error: 'Forbidden' });
+    
+    const updated = await prisma.reservation.update({
+      where: { id: req.params.id as string },
+      data: { status }
+    });
+    
+    res.json({ message: 'Reservation updated', reservation: updated });
+  } catch (error) {
+    console.error('Update booking error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 export default router;

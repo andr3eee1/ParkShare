@@ -7,7 +7,9 @@ import * as Location from 'expo-location';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+import { apiClient } from '../api/client';
 import { GlassPanel } from '../components/GlassPanel';
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -129,6 +131,31 @@ export const ExploreScreen = () => {
   const [searchedLocation, setSearchedLocation] = useState<DemoLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [activeReservation, setActiveReservation] = useState<any | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchActiveReservation = async () => {
+        if (!token) {
+          setActiveReservation(null);
+          return;
+        }
+        try {
+          const res = await apiClient.get('/bookings/me');
+          if (res.data.bookings) {
+            const now = new Date();
+            const active = res.data.bookings.find((b: any) => 
+              b.status === 'ACTIVE' && new Date(b.endTime) > now
+            );
+            setActiveReservation(active || null);
+          }
+        } catch (err) {
+          console.error('Failed to fetch reservations:', err);
+        }
+      };
+      fetchActiveReservation();
+    }, [token])
+  );
 
   useEffect(() => {
     const fetchSpots = async () => {
@@ -1090,6 +1117,51 @@ export const ExploreScreen = () => {
   );
 
 
+  const handleEndReservation = async () => {
+    if (!activeReservation) return;
+    try {
+      await apiClient.put(`/bookings/${activeReservation.id}/status`, { status: 'COMPLETED' });
+      setActiveReservation(null);
+    } catch (err) {
+      console.error('Failed to end reservation', err);
+    }
+  };
+
+  const renderActiveReservation = () => {
+    if (!activeReservation) return null;
+    
+    // time calculation
+    const end = new Date(activeReservation.endTime);
+    const now = new Date();
+    const diffMs = end.getTime() - now.getTime();
+    const diffMins = Math.max(0, Math.floor(diffMs / 60000));
+    
+    return (
+      <View style={styles.activeReservationContainer}>
+        <GlassPanel style={styles.activeReservationPanel}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="time" size={24} color={tokens.colors.municipalTeal} style={{ marginRight: 8 }} />
+              <Text style={{ fontFamily: tokens.typography.heading, fontSize: 18, color: tokens.colors.primaryText }}>Active Parking</Text>
+            </View>
+            <View style={{ backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+              <Text style={{ color: '#059669', fontFamily: tokens.typography.body, fontWeight: '600' }}>{diffMins} min left</Text>
+            </View>
+          </View>
+          <Text style={{ fontFamily: tokens.typography.body, fontSize: 16, color: tokens.colors.secondaryText, marginBottom: 16 }}>
+            You have an active reservation at {activeReservation.spot?.name || 'a spot'}.
+          </Text>
+          <TouchableOpacity 
+            style={{ backgroundColor: tokens.colors.accentAction, padding: 16, borderRadius: 12, alignItems: 'center' }}
+            onPress={handleEndReservation}
+          >
+            <Text style={{ color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 }}>End Reservation Early</Text>
+          </TouchableOpacity>
+        </GlassPanel>
+      </View>
+    );
+  };
+
   return (
     <>
       {isDesktop ? (
@@ -1097,6 +1169,7 @@ export const ExploreScreen = () => {
           <View style={{ width: 420, height: '100%', backgroundColor: tokens.colors.paleMapBackground, zIndex: 10, boxShadow: '4px 0px 12px rgba(0,0,0,0.1)', padding: 16 }}>
             <SafeAreaView style={{ flex: 1 }}>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+                {renderActiveReservation()}
                 {renderSearchPanel()}
                 {renderBookingSheet()}
               </ScrollView>
@@ -1111,6 +1184,7 @@ export const ExploreScreen = () => {
         <View style={styles.container}>
           {renderMap()}
           <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any }]}>
+            {renderActiveReservation()}
             {renderSearchPanel()}
             {renderMapControls()}
             {renderBookingSheet()}
@@ -1133,6 +1207,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  activeReservationContainer: {
+    margin: 16,
+    zIndex: 100,
+    pointerEvents: 'box-none' as any,
+  },
+  activeReservationPanel: {
+    padding: 20,
+    backgroundColor: tokens.colors.white,
+    borderColor: tokens.colors.municipalTeal,
+    borderWidth: 2,
   },
   headerContainer: {
     position: 'absolute',
