@@ -216,9 +216,13 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
   return <>
     {clusters.map((cluster) => {
       if (isClusteredView || cluster.spots.length > 1) {
+        const hasMySpot = cluster.spots.some((s: any) => s.bookedByMe);
+        const clusterBg = hasMySpot ? '#8B5CF6' : '#86EFAC';
+        const clusterColor = hasMySpot ? '#FFFFFF' : '#14532D';
+
         const icon = new DivIcon({
           className: 'cluster-leaflet-marker',
-          html: `<div class="cluster-marker">${cluster.spots.length}</div>`,
+          html: `<div class="cluster-marker" style="background-color: ${clusterBg}; color: ${clusterColor};">${cluster.spots.length}</div>`,
           iconSize: [44, 44],
           iconAnchor: [22, 22],
         });
@@ -797,10 +801,14 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
 
             clusters.forEach(function(cluster) {
               if (zoom < ${CLUSTER_ZOOM_THRESHOLD} || cluster.spots.length > 1) {
+                var hasMySpot = cluster.spots.some(function(s) { return s.bookedByMe; });
+                var clusterBg = hasMySpot ? '#8B5CF6' : '#86EFAC';
+                var clusterColor = hasMySpot ? '#FFFFFF' : '#14532D';
+
                 L.marker(cluster.center, {
                   icon: L.divIcon({
                     className: 'cluster-leaflet-marker',
-                    html: '<div class="cluster-marker">' + cluster.spots.length + '</div>',
+                    html: '<div class="cluster-marker" style="background-color: ' + clusterBg + '; color: ' + clusterColor + ';">' + cluster.spots.length + '</div>',
                     iconSize: [44, 44],
                     iconAnchor: [22, 22]
                   })
