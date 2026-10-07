@@ -633,6 +633,12 @@ export const ExploreScreen = () => {
         onMapClick={(coords) => {
           setFiltersVisible(false);
           setActiveDropdown(null);
+          setSearchFocused(false);
+          Keyboard.dismiss();
+        }}
+        onMapMoveStart={() => {
+          setSearchFocused(false);
+          Keyboard.dismiss();
         }}
         destination={searchedLocation ?? undefined}
         userLocation={userLocation || DEFAULT_USER_LOCATION}
