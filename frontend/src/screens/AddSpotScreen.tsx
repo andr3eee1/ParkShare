@@ -6,10 +6,12 @@ import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { Map } from '../components/Map';
+import { useAlert } from '../context/AlertContext';
 
 export const AddSpotScreen = () => {
   const { token } = useContext(AuthContext);
   const navigation = useNavigation();
+  const { alert } = useAlert();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -21,7 +23,7 @@ export const AddSpotScreen = () => {
 
   const handleSubmit = async () => {
     if (!name || !price) {
-      Alert.alert('Error', 'Please fill in all required fields.');
+      alert('Error', 'Please fill in all required fields.', undefined, 'error');
       return;
     }
 
@@ -43,15 +45,15 @@ export const AddSpotScreen = () => {
       });
 
       if (res.ok) {
-        Alert.alert('Success', 'Spot created!', [
+        alert('Success', 'Spot created!', [
           { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+        ], 'success');
       } else {
         const data = await res.json();
         throw new Error(data.error || 'Failed to create spot');
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      alert('Error', err.message, undefined, 'error');
     } finally {
       setLoading(false);
     }

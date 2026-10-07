@@ -8,6 +8,7 @@ import { AuthContext } from '../context/AuthContext';
 import { usePasses } from '../context/PassContext';
 import { apiClient } from '../api/client';
 import { SlideUpView } from '../components/SlideUpView';
+import { useAlert } from '../context/AlertContext';
 
 export const PaymentCheckoutScreen = () => {
   const navigation = useNavigation<any>();
@@ -16,6 +17,7 @@ export const PaymentCheckoutScreen = () => {
 
   const { user, token, updateUser } = useContext(AuthContext);
   const { togglePass } = usePasses();
+  const { alert } = useAlert();
   
   const [selectedMethod, setSelectedMethod] = useState<'wallet' | 'card'>('wallet');
   const [processing, setProcessing] = useState(false);
@@ -30,17 +32,9 @@ export const PaymentCheckoutScreen = () => {
     try {
       const res = await apiClient.post('/wallet/deposit', { amount: 100 });
       await updateUser(res.data.user);
-      if (Platform.OS === 'web') {
-        window.alert('Top Up Successful\n\nAdded 100.00 RON to your wallet.');
-      } else {
-        Alert.alert('Top Up Successful', 'Added 100.00 RON to your wallet.');
-      }
+      alert('Top Up Successful', 'Added 100.00 RON to your wallet.', undefined, 'success');
     } catch (err) {
-      if (Platform.OS === 'web') {
-        window.alert('Error\n\nFailed to top up wallet.');
-      } else {
-        Alert.alert('Error', 'Failed to top up wallet.');
-      }
+      alert('Error', 'Failed to top up wallet.', undefined, 'error');
     } finally {
       setTopUpLoading(false);
     }
@@ -48,11 +42,7 @@ export const PaymentCheckoutScreen = () => {
 
   const handlePayment = async () => {
     if (selectedMethod === 'wallet' && !canAfford) {
-      if (Platform.OS === 'web') {
-        window.alert('Insufficient Balance\n\nPlease top up your wallet or select a different payment method.');
-      } else {
-        Alert.alert('Insufficient Balance', 'Please top up your wallet or select a different payment method.');
-      }
+      alert('Insufficient Balance', 'Please top up your wallet or select a different payment method.', undefined, 'warning');
       return;
     }
 
@@ -92,11 +82,7 @@ export const PaymentCheckoutScreen = () => {
           ? err.response.data.error 
           : JSON.stringify(err.response.data.error);
       }
-      if (Platform.OS === 'web') {
-        window.alert('Payment Error\n\n' + errorMsg);
-      } else {
-        Alert.alert('Payment Error', errorMsg);
-      }
+      alert('Payment Error', errorMsg, undefined, 'error');
     } finally {
       setProcessing(false);
     }

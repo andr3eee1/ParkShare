@@ -1,3 +1,4 @@
+import { AlertProvider } from "./src/context/AlertContext";
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Platform, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -146,13 +147,16 @@ export default function App() {
     );
   };
 
+
   const AppRoot = (
     <SafeAreaProvider>
-      <PassProvider>
-        <AuthProvider>
-          <RootNavigator />
-        </AuthProvider>
-      </PassProvider>
+      <AlertProvider>
+        <PassProvider>
+          <AuthProvider>
+            <RootNavigator />
+          </AuthProvider>
+        </PassProvider>
+      </AlertProvider>
     </SafeAreaProvider>
   );
 

@@ -6,10 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
 import { apiClient } from '../../api/client';
+import { useAlert } from '../../context/AlertContext';
 
 export const PaymentMethodsScreen = () => {
   const navigation = useNavigation();
   const { user, token, updateUser } = useContext(AuthContext);
+  const { alert } = useAlert();
 
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export const PaymentMethodsScreen = () => {
 
   const handleAddCard = async () => {
     if (cardNumber.length < 13 || expMonth.length !== 2 || expYear.length !== 2) {
-      Alert.alert('Error', 'Please enter valid card details.');
+      alert('Error', 'Please enter valid card details.', undefined, 'error');
       return;
     }
     setSubmitting(true);
@@ -48,10 +50,10 @@ export const PaymentMethodsScreen = () => {
       setExpMonth('');
       setExpYear('');
       fetchCards();
-      Alert.alert('Success', 'Card added successfully');
+      alert('Success', 'Card added successfully', undefined, 'success');
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || err.message || 'Failed to add card';
-      Alert.alert('Error', errorMsg);
+      alert('Error', errorMsg, undefined, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -61,10 +63,10 @@ export const PaymentMethodsScreen = () => {
     try {
       const res = await apiClient.post('/wallet/deposit', { amount: 100 });
       await updateUser(res.data.user);
-      Alert.alert('Top Up', 'Added 100 RON to wallet for demo purposes.');
+      alert('Top Up', 'Added 100 RON to wallet for demo purposes.', undefined, 'success');
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Failed to top up wallet.');
+      alert('Error', 'Failed to top up wallet.', undefined, 'error');
     }
   };
 

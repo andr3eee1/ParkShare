@@ -6,10 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
 import { apiClient } from '../../api/client';
+import { useAlert } from '../../context/AlertContext';
 
 export const MyVehiclesScreen = () => {
   const navigation = useNavigation();
   const { token } = useContext(AuthContext);
+  const { alert } = useAlert();
 
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,8 +49,7 @@ export const MyVehiclesScreen = () => {
 
   const handleSaveVehicle = async () => {
     if (!name.trim() || !plate.trim()) {
-      if (Platform.OS === 'web') window.alert('Please enter vehicle name and license plate.');
-      else Alert.alert('Error', 'Please enter vehicle name and license plate.');
+      alert('Error', 'Please enter vehicle name and license plate.', undefined, 'warning');
       return;
     }
     setSubmitting(true);
@@ -62,12 +63,10 @@ export const MyVehiclesScreen = () => {
       
       resetForm();
       fetchVehicles();
-      if (Platform.OS === 'web') window.alert('Vehicle saved successfully');
-      else Alert.alert('Success', 'Vehicle saved successfully');
+      alert('Success', 'Vehicle saved successfully', undefined, 'success');
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || err.message || 'Failed to save vehicle';
-      if (Platform.OS === 'web') window.alert(errorMsg);
-      else Alert.alert('Error', errorMsg);
+      alert('Error', errorMsg, undefined, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -83,16 +82,10 @@ export const MyVehiclesScreen = () => {
       }
     };
 
-    if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to delete this vehicle?')) {
-        processDelete();
-      }
-    } else {
-      Alert.alert('Delete', 'Are you sure you want to delete this vehicle?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: processDelete }
-      ]);
-    }
+    alert('Delete', 'Are you sure you want to delete this vehicle?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: processDelete }
+    ], 'warning');
   };
 
   const handleEditVehicle = (v: any) => {

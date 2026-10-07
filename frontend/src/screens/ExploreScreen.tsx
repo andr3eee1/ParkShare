@@ -16,6 +16,7 @@ import { SlideUpView } from "../components/SlideUpView";
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePasses } from '../context/PassContext';
+import { useAlert } from '../context/AlertContext';
 
 import {
   DEFAULT_LOCATION,
@@ -124,6 +125,7 @@ export const ExploreScreen = () => {
   const navigation = useNavigation<any>();
   const { user, token, updateUser } = useContext(AuthContext) as any;
   const { getPassForSpot, isParkPlusActive } = usePasses();
+  const { alert } = useAlert();
   const [selectedSpot, setSelectedSpot] = useState<any | null>(null);
   const [spots, setSpots] = useState<any[]>([]);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -506,7 +508,7 @@ export const ExploreScreen = () => {
 
   const saveCustomVehicle = async () => {
     if (!vehiclePlate.trim() || !customVehicleName.trim()) {
-      Alert.alert('Missing Info', 'Please provide a name and license plate to save.');
+      alert('Missing Info', 'Please provide a name and license plate to save.', undefined, 'warning');
       return;
     }
     setIsSavingVehicle(true);
@@ -523,7 +525,7 @@ export const ExploreScreen = () => {
       }
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Failed to save vehicle');
+      alert('Error', 'Failed to save vehicle', undefined, 'error');
     } finally {
       setIsSavingVehicle(false);
     }
@@ -1230,11 +1232,7 @@ export const ExploreScreen = () => {
           }
           
           const msg = `Your final cost was ${(finalCost || 0).toFixed(2)} RON. Your security deposit has been refunded minus this cost.`;
-          if (Platform.OS === 'web') {
-            window.alert('Parking Ended\n\n' + msg);
-          } else {
-            Alert.alert('Parking Ended', msg);
-          }
+          alert('Parking Ended', msg, undefined, 'success');
         }
 
         const spotsRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
@@ -1243,29 +1241,19 @@ export const ExploreScreen = () => {
 
       } catch (err) {
         console.error('Failed to end reservation', err);
-        if (Platform.OS === 'web') {
-          window.alert('Error: Failed to end reservation');
-        } else {
-          Alert.alert('Error', 'Failed to end reservation');
-        }
+        alert('Error', 'Failed to end reservation', undefined, 'error');
       }
     };
 
-    if (Platform.OS === 'web') {
-      const confirmEnd = window.confirm(`Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`);
-      if (confirmEnd) {
-        endParking();
-      }
-    } else {
-      Alert.alert(
-        "End Reservation",
-        `Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "End Parking", style: "destructive", onPress: endParking }
-        ]
-      );
-    }
+    alert(
+      "End Reservation",
+      `Are you sure you want to end your parking session at ${activeReservation.spot?.name}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "End Parking", style: "destructive", onPress: endParking }
+      ],
+      "warning"
+    );
   };
 
   const renderActiveReservation = () => {
