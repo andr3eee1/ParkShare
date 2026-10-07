@@ -29,3 +29,11 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 };
+
+export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): any => {
+  if (req.user?.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  next();
+};

@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const apiClient = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8745',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -19,3 +19,13 @@ apiClient.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+export const adminApi = async (token: string, path: string): Promise<any> => {
+  const baseURL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8745';
+  const response = await fetch(`${baseURL}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error || 'Unable to load admin data');
+  return body;
+};

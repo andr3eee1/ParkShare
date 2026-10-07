@@ -10,12 +10,14 @@ import { tokens } from '../theme/tokens';
 export const AccountScreen = () => {
   const navigation = useNavigation<any>();
   const { user, logout } = useContext(AuthContext);
+  const isAdmin = user?.role === 'ADMIN';
 
   const handleLogout = async () => {
     await logout();
   };
 
   const menuItems = [
+    ...(isAdmin ? [{ icon: 'shield-checkmark-outline', title: 'Admin Panel', subtitle: 'Manage the ParkShare marketplace', route: 'AdminDashboard' }] : []),
     { icon: 'person-outline', title: 'Personal Information', subtitle: 'Name, Email, Phone', route: 'PersonalInformation' },
     { icon: 'card-outline', title: 'Wallet', subtitle: 'Manage balance and cards', route: 'PaymentMethods' },
     { icon: 'car-outline', title: 'My Vehicles', subtitle: 'License plates and vehicle details', route: 'MyVehicles' },
@@ -49,7 +51,7 @@ export const AccountScreen = () => {
             <Text style={styles.profileName}>{user?.firstName} {user?.lastName}</Text>
             <Text style={styles.profileEmail}>{user?.email}</Text>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>{'Verified User'}</Text>
+              <Text style={styles.roleText}>{isAdmin ? 'Platform Administrator' : user?.role === 'PROVIDER' ? 'Parking Provider' : 'Verified User'}</Text>
             </View>
           </View>
         </View>
