@@ -102,7 +102,7 @@ export const AddSpotScreen = () => {
               }}
             />
             {/* Center fixed pin with drop animation */}
-            <Animated.View style={[styles.centerPin, { transform: [{ translateY: pinAnimation }] }]} pointerEvents="none">
+            <Animated.View style={[styles.centerPin, { transform: [{ translateY: pinAnimation }], pointerEvents: 'none' }]}>
               <Ionicons name="location" size={40} color={tokens.colors.municipalTeal} style={{ marginTop: -20 }} />
               {/* Add a tiny shadow dot to show exactly where it's dropping */}
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.3)', position: 'absolute', bottom: -5 }} />

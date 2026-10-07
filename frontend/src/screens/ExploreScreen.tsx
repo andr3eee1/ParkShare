@@ -12,8 +12,8 @@ import { GlassPanel } from '../components/GlassPanel';
 import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePasses } from '../context/PassContext';
+import { toBucharestDBTime } from '../utils/timezone';
 import {
-  createAllParkingSpots,
   DEFAULT_LOCATION,
   searchDemoLocations,
   DemoLocation,
@@ -249,7 +249,7 @@ export const ExploreScreen = () => {
       evCharging: false,
     }));
     
-    const allSpots = [...createAllParkingSpots(), ...backendSpots];
+    const allSpots = [...backendSpots];
 
     return allSpots.filter((spot: any) => {
       // First, always filter out currently active spots if the request implied availability? 
@@ -514,7 +514,7 @@ export const ExploreScreen = () => {
     if (selectedSpot) return null;
     return (
     <>
-      <View pointerEvents="box-none" style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { pointerEvents: 'box-none' as any }]}>
           <GlassPanel borderRadius={tokens.radii.topPanel} style={styles.headerPanel}>
             <View style={styles.headerTopRow}>
               <Text style={styles.wordmark}>ParkShare</Text>
@@ -808,7 +808,7 @@ export const ExploreScreen = () => {
   const renderMapControls = () => (
     <>
       {/* Map Controls */}
-        <View pointerEvents="box-none" style={[styles.mapControls, !isDesktop && selectedSpot && { bottom: 300 }]}>
+        <View style={[styles.mapControls, !isDesktop && selectedSpot && { bottom: 300 }, { pointerEvents: 'box-none' as any }]}>
           <GlassPanel borderRadius={12} style={styles.controlGroup}>
             <TouchableOpacity style={styles.controlButton} onPress={handleZoomIn}>
               <Ionicons name="add" size={24} color={tokens.colors.primaryText} />
@@ -831,7 +831,7 @@ export const ExploreScreen = () => {
     <>
       {/* Booking Sheet (Simplified) */}
         {selectedSpot && (
-          <View pointerEvents="box-none" style={isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper}>
+          <View style={[isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper, { pointerEvents: 'box-none' as any }]}>
             <GlassPanel borderRadius={tokens.radii.upperSheet} style={isDesktop ? [styles.bookingSheet, { marginBottom: 0, marginHorizontal: 0 }] : styles.bookingSheet}>
               <View style={styles.sheetHeader}>
                 <View style={{ flex: 1 }}>
@@ -1010,13 +1010,17 @@ export const ExploreScreen = () => {
                   startTime: (() => {
                     const d = new Date();
                     d.setHours(Math.floor(actualStartMinutes / 60), actualStartMinutes % 60, 0, 0);
-                    return d.toISOString();
+                    return toBucharestDBTime(d).toISOString();
                   })(),
                   endTime: (() => {
+                    const startD = new Date();
+                    startD.setHours(Math.floor(actualStartMinutes / 60), actualStartMinutes % 60, 0, 0);
                     const d = new Date();
                     d.setHours(Math.floor(departureMinutes / 60), departureMinutes % 60, 0, 0);
-                    if (d < new Date()) d.setDate(d.getDate() + 1);
-                    return d.toISOString();
+                    if (d <= startD) {
+                      d.setDate(d.getDate() + 1);
+                    }
+                    return toBucharestDBTime(d).toISOString();
                   })()
                 });
               }}>
@@ -1090,7 +1094,7 @@ export const ExploreScreen = () => {
     <>
       {isDesktop ? (
         <View style={[styles.container, { flexDirection: 'row' }]}>
-          <View style={{ width: 420, height: '100%', backgroundColor: tokens.colors.paleMapBackground, zIndex: 10, shadowColor: '#000', shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.1, shadowRadius: 12, padding: 16 }}>
+          <View style={{ width: 420, height: '100%', backgroundColor: tokens.colors.paleMapBackground, zIndex: 10, boxShadow: '4px 0px 12px rgba(0,0,0,0.1)', padding: 16 }}>
             <SafeAreaView style={{ flex: 1 }}>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 {renderSearchPanel()}
@@ -1106,7 +1110,7 @@ export const ExploreScreen = () => {
       ) : (
         <View style={styles.container}>
           {renderMap()}
-          <SafeAreaView pointerEvents="box-none" style={styles.safeArea}>
+          <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any }]}>
             {renderSearchPanel()}
             {renderMapControls()}
             {renderBookingSheet()}

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { apiClient } from '../api/client';
 
 export const MySpotsScreen = () => {
   const { token } = useContext(AuthContext);
@@ -18,11 +19,8 @@ export const MySpotsScreen = () => {
 
   const fetchSpots = async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (res.ok) setSpots(data.spots);
+      const res = await apiClient.get('/spots/me');
+      setSpots(res.data.spots);
     } catch (err) {
       console.error(err);
     } finally {
@@ -100,10 +98,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexDirection: 'row',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
+    boxShadow: '0px 2px 5px rgba(0,0,0,0.05)',
   },
   spotImage: {
     width: 100,
@@ -159,9 +154,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 },
+    boxShadow: '0px 3px 5px rgba(0,0,0,0.3)',
   }
 });

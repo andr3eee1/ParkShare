@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
+import { apiClient } from '../../api/client';
 
 export const MyVehiclesScreen = () => {
   const navigation = useNavigation();
@@ -27,13 +28,8 @@ export const MyVehiclesScreen = () => {
 
   const fetchVehicles = async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/vehicles`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setVehicles(data.vehicles);
-      }
+      const res = await apiClient.get('/vehicles');
+      setVehicles(res.data.vehicles);
     } catch (err) {
       console.error(err);
     } finally {
@@ -57,32 +53,21 @@ export const MyVehiclesScreen = () => {
     }
     setSubmitting(true);
     
-    const url = editingVehicleId 
-      ? `${process.env.EXPO_PUBLIC_API_URL}/vehicles/${editingVehicleId}` 
-      : `${process.env.EXPO_PUBLIC_API_URL}/vehicles`;
-    const method = editingVehicleId ? 'PUT' : 'POST';
-
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ name, plate, isDefault })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        resetForm();
-        fetchVehicles();
-        if (Platform.OS === 'web') window.alert('Vehicle saved successfully');
-        else Alert.alert('Success', 'Vehicle saved successfully');
+      if (editingVehicleId) {
+        await apiClient.put(`/vehicles/${editingVehicleId}`, { name, plate, isDefault });
       } else {
-        throw new Error(data.error || 'Failed to save vehicle');
+        await apiClient.post('/vehicles', { name, plate, isDefault });
       }
+      
+      resetForm();
+      fetchVehicles();
+      if (Platform.OS === 'web') window.alert('Vehicle saved successfully');
+      else Alert.alert('Success', 'Vehicle saved successfully');
     } catch (err: any) {
-      if (Platform.OS === 'web') window.alert(err.message);
-      else Alert.alert('Error', err.message);
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to save vehicle';
+      if (Platform.OS === 'web') window.alert(errorMsg);
+      else Alert.alert('Error', errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -91,13 +76,8 @@ export const MyVehiclesScreen = () => {
   const handleDeleteVehicle = async (id: string) => {
     const processDelete = async () => {
       try {
-        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/vehicles/${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          fetchVehicles();
-        }
+        await apiClient.delete(`/vehicles/${id}`);
+        fetchVehicles();
       } catch (err) {
         console.error(err);
       }

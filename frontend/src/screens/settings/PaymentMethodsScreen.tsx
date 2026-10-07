@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
+import { apiClient } from '../../api/client';
 
 export const PaymentMethodsScreen = () => {
   const navigation = useNavigation();
@@ -25,13 +26,8 @@ export const PaymentMethodsScreen = () => {
 
   const fetchCards = async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/wallet/cards`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setCards(data.cards);
-      }
+      const res = await apiClient.get('/wallet/cards');
+      setCards(res.data.cards);
     } catch (err) {
       console.error(err);
     } finally {
@@ -46,27 +42,16 @@ export const PaymentMethodsScreen = () => {
     }
     setSubmitting(true);
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/wallet/cards`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ cardNumber, expMonth, expYear })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setAddingCard(false);
-        setCardNumber('');
-        setExpMonth('');
-        setExpYear('');
-        fetchCards();
-        Alert.alert('Success', 'Card added successfully');
-      } else {
-        throw new Error(data.error || 'Failed to add card');
-      }
+      await apiClient.post('/wallet/cards', { cardNumber, expMonth, expYear });
+      setAddingCard(false);
+      setCardNumber('');
+      setExpMonth('');
+      setExpYear('');
+      fetchCards();
+      Alert.alert('Success', 'Card added successfully');
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to add card';
+      Alert.alert('Error', errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -74,16 +59,9 @@ export const PaymentMethodsScreen = () => {
 
   const handleTopUp = async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/wallet/deposit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ amount: 100 })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        await updateUser(data.user);
-        Alert.alert('Top Up', 'Added 100 RON to wallet for demo purposes.');
-      }
+      const res = await apiClient.post('/wallet/deposit', { amount: 100 });
+      await updateUser(res.data.user);
+      Alert.alert('Top Up', 'Added 100 RON to wallet for demo purposes.');
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Failed to top up wallet.');
@@ -228,10 +206,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    boxShadow: '0px 2px 8px rgba(0,0,0,0.05)',
   },
   walletTitle: {
     fontFamily: tokens.typography.body,

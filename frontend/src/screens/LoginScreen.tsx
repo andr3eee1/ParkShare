@@ -1,45 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
 import { tokens } from '../theme/tokens';
 import { Ionicons } from '@expo/vector-icons';
+import { apiClient } from '../api/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { FormInput } from '../components/FormInput';
+
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required')
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const LoginScreen = () => {
   const navigation = useNavigation<any>();
   const { login } = useContext(AuthContext);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-    
-    setLoading(true);
+  const { control, handleSubmit, formState: { isSubmitting } } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' }
+  });
+
+  const onSubmit = async (data: LoginFormValues) => {
     setError('');
-
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-
-      await login(data.user, data.token);
+      const res = await apiClient.post('/auth/login', { email: data.email, password: data.password });
+      await login(res.data.user, res.data.token);
     } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setError(err.response?.data?.error || err.message || 'Login failed');
     }
   };
 
@@ -58,35 +53,27 @@ export const LoginScreen = () => {
           </View>
         ) : null}
 
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Email address</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="name@example.com"
-            placeholderTextColor={tokens.colors.secondaryText}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-        </View>
+        <FormInput
+          control={control}
+          name="email"
+          label="Email address"
+          placeholder="name@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
 
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={tokens.colors.secondaryText}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            onSubmitEditing={handleLogin}
-            returnKeyType="go"
-          />
-        </View>
+        <FormInput
+          control={control}
+          name="password"
+          label="Password"
+          placeholder="••••••••"
+          secureTextEntry
+          onSubmitEditing={handleSubmit(onSubmit)}
+          returnKeyType="go"
+        />
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          {loading ? (
+        <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)} disabled={isSubmitting}>
+          {isSubmitting ? (
             <ActivityIndicator color={tokens.colors.white} />
           ) : (
             <Text style={styles.buttonText}>Sign In</Text>

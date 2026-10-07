@@ -6,6 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../components/GlassPanel';
 import { tokens } from '../theme/tokens';
+import { apiClient } from '../api/client';
+import { fromBucharestDBTime } from '../utils/timezone';
 
 type BookingStatus = 'Upcoming' | 'Completed' | 'Cancelled';
 type HistoryFilter = 'All' | BookingStatus;
@@ -94,19 +96,15 @@ export const HistoryScreen = () => {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/bookings/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        // Transform backend bookings to UI format
-        const transformed = data.bookings.map((b: any) => {
-          const startDate = new Date(b.startTime);
-          const endDate = new Date(b.endTime);
-          
-          let status = 'Completed';
-          if (b.status === 'ACTIVE') status = 'Upcoming';
-          else if (b.status === 'CANCELLED') status = 'Cancelled';
+      const res = await apiClient.get('/bookings/me');
+      // Transform backend bookings to UI format
+      const transformed = res.data.bookings.map((b: any) => {
+        const startDate = fromBucharestDBTime(new Date(b.startTime));
+        const endDate = fromBucharestDBTime(new Date(b.endTime));
+        
+        let status = 'Completed';
+        if (b.status === 'ACTIVE') status = 'Upcoming';
+        else if (b.status === 'CANCELLED') status = 'Cancelled';
           
           const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
 
@@ -124,7 +122,6 @@ export const HistoryScreen = () => {
           };
         });
         setBookings(transformed);
-      }
     } catch (err) {
       console.error(err);
     } finally {

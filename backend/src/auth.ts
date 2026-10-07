@@ -181,5 +181,33 @@ router.post('/upload-avatar', requireAuth, upload.single('avatar'), async (req: 
   }
 });
 
+
+router.get('/me', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = (req as AuthRequest).user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+        walletBalance: user.walletBalance
+      }
+    });
+  } catch (error: any) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
 
