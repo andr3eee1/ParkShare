@@ -873,15 +873,7 @@ export const ExploreScreen = () => {
     <>
       {/* Map Controls */}
         <View style={[styles.mapControls, !isDesktop && selectedSpot && { bottom: 300 }, { pointerEvents: 'box-none' as any }]}>
-          <GlassPanel borderRadius={12} style={styles.controlGroup}>
-            <TouchableOpacity style={styles.controlButton} onPress={handleZoomIn}>
-              <Ionicons name="add" size={24} color={tokens.colors.primaryText} />
-            </TouchableOpacity>
-            <View style={styles.controlDivider} />
-            <TouchableOpacity style={styles.controlButton} onPress={handleZoomOut}>
-              <Ionicons name="remove" size={24} color={tokens.colors.primaryText} />
-            </TouchableOpacity>
-          </GlassPanel>
+
           <GlassPanel borderRadius={12} style={styles.controlSingle}>
             <TouchableOpacity style={styles.controlButton} onPress={() => mapRef.current?.centerOnLocation(userLocation || DEFAULT_USER_LOCATION)}>
               <Ionicons name="navigate" size={20} color={tokens.colors.primaryText} />
@@ -1259,8 +1251,8 @@ export const ExploreScreen = () => {
           <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any }]}>
             {renderSearchPanel()}
             {renderMapControls()}
-            {renderBookingSheet()}
             {renderActiveReservation()}
+            {renderBookingSheet()}
           </SafeAreaView>
         </View>
       )}
@@ -1468,6 +1460,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    zIndex: 200,
   },
   bookingSheet: {
     marginHorizontal: 16,
