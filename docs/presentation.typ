@@ -115,11 +115,25 @@ Majoritatea soluțiilor actuale se axează exclusiv pe digitalizarea parcărilor
   )
 ]
 
-== Proiecții Financiare (Estimare conservatoare)
-Pe baza modelului nostru cu comision de 15% pe tranzacție:
-- *Anul 1:* Preluarea a 500 de spații active zilnic. Venituri nete estimate (Net Revenue): 75,000 EUR.
-- *Anul 3 (Scalare Națională):* 5,000 spații active zilnic. Venituri nete estimate: 1.2 milioane EUR.
-Break-even point-ul operațional este estimat la sfârșitul lunii a 14-a de activitate.
+== Proiecții Financiare și KPI (Key Performance Indicators)
+Pe baza modelului nostru cu comision de 15% pe tranzacție (calculat la o medie de 3 EUR/zi per loc):
+- *Anul 1:* Preluarea a 500 de spații active zilnic. Venituri nete estimate (Net Revenue): ~80,000 EUR.
+- *Anul 3 (Scalare Națională):* 5,000 spații active zilnic. Venituri nete estimate: ~1.2 milioane EUR.
+
+*Justificarea Break-Even Point (Luna 14):*
+Pentru atingerea masei critice de utilizatori, este necesară o investiție inițială (Seed) estimată la *60,000 EUR*, alocată astfel:
+#align(center)[
+  #table(
+    columns: (1.5fr, 1fr, 1.5fr),
+    inset: 8pt,
+    align: horizon,
+    [*Categorie*], [*Cost Estimat*], [*KPI (Indicator de Performanță)*],
+    [Dezvoltare Tehnică (AWS, Maps API, etc.)], [20,000 EUR], [Latență sub 50ms, Zero Downtime],
+    [Marketing (Achiziție Gazde & Șoferi)], [30,000 EUR], [CAC (Cost per Achiziție) sub 5 EUR],
+    [Operațional & Mentenanță (Rezervă)], [10,000 EUR], [Timp de rezolvare suport sub 2h]
+  )
+]
+Profitabilitatea devine pozitivă în luna a 14-a, moment în care valoarea generată de utilizatorii recurenți (LTV - Life-Time Value) depășește semnificativ CAC-ul, generând profit organic.
 
 = Arhitectura Tehnică a Proiectului
 
