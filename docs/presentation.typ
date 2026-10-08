@@ -121,19 +121,19 @@ Pe baza modelului nostru cu comision de 15% pe tranzacție (calculat la o medie 
 - *Anul 3 (Scalare Națională):* 5,000 spații active zilnic. Venituri nete estimate: ~1.2 milioane EUR.
 
 *Justificarea Break-Even Point (Luna 14):*
-Pentru atingerea masei critice de utilizatori, este necesară o investiție inițială (Seed) estimată la *60,000 EUR*, alocată astfel:
+Pentru validarea pe piață și atingerea masei critice în primul oraș, adoptăm o abordare "Lean/Pre-Seed", necesitând o investiție inițială hiper-eficientă de doar *15,000 EUR*, alocată astfel:
 #align(center)[
   #table(
     columns: (1.5fr, 1fr, 1.5fr),
     inset: 8pt,
     align: horizon,
     [*Categorie*], [*Cost Estimat*], [*KPI (Indicator de Performanță)*],
-    [Dezvoltare Tehnică (AWS, Maps API, etc.)], [20,000 EUR], [Latență sub 50ms, Zero Downtime],
-    [Marketing (Achiziție Gazde & Șoferi)], [30,000 EUR], [CAC (Cost per Achiziție) sub 5 EUR],
-    [Operațional & Mentenanță (Rezervă)], [10,000 EUR], [Timp de rezolvare suport sub 2h]
+    [Infrastructură (Cloud & Maps API)], [2,500 EUR / an], [Cost mediu de server sub 200 EUR/lună],
+    [Marketing (Lansare Hiper-Localizată)], [10,000 EUR], [CAC (Cost per Achiziție) sub 3 EUR],
+    [Legal, Contabilitate & Rezervă], [2,500 EUR], [Lansare operațională conformă juridic]
   )
 ]
-Profitabilitatea devine pozitivă în luna a 14-a, moment în care valoarea generată de utilizatorii recurenți (LTV - Life-Time Value) depășește semnificativ CAC-ul, generând profit organic.
+Profitabilitatea devine pozitivă în luna a 14-a, moment în care valoarea generată de utilizatorii recurenți (LTV) acoperă și depășește CAC-ul optimizat de 3 EUR.
 
 = Arhitectura Tehnică a Proiectului
 
