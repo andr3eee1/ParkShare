@@ -69,7 +69,7 @@ Platforma oferă o soluție *Peer-to-Peer (P2P)*:
 
 Conform studiilor urbane și analizelor noastre interne, potențialul de piață este enorm. 
 
-== Timpul pierdut de șoferi în marile orașe (Minute / zi)
+== Timpul pierdut de șoferi în marile orașe
 #align(center)[
   #box(width: 80%, height: 120pt)[
     #grid(
@@ -84,7 +84,7 @@ Conform studiilor urbane și analizelor noastre interne, potențialul de piață
       rect(width: 30pt, height: 15pt, fill: brand-dark, radius: 2pt),
       
       // LABELS
-      text(size: 9pt)[București\ (40m)],
+      text(size: 9pt)[București\ (41m)],
       text(size: 9pt)[Cluj\ (32m)],
       text(size: 9pt)[Timișoara\ (22m)],
       text(size: 9pt)[Londra\ (47m)],
@@ -93,7 +93,7 @@ Conform studiilor urbane și analizelor noastre interne, potențialul de piață
   ]
 ]
 
-*(Grafic: Impactul ParkShare asupra reducerii timpului petrecut în trafic)*
+*(Sursă date: Conform TomTom Traffic Index 2025, șoferii din București pierd 171 de ore anual în trafic, adică o medie de 41 de minute/zi lucrătoare doar pe fondul congestiei).*
 
 == Segmentarea Pieței (TAM, SAM, SOM)
 - *TAM (Total Addressable Market):* Toți șoferii din zonele urbane europene care întâmpină dificultăți în a găsi parcare (aprox. 5 miliarde EUR/an).
@@ -120,20 +120,20 @@ Pe baza modelului nostru cu comision de 15% pe tranzacție (calculat la o medie 
 - *Anul 1:* Preluarea a 500 de spații active zilnic. Venituri nete estimate (Net Revenue): ~80,000 EUR.
 - *Anul 3 (Scalare Națională):* 5,000 spații active zilnic. Venituri nete estimate: ~1.2 milioane EUR.
 
-*Justificarea Break-Even Point (Luna 14):*
-Pentru validarea pe piață și atingerea masei critice în primul oraș, adoptăm o abordare "Lean/Pre-Seed", necesitând o investiție inițială hiper-eficientă de doar *15,000 EUR*, alocată astfel:
+*Costuri Reale de Validare (Bootstrapping / Lean Startup):*
+Pentru lansarea MVP-ului pe piața locală, ne folosim de infrastructura modernă pentru a menține costurile extrem de reduse (buget total de doar *4,000 EUR* în primele 6 luni):
 #align(center)[
   #table(
-    columns: (1.5fr, 1fr, 1.5fr),
+    columns: (1fr, 1fr, 2fr),
     inset: 8pt,
     align: horizon,
-    [*Categorie*], [*Cost Estimat*], [*KPI (Indicator de Performanță)*],
-    [Infrastructură (Cloud & Maps API)], [2,500 EUR / an], [Cost mediu de server sub 200 EUR/lună],
-    [Marketing (Lansare Hiper-Localizată)], [10,000 EUR], [CAC (Cost per Achiziție) sub 3 EUR],
-    [Legal, Contabilitate & Rezervă], [2,500 EUR], [Lansare operațională conformă juridic]
+    [*Categorie*], [*Cost Estimat (Live)*], [*Explicație / Sursă Date*],
+    [Legal & Setup SRL], [~250 EUR (one-time)], [ONRC + Capital Social (500 RON) + Servicii tip StartCo/Incorpo],
+    [Infrastructură (Cloud & Hărți)], [~0 EUR / primele luni], [Google Maps Platform oferă credit lunar gratuit de \$200 (suficient pt. ~28.000 afișări hărți)],
+    [Marketing (Achiziție Users)], [~3,500 EUR], [CAC estimat la 1.5 - 2 EUR (bazat pe un CPM mediu de \$4-\$6 pe Facebook/Meta Ads în RO)]
   )
 ]
-Profitabilitatea devine pozitivă în luna a 14-a, moment în care valoarea generată de utilizatorii recurenți (LTV) acoperă și depășește CAC-ul optimizat de 3 EUR.
+Prin acest model extrem de "lean", riscul investițional este cvasi-zero, iar break-even point-ul operațional este atins imediat ce densitatea pe un cartier depășește pragul critic.
 
 = Arhitectura Tehnică a Proiectului
 
