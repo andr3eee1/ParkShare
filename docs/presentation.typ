@@ -44,6 +44,27 @@ Platforma oferă o soluție *Peer-to-Peer (P2P)*:
 - *Pentru Șoferi:* Posibilitatea de a găsi, rezerva și plăti un loc de parcare direct din aplicație, la prețuri competitive, eliminând stresul căutării.
 - *Pentru Gazde:* O metodă pasivă și sigură de a genera venituri suplimentare prin închirierea locului de parcare propriu.
 
+== User Journey (Fluxul Utilizatorului)
+#align(center)[
+  #box(
+    fill: brand-light, inset: 15pt, radius: 5pt, stroke: 1pt + brand-dark,
+    [
+      #grid(
+        columns: (auto, auto, auto, auto, auto, auto, auto),
+        align: center + horizon,
+        column-gutter: 10pt,
+        rect(fill: brand-green, radius: 3pt, inset: 8pt)[#text(fill: white, weight: "bold")[1. Caută]],
+        [#text(size: 16pt)[$arrow.r$]],
+        rect(fill: brand-green, radius: 3pt, inset: 8pt)[#text(fill: white, weight: "bold")[2. Rezervă & Plătește]],
+        [#text(size: 16pt)[$arrow.r$]],
+        rect(fill: brand-green, radius: 3pt, inset: 8pt)[#text(fill: white, weight: "bold")[3. Parchează]],
+        [#text(size: 16pt)[$arrow.r$]],
+        rect(fill: brand-dark, radius: 3pt, inset: 8pt)[#text(fill: white, weight: "bold")[4. Gazda încasează]]
+      )
+    ]
+  )
+]
+
 = Analiza Pieței și Statistici
 
 Conform studiilor urbane și analizelor noastre interne, potențialul de piață este enorm. 
@@ -78,6 +99,27 @@ Conform studiilor urbane și analizelor noastre interne, potențialul de piață
 - *TAM (Total Addressable Market):* Toți șoferii din zonele urbane europene care întâmpină dificultăți în a găsi parcare (aprox. 5 miliarde EUR/an).
 - *SAM (Serviceable Available Market):* Șoferii din România și Europa de Est care folosesc smartphone-uri pentru servicii de mobilitate.
 - *SOM (Serviceable Obtainable Market):* 5% din piața din București și Cluj-Napoca în primii 2 ani (estimat la 2.5 milioane EUR tranzacționați anual).
+
+== Avantaj Competitiv
+Majoritatea soluțiilor actuale se axează exclusiv pe digitalizarea parcărilor publice/de stat, ignorând complet oferta imensă de spații private.
+#align(center)[
+  #table(
+    columns: (2fr, 1fr, 1fr, 1fr),
+    inset: 10pt,
+    align: horizon,
+    [*Funcționalitate*], [*ParkShare*], [*Aplicații de Stat*], [*Parcări Tradiționale*],
+    [Spații Private/Rezidențiale], [*Da*], [Nu], [Nu],
+    [Sistem de Rating / Trust], [*Da*], [Nu], [Nu],
+    [Prețuri Dinamice & Mici], [*Da*], [Nu (Tarif Fix)], [Nu (Tarif Ridicat)],
+    [Rezervare Garantată Avans], [*Da*], [Depinde de noroc], [Nu (Primul venit)]
+  )
+]
+
+== Proiecții Financiare (Estimare conservatoare)
+Pe baza modelului nostru cu comision de 15% pe tranzacție:
+- *Anul 1:* Preluarea a 500 de spații active zilnic. Venituri nete estimate (Net Revenue): 75,000 EUR.
+- *Anul 3 (Scalare Națională):* 5,000 spații active zilnic. Venituri nete estimate: 1.2 milioane EUR.
+Break-even point-ul operațional este estimat la sfârșitul lunii a 14-a de activitate.
 
 = Arhitectura Tehnică a Proiectului
 
@@ -121,6 +163,11 @@ Dezvoltarea și scalarea unei platforme de tip P2P în sectorul parcărilor impl
 == Riscuri Economice și Operaționale
 - *Chicken-and-Egg Problem:* Lipsa de parcări disponibile inițial descurajează șoferii. *Atenuare:* Adoptăm o lansare hiper-localizată, concentrându-ne pe o singură zonă/cartier până la atingerea lichidității.
 - *Elasticitatea Prețului:* Prețurile cerute de gazde pot depăși parcările publice. *Atenuare:* Algoritmul nostru va sugera prețuri dinamice bazate pe cerere și ofertă, asigurându-se că parcările ParkShare rămân mai ieftine și mai atractive decât alternativele publice.
+
+= Echipa și Viziunea
+
+Pentru a asigura succesul platformei, execuția tehnică excelentă trebuie combinată cu o strategie de creștere ascuțită. 
+*Viziunea noastră* este să transformăm felul în care orașele europene gestionează spațiul urban, mutând accentul de pe "construcția de noi parcări din beton" pe "optimizarea spațiilor deja existente prin tehnologie". Echipa combină know-how tehnic avansat (React, Sisteme Real-Time) cu înțelegerea pieței locale de mobilitate.
 
 = Concluzii
 
