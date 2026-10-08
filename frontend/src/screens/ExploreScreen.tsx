@@ -978,7 +978,11 @@ export const ExploreScreen = () => {
                   <Text style={styles.availableText}>Available: {selectedSpot.available}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <TouchableOpacity onPress={() => setSelectedSpot(null)} style={styles.closeButton}>
+                  <TouchableOpacity 
+                    onPress={() => setSelectedSpot(null)} 
+                    style={styles.closeButton}
+                    pressRetentionOffset={{ top: 200, bottom: 200, left: 200, right: 200 }}
+                  >
                     <Ionicons name="close-circle" size={24} color={tokens.colors.secondaryText} />
                   </TouchableOpacity>
                   <Text style={styles.spotPrice}>{selectedSpot.price} RON<Text style={styles.perHour}>/hr</Text></Text>
@@ -994,10 +998,14 @@ export const ExploreScreen = () => {
                   <Text style={styles.municipalWarningText}>This spot is currently unavailable.</Text>
                 </View>
               ) : selectedSpot.type === 'private' ? (
-                <TouchableOpacity style={styles.reserveButton} onPress={() => { 
-                  setDepartureMinutes(Math.min(sliderMin + 60, sliderMax)); 
-                  setModalVisible(true); 
-                }}>
+                <TouchableOpacity 
+                  style={styles.reserveButton} 
+                  pressRetentionOffset={{ top: 200, bottom: 200, left: 200, right: 200 }}
+                  delayPressIn={0}
+                  onPress={() => { 
+                    setDepartureMinutes(Math.min(sliderMin + 60, sliderMax)); 
+                    setModalVisible(true); 
+                  }}>
                   <Text style={styles.reserveButtonText}>Reserve space</Text>
                 </TouchableOpacity>
               ) : (
@@ -1008,6 +1016,8 @@ export const ExploreScreen = () => {
 
               <TouchableOpacity 
                 style={[styles.reserveButton, { marginTop: 12, backgroundColor: tokens.colors.white, borderWidth: 1, borderColor: '#E5E7EB' }]} 
+                pressRetentionOffset={{ top: 200, bottom: 200, left: 200, right: 200 }}
+                delayPressIn={0}
                 onPress={() => setDetailsVisible(true)}
               >
                 <Text style={[styles.reserveButtonText, { color: tokens.colors.primaryText }]}>See Details</Text>
