@@ -397,13 +397,13 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
   useEffect(() => {
     if (Platform.OS === 'web' && webMapRef.current) {
       if (selectedSpot) {
-        webMapRef.current.flyTo(getCoordinates(selectedSpot), webMapRef.current.getZoom(), { duration: 0.8 });
+        webMapRef.current.panTo(getCoordinates(selectedSpot), { animate: true, duration: 0.3 });
       }
     } else if (webviewRef.current) {
       let script = `if (typeof updateSelection === 'function') { updateSelection(${JSON.stringify(selectedSpot?.id || '')}); }`;
       if (selectedSpot) {
         const coords = getCoordinates(selectedSpot);
-        script += `if (typeof map !== 'undefined') { map.flyTo([${coords[0]}, ${coords[1]}], map.getZoom(), { duration: 0.8 }); }`;
+        script += `if (typeof map !== 'undefined') { map.panTo([${coords[0]}, ${coords[1]}], { animate: true, duration: 0.3 }); }`;
       }
       script += 'true;';
       webviewRef.current.injectJavaScript(script);

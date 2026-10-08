@@ -140,6 +140,14 @@ export const ExploreScreen = () => {
   const searchInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
+    if (selectedSpot) {
+      Keyboard.dismiss();
+      setSearchFocused(false);
+      searchInputRef.current?.blur();
+    }
+  }, [selectedSpot]);
+
+  useEffect(() => {
     let interval: any;
     if (activeReservation) {
       interval = setInterval(() => {

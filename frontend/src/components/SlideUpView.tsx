@@ -21,7 +21,7 @@ export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, dragg
   useEffect(() => {
     Animated.spring(slideAnim, {
       toValue: initialMinimized ? minimizedOffset : 0,
-      useNativeDriver: true,
+      useNativeDriver: false,
       tension: 50,
       friction: 8
     }).start();
@@ -51,7 +51,7 @@ export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, dragg
         setIsMinimized(minimize);
         Animated.spring(slideAnim, {
           toValue: minimize ? minimizedOffset : 0,
-          useNativeDriver: true,
+          useNativeDriver: false,
           tension: 50,
           friction: 8
         }).start();
@@ -59,7 +59,7 @@ export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, dragg
       onPanResponderTerminate: () => {
         Animated.spring(slideAnim, {
           toValue: isMinimizedRef.current ? minimizedOffset : 0,
-          useNativeDriver: true,
+          useNativeDriver: false,
           tension: 50,
           friction: 8
         }).start();
