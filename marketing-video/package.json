@@ -1,0 +1,22 @@
+{
+  "name": "marketing-video",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "remotion studio src/index.ts", "build": "remotion render src/index.ts ParkShareVideo out/video.mp4", "build:prores": "remotion render src/index.ts ParkShareVideo out/video_high_quality.mov --codec=prores --prores-profile=4444"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "dependencies": {
+    "@remotion/cli": "^4.0.534",
+    "@remotion/transitions": "^4.0.534",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "lucide-react": "^1.53.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.534",
+    "typescript": "^7.0.2"
+  }
+}
