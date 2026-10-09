@@ -75,6 +75,23 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
     res.status(500).json({ error: 'Internal server error' });
   }
+});// DELETE a spot
+router.delete('/:id', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = req.user?.userId;
+    const spotId = req.params.id as string;
+
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const spot = await prisma.parkingSpot.findUnique({ where: { id: spotId } });
+    if (!spot) return res.status(404).json({ error: 'Spot not found' });
+    if (spot.ownerId !== userId) return res.status(403).json({ error: 'Forbidden' });
+
+    await prisma.parkingSpot.delete({ where: { id: spotId } });
+    res.json({ message: 'Spot deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;

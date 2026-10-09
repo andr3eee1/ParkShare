@@ -10,7 +10,6 @@ import { apiClient } from '../api/client';
 
 
 type BookingStatus = 'Upcoming' | 'Completed' | 'Cancelled';
-type HistoryFilter = 'All' | BookingStatus;
 
 type MockBooking = {
   id: string;
@@ -76,8 +75,6 @@ const mockBookings: MockBooking[] = [
   },
 ];
 
-const filters: HistoryFilter[] = ['All', 'Upcoming', 'Completed', 'Cancelled'];
-
 const statusColors: Record<BookingStatus, { background: string; text: string; icon: keyof typeof Ionicons.glyphMap }> = {
   Upcoming: { background: '#E6F5EE', text: tokens.colors.availabilityGreen, icon: 'time-outline' },
   Completed: { background: '#E8F1F5', text: tokens.colors.municipalTeal, icon: 'checkmark-circle-outline' },
@@ -86,7 +83,6 @@ const statusColors: Record<BookingStatus, { background: string; text: string; ic
 
 export const HistoryScreen = () => {
   const { token } = useContext(AuthContext);
-  const [activeFilter, setActiveFilter] = useState<HistoryFilter>('All');
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -137,11 +133,6 @@ export const HistoryScreen = () => {
     }
   };
 
-  const visibleBookings = useMemo(
-    () => activeFilter === 'All' ? bookings : bookings.filter((booking) => booking.status === activeFilter),
-    [activeFilter, bookings],
-  );
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -186,36 +177,19 @@ export const HistoryScreen = () => {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Your bookings</Text>
-          <Text style={styles.bookingCount}>{visibleBookings.length} {visibleBookings.length === 1 ? 'trip' : 'trips'}</Text>
+          <Text style={styles.bookingCount}>{bookings.length} {bookings.length === 1 ? 'trip' : 'trips'}</Text>
         </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-          {filters.map((filter) => {
-            const isActive = filter === activeFilter;
-            return (
-              <TouchableOpacity
-                key={filter}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isActive }}
-                onPress={() => setActiveFilter(filter)}
-                style={[styles.filterButton, isActive && styles.filterButtonActive]}
-              >
-                <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{filter}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
 
         <View style={styles.bookingList}>
-          {visibleBookings.map((booking) => <BookingCard key={booking.id} booking={booking} />)}
+          {bookings.map((booking) => <BookingCard key={booking.id} booking={booking} />)}
         </View>
 
-        {visibleBookings.length === 0 && (
+        {bookings.length === 0 && (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
               <Ionicons name="calendar-outline" size={28} color={tokens.colors.secondaryText} />
             </View>
-            <Text style={styles.emptyTitle}>No {activeFilter.toLowerCase()} trips</Text>
+            <Text style={styles.emptyTitle}>No trips</Text>
             <Text style={styles.emptyText}>Your parking activity will appear here.</Text>
           </View>
         )}
@@ -378,30 +352,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.secondaryText,
     fontFamily: tokens.typography.body,
     fontSize: 12,
-  },
-  filterRow: {
-    paddingBottom: 16,
-  },
-  filterButton: {
-    backgroundColor: tokens.colors.panelSurface,
-    borderColor: '#E2E7EA',
-    borderRadius: tokens.radii.pill,
-    borderWidth: 1,
-    marginRight: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  filterButtonActive: {
-    backgroundColor: tokens.colors.primaryText,
-    borderColor: tokens.colors.primaryText,
-  },
-  filterText: {
-    color: tokens.colors.secondaryText,
-    fontFamily: tokens.typography.bodyMedium,
-    fontSize: 13,
-  },
-  filterTextActive: {
-    color: tokens.colors.white,
   },
   bookingList: {
     gap: 12,
