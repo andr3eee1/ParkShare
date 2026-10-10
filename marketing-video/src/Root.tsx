@@ -9,7 +9,7 @@ export const RemotionVideo: React.FC = () => {
       <Composition
         id="ParkShareVideo"
         component={() => <I18nProvider lang="en"><MainVideo /></I18nProvider>}
-        durationInFrames={778}
+        durationInFrames={1560}
         fps={30}
         width={1920}
         height={1080}
@@ -17,7 +17,7 @@ export const RemotionVideo: React.FC = () => {
       <Composition
         id="ParkShareVideo-RO"
         component={() => <I18nProvider lang="ro"><MainVideo /></I18nProvider>}
-        durationInFrames={778}
+        durationInFrames={1560}
         fps={30}
         width={1920}
         height={1080}
