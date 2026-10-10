@@ -663,7 +663,7 @@ export const ExploreScreen = () => {
     if (selectedSpot) return null;
     return (
     <>
-      <View style={[styles.headerContainer, { pointerEvents: 'box-none' as any }]}>
+      <View pointerEvents="box-none" style={styles.headerContainer}>
           <GlassPanel borderRadius={tokens.radii.topPanel} style={styles.headerPanel}>
             <View style={styles.headerTopRow}>
               <Text style={styles.wordmark}>ParkShare</Text>
@@ -959,7 +959,7 @@ export const ExploreScreen = () => {
   const renderMapControls = () => (
     <>
       {/* Map Controls */}
-        <View style={[styles.mapControls, !isDesktop && selectedSpot && { bottom: 300 }, { pointerEvents: 'box-none' as any }]}>
+        <View pointerEvents="box-none" style={[styles.mapControls, !isDesktop && selectedSpot && { bottom: 300 }]}>
 
           <GlassPanel borderRadius={12} style={styles.controlSingle}>
             <TouchableOpacity style={styles.controlButton} onPress={() => mapRef.current?.centerOnLocation(userLocation || DEFAULT_USER_LOCATION)}>
@@ -974,7 +974,7 @@ export const ExploreScreen = () => {
     <>
       {/* Booking Sheet (Simplified) */}
         {selectedSpot && (
-          <SlideUpView style={[isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper, { pointerEvents: 'box-none' as any }]}>
+          <SlideUpView pointerEvents="box-none" style={[isDesktop ? { marginTop: 16 } : styles.bookingSheetWrapper]}>
             <GlassPanel borderRadius={tokens.radii.upperSheet} style={isDesktop ? [styles.bookingSheet, { marginBottom: 0, marginHorizontal: 0 }] : styles.bookingSheet}>
               <View style={styles.sheetHeader}>
                 <View style={{ flex: 1 }}>
@@ -1373,12 +1373,14 @@ export const ExploreScreen = () => {
               }}
             />
           )}
-          <SafeAreaView style={[styles.safeArea, { pointerEvents: 'box-none' as any, zIndex: 2 }]}>
-            {renderSearchPanel()}
-            {renderMapControls()}
-            {renderActiveReservation()}
-            {renderBookingSheet()}
-          </SafeAreaView>
+          <View pointerEvents="box-none" style={[styles.safeArea, { zIndex: 2 }]}>
+            <SafeAreaView pointerEvents="box-none" style={{ flex: 1 }}>
+              {renderSearchPanel()}
+              {renderMapControls()}
+              {renderActiveReservation()}
+              {renderBookingSheet()}
+            </SafeAreaView>
+          </View>
         </View>
       )}
       {renderModal()}
