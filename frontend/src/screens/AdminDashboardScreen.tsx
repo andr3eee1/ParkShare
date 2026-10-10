@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -6,7 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../components/GlassPanel';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
-import { adminApi } from '../api/client';
+import { adminApi, ApiRequestError, checkBackendHealth } from '../api/client';
+import { API_BASE_URL, API_URL_SOURCE } from '../api/config';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -34,6 +35,61 @@ type Overview = {
   limitations: { reports: boolean; paymentReviews: boolean };
 };
 
+type DiagnosticStatus = 'checking' | 'connected' | 'unavailable' | 'unknown';
+
+type Diagnostics = {
+  backend: DiagnosticStatus;
+  database: DiagnosticStatus;
+  admin: DiagnosticStatus;
+  checkedAt: Date | null;
+};
+
+const statusLabels: Record<DiagnosticStatus, string> = {
+  checking: 'Checking…',
+  connected: 'Connected',
+  unavailable: 'Unavailable',
+  unknown: 'Not verified',
+};
+
+const statusIcons: Record<DiagnosticStatus, IconName> = {
+  checking: 'ellipsis-horizontal-circle-outline',
+  connected: 'checkmark-circle-outline',
+  unavailable: 'close-circle-outline',
+  unknown: 'help-circle-outline',
+};
+
+const statusColors: Record<DiagnosticStatus, string> = {
+  checking: tokens.colors.warningAmber,
+  connected: tokens.colors.availabilityGreen,
+  unavailable: '#C24141',
+  unknown: tokens.colors.secondaryText,
+};
+
+const formatRequestError = (requestError: unknown): string => {
+  if (requestError instanceof ApiRequestError) {
+    if (requestError.status === 401) return 'Your session has expired. Sign in again.';
+    if (requestError.status === 403) return 'Your account does not have admin access.';
+    return requestError.message;
+  }
+  if (requestError instanceof Error && requestError.name === 'AbortError') {
+    return `The backend at ${API_BASE_URL} did not respond in time.`;
+  }
+  return `Could not reach the backend at ${API_BASE_URL}.`;
+};
+
+const DiagnosticRow = ({ label, status, detail }: { label: string; status: DiagnosticStatus; detail?: string }) => (
+  <View style={styles.diagnosticRow}>
+    <View style={styles.diagnosticCopy}>
+      <Text style={styles.diagnosticLabel}>{label}</Text>
+      {detail ? <Text style={styles.diagnosticDetail} selectable>{detail}</Text> : null}
+    </View>
+    <View style={styles.diagnosticStatus}>
+      <Ionicons name={statusIcons[status]} size={17} color={statusColors[status]} />
+      <Text style={[styles.diagnosticStatusText, { color: statusColors[status] }]}>{statusLabels[status]}</Text>
+    </View>
+  </View>
+);
+
 const managementAreas = [
   { label: 'Users', description: 'Accounts and roles', icon: 'people-outline' as IconName, route: 'AdminUsers' },
   { label: 'Parking spaces', description: 'Listings and approvals', icon: 'map-outline' as IconName, route: 'AdminSpaces' },
@@ -44,15 +100,49 @@ const managementAreas = [
 export const AdminDashboardScreen = () => {
   const navigation = useNavigation<any>();
   const { width } = useWindowDimensions();
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [error, setError] = useState('');
+  const [diagnostics, setDiagnostics] = useState<Diagnostics>({ backend: 'checking', database: 'checking', admin: 'checking', checkedAt: null });
+  const [lastStatsRefresh, setLastStatsRefresh] = useState<Date | null>(null);
   const metricWidth = width >= 900 ? '23.5%' : '48%';
 
-  useEffect(() => {
+  const loadDashboard = useCallback(async () => {
     if (!token) return;
-    adminApi(token, '/admin/overview').then(setOverview).catch((requestError) => setError(requestError.message));
+
+    setError('');
+    setDiagnostics((current) => ({ ...current, backend: 'checking', database: 'checking', admin: 'checking' }));
+
+    const [healthResult, overviewResult] = await Promise.allSettled([
+      checkBackendHealth(),
+      adminApi(token, '/admin/overview'),
+    ]);
+
+    const backendStatus: DiagnosticStatus = healthResult.status === 'fulfilled' ? 'connected' : 'unavailable';
+    let databaseStatus: DiagnosticStatus = 'unknown';
+    if (healthResult.status === 'fulfilled') {
+      databaseStatus = healthResult.value.database || 'unknown';
+    }
+
+    if (overviewResult.status === 'fulfilled') {
+      setOverview(overviewResult.value);
+      setLastStatsRefresh(new Date());
+      if (databaseStatus === 'unknown') databaseStatus = 'connected';
+    } else {
+      setError(formatRequestError(overviewResult.reason));
+    }
+
+    setDiagnostics({
+      backend: backendStatus,
+      database: databaseStatus,
+      admin: overviewResult.status === 'fulfilled' ? 'connected' : 'unavailable',
+      checkedAt: new Date(),
+    });
   }, [token]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   const metrics: Metric[] = [
     { label: 'Active users', value: overview ? overview.users.total.toLocaleString() : '—', change: overview ? `${overview.users.changePercent >= 0 ? '+' : ''}${overview.users.changePercent}%` : 'Loading', icon: 'people-outline', color: tokens.colors.municipalTeal },
@@ -88,6 +178,24 @@ export const AdminDashboardScreen = () => {
           {overview ? <Ionicons name="cloud-done-outline" size={18} color={tokens.colors.municipalTeal} /> : <ActivityIndicator size="small" color={tokens.colors.municipalTeal} />}
           <Text style={styles.mockNoticeText}>{error || (overview ? 'Live data from the ParkShare database.' : 'Loading live admin data...')}</Text>
         </View>
+
+        <Text style={styles.sectionTitle}>Connection diagnostics</Text>
+        <GlassPanel style={styles.diagnosticsPanel} borderRadius={20} intensity={30} overlayColor={tokens.colors.panelSurface}>
+          <DiagnosticRow label="Backend API" status={diagnostics.backend} detail={`${API_BASE_URL} · ${API_URL_SOURCE === 'environment' ? 'configured by environment' : 'deployed fallback'}`} />
+          <DiagnosticRow label="Database" status={diagnostics.database} detail="Verified through the health check and statistics query" />
+          <DiagnosticRow label="Admin access" status={diagnostics.admin} detail="Authenticated statistics request" />
+          <DiagnosticRow label="Signed-in account" status={user ? 'connected' : 'unavailable'} detail={user ? `${user.email} · ${user.role}` : 'No authenticated account'} />
+          <View style={styles.diagnosticFooter}>
+            <View style={styles.refreshTimes}>
+              <Text style={styles.checkedAtText}>{diagnostics.checkedAt ? `Checked ${diagnostics.checkedAt.toLocaleTimeString()}` : 'Checking connection…'}</Text>
+              <Text style={styles.checkedAtText}>{lastStatsRefresh ? `Stats refreshed ${lastStatsRefresh.toLocaleTimeString()}` : 'Stats not loaded yet'}</Text>
+            </View>
+            <TouchableOpacity style={styles.refreshButton} onPress={loadDashboard} disabled={diagnostics.backend === 'checking' || diagnostics.admin === 'checking'} accessibilityRole="button" accessibilityLabel="Refresh connection diagnostics">
+              <Ionicons name="refresh-outline" size={16} color={tokens.colors.municipalTeal} />
+              <Text style={styles.refreshButtonText}>Refresh</Text>
+            </TouchableOpacity>
+          </View>
+        </GlassPanel>
 
         <View style={styles.metricGrid}>
           {metrics.map((metric) => (
@@ -159,6 +267,18 @@ const styles = StyleSheet.create({
   adminBadgeText: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 12 },
   mockNotice: { alignItems: 'center', backgroundColor: '#E8F1F5', borderRadius: 12, flexDirection: 'row', marginBottom: 20, paddingHorizontal: 13, paddingVertical: 11 },
   mockNoticeText: { color: tokens.colors.municipalTeal, flex: 1, fontFamily: tokens.typography.body, fontSize: 12, marginLeft: 8 },
+  diagnosticsPanel: { paddingHorizontal: 15, paddingVertical: 4 },
+  diagnosticRow: { alignItems: 'center', borderBottomColor: '#E8ECEF', borderBottomWidth: 1, flexDirection: 'row', minHeight: 62, paddingVertical: 10 },
+  diagnosticCopy: { flex: 1, paddingRight: 8 },
+  diagnosticLabel: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 13 },
+  diagnosticDetail: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10, marginTop: 3 },
+  diagnosticStatus: { alignItems: 'center', flexDirection: 'row', gap: 5 },
+  diagnosticStatusText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 11 },
+  diagnosticFooter: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
+  refreshTimes: { flex: 1, gap: 3 },
+  checkedAtText: { color: tokens.colors.secondaryText, flex: 1, fontFamily: tokens.typography.body, fontSize: 10 },
+  refreshButton: { alignItems: 'center', borderColor: '#B7D8D3', borderRadius: 9, borderWidth: 1, flexDirection: 'row', gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
+  refreshButtonText: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 11 },
   metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
   metricCard: { minHeight: 150, padding: 15 },
   metricIcon: { alignItems: 'center', borderRadius: 11, height: 38, justifyContent: 'center', marginBottom: 13, width: 38 },
