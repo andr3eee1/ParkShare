@@ -1,6 +1,6 @@
 import { AlertProvider } from "./src/context/AlertContext";
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Platform, Text, Image } from 'react-native';
+import { View, Platform, Text, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { useContext } from 'react';
@@ -33,6 +33,7 @@ import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
 import { AdminManagementScreen, AdminRecordScreen } from './src/screens/AdminManagementScreens';
 import { PassProvider } from './src/context/PassContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { styles } from './App.styles';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -150,7 +151,6 @@ export default function App() {
     );
   };
 
-
   const AppRoot = (
     <SafeAreaProvider>
       <AlertProvider>
@@ -173,29 +173,3 @@ export default function App() {
 
   return AppRoot;
 }
-
-const styles = StyleSheet.create({
-  webWrapper: {
-    flex: 1,
-    backgroundColor: '#EEF2F5',
-  },
-  mobileContainer: {
-    // Deprecated fixed size constraints
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.paleMapBackground,
-  },
-  loadingMark: {
-    width: 96,
-    height: 96,
-    marginBottom: 12,
-  },
-  loadingTitle: {
-    fontFamily: tokens.typography.headingBold,
-    fontSize: 28,
-    color: tokens.colors.primaryText,
-  },
-});

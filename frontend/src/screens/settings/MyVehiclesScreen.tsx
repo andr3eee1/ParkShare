@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { apiClient } from '../../api/client';
 import { useAlert } from '../../context/AlertContext';
 import { GlassPanel } from '../../components/GlassPanel';
 import { Screen, ScreenHeader } from '../../components/Screen';
+import { styles } from './MyVehiclesScreen.styles';
 
 export const MyVehiclesScreen = () => {
   const { alert } = useAlert();
@@ -185,54 +179,3 @@ export const MyVehiclesScreen = () => {
     </Screen>
   );
 };
-
-const styles = StyleSheet.create({
-  emptyText: { fontFamily: tokens.typography.body, fontSize: 13, color: tokens.colors.secondaryText, marginBottom: 12 },
-  cardItem: { flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 12 },
-  cardIcon: {
-    alignItems: 'center',
-    backgroundColor: tokens.colors.emeraldTint,
-    borderRadius: 10,
-    height: 38,
-    justifyContent: 'center',
-    marginRight: 14,
-    width: 38,
-  },
-  cardName: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: tokens.colors.primaryText },
-  cardPlate: { fontFamily: tokens.typography.body, fontSize: 13, color: tokens.colors.secondaryText, marginTop: 2 },
-  defaultBadge: { backgroundColor: '#E0F2FE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 8 },
-  defaultText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 11, color: '#0284C7' },
-  actionButtons: { flexDirection: 'row' },
-  actionIcon: { padding: 8, marginLeft: 2 },
-  addCardButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.panelSurface,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-    marginTop: 4,
-  },
-  addCardText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: tokens.colors.primaryText, marginLeft: 8 },
-  addCardForm: { padding: 18, marginTop: 4 },
-  formTitle: { fontFamily: tokens.typography.headingMedium, fontSize: 16, color: tokens.colors.primaryText, marginBottom: 16 },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 13,
-    marginBottom: 12,
-    fontFamily: tokens.typography.body,
-    fontSize: 15,
-    color: tokens.colors.primaryText,
-  },
-  checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: 4 },
-  checkboxLabel: { marginLeft: 8, fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.primaryText },
-  submitButton: { flex: 1, backgroundColor: tokens.colors.emerald, padding: 13, borderRadius: 12, alignItems: 'center' },
-  cancelButton: { backgroundColor: '#EEF2F5' },
-  submitButtonText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.white, fontSize: 14 },
-});

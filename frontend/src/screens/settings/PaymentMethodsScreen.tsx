@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
@@ -14,6 +7,7 @@ import { apiClient } from '../../api/client';
 import { useAlert } from '../../context/AlertContext';
 import { GlassPanel } from '../../components/GlassPanel';
 import { Screen, ScreenHeader } from '../../components/Screen';
+import { styles } from './PaymentMethodsScreen.styles';
 
 export const PaymentMethodsScreen = () => {
   const { user, updateUser } = useContext(AuthContext);
@@ -182,84 +176,3 @@ export const PaymentMethodsScreen = () => {
     </Screen>
   );
 };
-
-const styles = StyleSheet.create({
-  walletCard: { padding: 22, marginBottom: 26 },
-  walletHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  walletIcon: {
-    alignItems: 'center',
-    backgroundColor: tokens.colors.emeraldTint,
-    borderRadius: 10,
-    height: 34,
-    justifyContent: 'center',
-    marginRight: 10,
-    width: 34,
-  },
-  walletTitle: { fontFamily: tokens.typography.bodyMedium, fontSize: 14, color: tokens.colors.secondaryText },
-  walletAmount: {
-    fontFamily: tokens.typography.headingBold,
-    fontSize: 34,
-    color: tokens.colors.primaryText,
-    marginBottom: 16,
-  },
-  topUpButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.emerald,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: tokens.radii.pill,
-  },
-  topUpText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.white, fontSize: 13, marginLeft: 6 },
-  sectionTitle: {
-    fontFamily: tokens.typography.headingMedium,
-    fontSize: 18,
-    color: tokens.colors.primaryText,
-    marginBottom: 12,
-  },
-  emptyText: { fontFamily: tokens.typography.body, fontSize: 13, color: tokens.colors.secondaryText, marginBottom: 12 },
-  cardItem: { flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 12 },
-  cardIcon: {
-    alignItems: 'center',
-    backgroundColor: tokens.colors.emeraldTint,
-    borderRadius: 10,
-    height: 38,
-    justifyContent: 'center',
-    marginRight: 14,
-    width: 38,
-  },
-  cardBrand: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: tokens.colors.primaryText },
-  cardExpiry: { fontFamily: tokens.typography.body, fontSize: 13, color: tokens.colors.secondaryText, marginTop: 2 },
-  defaultBadge: { backgroundColor: '#E0F2FE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  defaultText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 11, color: '#0284C7' },
-  addCardButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.panelSurface,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-    marginTop: 4,
-  },
-  addCardText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: tokens.colors.primaryText, marginLeft: 8 },
-  addCardForm: { padding: 18, marginTop: 4 },
-  formTitle: { fontFamily: tokens.typography.headingMedium, fontSize: 16, color: tokens.colors.primaryText, marginBottom: 16 },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 13,
-    marginBottom: 12,
-    fontFamily: tokens.typography.body,
-    fontSize: 15,
-    color: tokens.colors.primaryText,
-  },
-  submitButton: { flex: 1, backgroundColor: tokens.colors.emerald, padding: 13, borderRadius: 12, alignItems: 'center' },
-  cancelButton: { backgroundColor: '#EEF2F5' },
-  submitButtonText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.white, fontSize: 14 },
-});

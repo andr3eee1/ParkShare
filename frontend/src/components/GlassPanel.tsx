@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { tokens } from '../theme/tokens';
+import { styles } from './GlassPanel.styles';
 
 interface GlassPanelProps {
   children: React.ReactNode;
@@ -20,15 +20,3 @@ export const GlassPanel: React.FC<GlassPanelProps> = ({ children, style, intensi
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: tokens.colors.borderLight,
-    ...tokens.shadows.soft,
-  },
-  overlay: {
-    backgroundColor: tokens.colors.transparentWhite,
-  },
-});

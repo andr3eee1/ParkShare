@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { adminApi, adminPost } from '../api/client';
+import { styles } from './AdminManagementScreens.styles';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 type AdminRoute = 'AdminUsers' | 'AdminSpaces' | 'AdminBookings' | 'AdminReports';
@@ -426,61 +427,3 @@ export const AdminRecordScreen = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: tokens.colors.paleMapBackground },
-  header: { alignItems: 'flex-start', flexDirection: 'row', padding: 20, paddingBottom: 12 },
-  backButton: { alignItems: 'center', backgroundColor: tokens.colors.panelSurface, borderRadius: 12, height: 42, justifyContent: 'center', marginRight: 12, width: 42, ...tokens.shadows.soft },
-  headerCopy: { flex: 1 },
-  titleRow: { alignItems: 'center', flexDirection: 'row' },
-  titleIcon: { alignItems: 'center', borderRadius: 11, height: 38, justifyContent: 'center', marginRight: 10, width: 38 },
-  title: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 28 },
-  subtitle: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 12, marginTop: 4 },
-  searchInput: { backgroundColor: tokens.colors.panelSurface, borderColor: tokens.colors.borderLight, borderRadius: 13, borderWidth: 1, color: tokens.colors.primaryText, fontFamily: tokens.typography.body, fontSize: 13, marginHorizontal: 20, paddingHorizontal: 14, paddingVertical: 12 },
-  filters: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingVertical: 14 },
-  filter: { backgroundColor: tokens.colors.panelSurface, borderRadius: tokens.radii.pill, paddingHorizontal: 13, paddingVertical: 9 },
-  filterText: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 11 },
-  activeFilterText: { color: tokens.colors.white },
-  listContent: { paddingBottom: 36, paddingHorizontal: 20 },
-  resultCount: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.bodySemiBold, fontSize: 11, marginBottom: 9 },
-  recordCard: { alignItems: 'center', backgroundColor: tokens.colors.panelSurface, borderColor: tokens.colors.borderLight, borderRadius: 16, borderWidth: 1, flexDirection: 'row', marginBottom: 10, minHeight: 92, padding: 13, ...tokens.shadows.soft },
-  recordIcon: { alignItems: 'center', borderRadius: 12, height: 42, justifyContent: 'center', marginRight: 11, width: 42 },
-  recordCopy: { flex: 1 },
-  recordTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 14 },
-  recordSubtitle: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 11, marginTop: 3 },
-  recordMeta: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10, marginTop: 5 },
-  recordRight: { alignItems: 'flex-end', gap: 10, marginLeft: 8 },
-  statusText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 10, textAlign: 'right' },
-  emptyState: { alignItems: 'center', paddingTop: 70 },
-  emptyTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingMedium, fontSize: 17, marginTop: 12 },
-  emptyText: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 12, marginTop: 4 },
-  detailContent: { padding: 20 },
-  detailIcon: { alignItems: 'center', backgroundColor: '#E8F1F5', borderRadius: 18, height: 64, justifyContent: 'center', width: 64 },
-  detailTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 27, marginTop: 18 },
-  detailSubtitle: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, lineHeight: 20, marginTop: 5 },
-  detailPanel: { backgroundColor: tokens.colors.panelSurface, borderRadius: 16, marginTop: 24, padding: 17, ...tokens.shadows.soft },
-  detailLabel: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.bodySemiBold, fontSize: 11, marginTop: 9 },
-  detailValue: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 14, marginTop: 3 },
-  mockNotice: { alignItems: 'center', backgroundColor: '#E8F1F5', borderRadius: 12, flexDirection: 'row', marginTop: 16, paddingHorizontal: 13, paddingVertical: 11 },
-  mockNoticeText: { color: tokens.colors.municipalTeal, flex: 1, fontFamily: tokens.typography.body, fontSize: 12, marginLeft: 8 },
-  standingScores: { flexDirection: 'row', gap: 10, marginTop: 18 },
-  standingScore: { alignItems: 'center', backgroundColor: tokens.colors.panelSurface, borderRadius: 14, flex: 1, paddingVertical: 14, ...tokens.shadows.soft },
-  standingScoreValue: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 20 },
-  standingScoreLabel: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10, marginTop: 3 },
-  sanctionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  sanctionButton: { borderRadius: 10, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 9 },
-  sanctionButtonText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 12 },
-  auditPanel: { backgroundColor: tokens.colors.panelSurface, borderRadius: 14, marginTop: 18, padding: 14, ...tokens.shadows.soft },
-  auditRow: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 12, marginTop: 6 },
-  modalOverlay: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', flex: 1, justifyContent: 'center', padding: 20 },
-  modalCard: { backgroundColor: tokens.colors.white, borderRadius: 18, maxWidth: 420, padding: 22, width: '100%' },
-  modalTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 19 },
-  modalText: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, lineHeight: 19, marginTop: 8 },
-  modalInput: { borderColor: '#E5E7EB', borderRadius: 12, borderWidth: 1, color: tokens.colors.primaryText, fontFamily: tokens.typography.body, fontSize: 14, marginTop: 14, minHeight: 72, padding: 12, textAlignVertical: 'top' },
-  modalButtons: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  modalButton: { alignItems: 'center', borderRadius: 12, flex: 1, paddingVertical: 13 },
-  modalCancel: { backgroundColor: '#EEF2F5' },
-  modalCancelText: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodySemiBold, fontSize: 14 },
-  modalConfirm: { backgroundColor: tokens.colors.emerald },
-  modalConfirmText: { color: tokens.colors.white, fontFamily: tokens.typography.bodySemiBold, fontSize: 14 },
-});

@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { tokens } from '../theme/tokens';
+import { styles } from './Map.styles';
 
 let MapContainer: any, TileLayer: any, Marker: any, DivIcon: any, useMapEvents: any, useMap: any;
 if (Platform.OS === 'web') {
@@ -25,7 +26,6 @@ interface MapDestination {
 const getDestinationCoordinates = (destination?: MapDestination): [number, number] => (
   destination ? [destination.latitude, destination.longitude] : [44.4820, 26.1130]
 );
-
 
 export const getAvailability = (availableStr: string, reservations: {startTime: string, endTime: string}[] = []) => {
   const now = new Date();
@@ -287,7 +287,6 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
   </>;
 };
 
-
 const WebUserLocationMarker = ({ userLocation }: { userLocation?: { latitude: number; longitude: number } }) => {
   if (!userLocation) return null;
   return (
@@ -352,7 +351,6 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
     const lng = baseLng + (parseFloat(spot.x) - 50) * 0.0003;
     return [lat, lng];
   };
-
 
   useEffect(() => {
     if (Platform.OS !== 'web' && webviewRef.current) {
@@ -701,7 +699,6 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             return [44.4820 + (parseFloat(spot.y) - 50) * -0.0003, 26.1130 + (parseFloat(spot.x) - 50) * 0.0003];
           }
 
-
           function getAvailability(availableStr, reservations) {
             var now = new Date();
             var currentMins = now.getHours() * 60 + now.getMinutes();
@@ -922,13 +919,3 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
 });
 
 Map.displayName = 'Map';
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: tokens.colors.paleMapBackground,
-  },
-  mapGrid: {
-    flex: 1,
-  },
-});

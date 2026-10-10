@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useContext, useCallback } from 'react';
@@ -9,6 +9,7 @@ import { tokens } from '../theme/tokens';
 import { GlassPanel } from '../components/GlassPanel';
 import { Screen } from '../components/Screen';
 import { BrandGradient } from '../components/Brand';
+import { styles } from './AccountScreen.styles';
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
   ACTIVE: { label: 'Good standing', color: tokens.colors.availabilityGreen, bg: tokens.colors.emeraldTint },
@@ -137,125 +138,3 @@ export const AccountScreen = () => {
     </Screen>
   );
 };
-
-const styles = StyleSheet.create({
-  hero: {
-    borderRadius: tokens.radii.upperSheet,
-    overflow: 'hidden',
-    padding: 20,
-    marginBottom: 20,
-    ...tokens.shadows.soft,
-  },
-  heroSheen: {
-    position: 'absolute',
-    right: -60,
-    top: -80,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
-  },
-  heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  heroEyebrow: {
-    fontFamily: tokens.typography.bodySemiBold,
-    fontSize: 10,
-    letterSpacing: 1.2,
-    color: 'rgba(255, 255, 255, 0.85)',
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderRadius: tokens.radii.pill,
-  },
-  editButtonText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.white, fontSize: 13, marginLeft: 5 },
-  heroProfile: { flexDirection: 'row', alignItems: 'center' },
-  avatarContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: tokens.colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  avatarText: { fontFamily: tokens.typography.headingBold, fontSize: 24, color: tokens.colors.emeraldDeep },
-  avatarImage: { width: '100%', height: '100%', borderRadius: 32 },
-  profileInfo: { flex: 1 },
-  profileName: { fontFamily: tokens.typography.headingBold, fontSize: 22, color: tokens.colors.white, marginBottom: 2 },
-  profileEmail: { fontFamily: tokens.typography.body, fontSize: 13, color: 'rgba(255, 255, 255, 0.85)', marginBottom: 8 },
-  roleBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 7,
-  },
-  roleText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 11, color: tokens.colors.white },
-  heroStatusPill: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.white,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: tokens.radii.pill,
-    marginTop: 16,
-  },
-  heroStatusText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 12, marginLeft: 5, marginRight: 3 },
-  standingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 20,
-  },
-  standingBannerTitle: { fontFamily: tokens.typography.bodySemiBold, fontSize: 14 },
-  standingBannerText: { fontFamily: tokens.typography.body, fontSize: 12, color: tokens.colors.secondaryText, marginTop: 2 },
-  menuContainer: { paddingHorizontal: 4, marginBottom: 24 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 12 },
-  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#EDF1EF' },
-  menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: tokens.colors.emeraldTint,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  menuTextContainer: { flex: 1 },
-  menuTitle: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: tokens.colors.primaryText, marginBottom: 2 },
-  menuSubtitle: { fontFamily: tokens.typography.body, fontSize: 12, color: tokens.colors.secondaryText },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEF2F2',
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 20,
-  },
-  logoutText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: tokens.colors.danger, marginLeft: 8 },
-  versionText: { fontFamily: tokens.typography.body, fontSize: 13, color: '#9CA3AF', textAlign: 'center' },
-  brandFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 28,
-    marginBottom: 4,
-  },
-  brandMark: {
-    width: 18,
-    height: 18,
-    marginRight: 8,
-  },
-});

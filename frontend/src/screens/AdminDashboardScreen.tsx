@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { GlassPanel } from '../components/GlassPanel';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { adminApi } from '../api/client';
+import { styles } from './AdminDashboardScreen.styles';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -145,41 +146,3 @@ export const AdminDashboardScreen = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: tokens.colors.paleMapBackground },
-  scrollContent: { padding: 20, paddingBottom: 48, maxWidth: 1080, width: '100%', alignSelf: 'center' },
-  header: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 8, marginBottom: 20 },
-  backButton: { alignItems: 'center', backgroundColor: tokens.colors.panelSurface, borderRadius: 12, height: 42, justifyContent: 'center', marginRight: 12, width: 42, ...tokens.shadows.soft },
-  headerCopy: { flex: 1 },
-  eyebrow: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 10, letterSpacing: 1.1 },
-  screenTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 30, marginTop: 3 },
-  subtitle: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, marginTop: 3 },
-  adminBadge: { alignItems: 'center', backgroundColor: tokens.colors.emeraldTint, borderRadius: tokens.radii.pill, flexDirection: 'row', gap: 5, paddingHorizontal: 11, paddingVertical: 8 },
-  adminBadgeText: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 12 },
-  mockNotice: { alignItems: 'center', backgroundColor: '#E8F1F5', borderRadius: 12, flexDirection: 'row', marginBottom: 20, paddingHorizontal: 13, paddingVertical: 11 },
-  mockNoticeText: { color: tokens.colors.municipalTeal, flex: 1, fontFamily: tokens.typography.body, fontSize: 12, marginLeft: 8 },
-  metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
-  metricCard: { minHeight: 150, padding: 15 },
-  metricIcon: { alignItems: 'center', borderRadius: 11, height: 38, justifyContent: 'center', marginBottom: 13, width: 38 },
-  metricLabel: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 12 },
-  metricValue: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 22, marginTop: 3 },
-  metricChange: { fontFamily: tokens.typography.bodySemiBold, fontSize: 11, marginTop: 7 },
-  metricChangeLabel: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10 },
-  sectionTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingMedium, fontSize: 18, marginBottom: 11, marginTop: 25 },
-  panel: { paddingHorizontal: 15 },
-  queueRow: { alignItems: 'center', flexDirection: 'row', minHeight: 72, paddingVertical: 11 },
-  rowDivider: { borderBottomColor: '#E8ECEF', borderBottomWidth: 1 },
-  queueIcon: { alignItems: 'center', borderRadius: 11, height: 38, justifyContent: 'center', marginRight: 11, width: 38 },
-  rowCopy: { flex: 1 },
-  rowTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 13 },
-  rowDescription: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 11, marginTop: 3 },
-  queueCount: { alignItems: 'center', flexDirection: 'row', gap: 7, marginLeft: 8 },
-  queueCountText: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 17 },
-  managementGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
-  managementCard: { backgroundColor: tokens.colors.panelSurface, borderColor: tokens.colors.borderLight, borderRadius: 16, borderWidth: 1, minHeight: 126, padding: 14, width: '48%', ...tokens.shadows.soft },
-  managementIcon: { alignItems: 'center', backgroundColor: '#F0F3F5', borderRadius: 10, height: 35, justifyContent: 'center', width: 35 },
-  managementLabel: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 13, marginTop: 12 },
-  managementDescription: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10, marginTop: 3 },
-  managementArrow: { bottom: 13, position: 'absolute', right: 13 },
-});

@@ -1,14 +1,5 @@
 import React, { useState, useContext } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Platform,
-  Image,
-} from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
@@ -16,6 +7,7 @@ import { apiClient } from '../../api/client';
 import * as ImagePicker from 'expo-image-picker';
 import { GlassPanel } from '../../components/GlassPanel';
 import { Screen, ScreenHeader } from '../../components/Screen';
+import { styles } from './PersonalInformationScreen.styles';
 
 export const PersonalInformationScreen = () => {
   const { user, updateUser } = useContext(AuthContext);
@@ -190,70 +182,3 @@ export const PersonalInformationScreen = () => {
     </Screen>
   );
 };
-
-const styles = StyleSheet.create({
-  errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  errorText: { fontFamily: tokens.typography.body, color: '#991B1B', marginLeft: 8, flex: 1 },
-  successBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.emeraldTint,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  successText: { fontFamily: tokens.typography.body, color: '#047857', marginLeft: 8, flex: 1 },
-  avatarBlock: { alignItems: 'center', marginBottom: 24 },
-  avatarCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: tokens.colors.emerald,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    marginBottom: 14,
-    ...tokens.shadows.soft,
-  },
-  avatarImage: { width: '100%', height: '100%' },
-  avatarText: { fontFamily: tokens.typography.heading, fontSize: 34, color: tokens.colors.white },
-  changePhotoButton: {
-    backgroundColor: tokens.colors.panelSurface,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: tokens.radii.pill,
-    ...tokens.shadows.soft,
-  },
-  changePhotoText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.primaryText, fontSize: 13 },
-  card: { padding: 18 },
-  formGroup: { marginBottom: 18 },
-  lastGroup: { marginBottom: 0 },
-  label: { fontFamily: tokens.typography.bodySemiBold, fontSize: 13, marginBottom: 8, color: tokens.colors.primaryText },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 14,
-    fontFamily: tokens.typography.body,
-    fontSize: 15,
-    color: tokens.colors.primaryText,
-  },
-  disabledInput: { backgroundColor: '#F3F4F6', color: tokens.colors.secondaryText },
-  helperText: { fontFamily: tokens.typography.body, fontSize: 12, color: tokens.colors.secondaryText, marginTop: 6 },
-  button: {
-    backgroundColor: tokens.colors.emerald,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonText: { color: tokens.colors.white, fontFamily: tokens.typography.heading, fontSize: 16 },
-});
