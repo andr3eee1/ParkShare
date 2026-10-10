@@ -159,8 +159,9 @@ Spre deosebire de platformele concurente, ParkShare integrează un sistem comple
 
 == 4. Marketing Video Programatic (Remotion)
 O componentă tehnică inovatoare a proiectului nostru este generarea materialelor de marketing direct din cod. Am construit un sistem video bazat pe `Remotion` (React):
-- Renderizează videoclipuri promoționale high-end (1080p, 60fps) cu efecte de *Kinetic Typography* (blur-up, spring animations).
-- Permite generarea programatică a reclamelor în mai multe limbi (suport i18n pentru română și engleză) fără intervenția unui editor video uman.
+- Renderizează un promo high-end de *11 scene* (~52 de secunde, 1920×1080 la 30fps), ce acoperă tot fluxul utilizatorului: *Găsește → Rezervă → Parchează → Economisește → Listează → Câștigă → Încredere*.
+- *Bilingv:* fiecare scenă este randată în română *și* engleză printr-un dicționar `i18n` partajat (inclusiv noul conținut: "Park Plus", "Garanție anulată", "Gazde verificate").
+- Motion scriptat: typography kinetică, animații spring, mockup-uri de telefon animate (cronometru de parcare live, portofel & pass-uri, grila de disponibilitate a gazdei) și o bară de progres branded.
 
 = Modelul de Business & Monetizare
 

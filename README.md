@@ -41,6 +41,16 @@ The backend is a high-performance **Node.js** API using **Express** and the **Pr
 - **Trust & Safety Engine:** Ratings feed a per-user standing ladder (`src/standing.ts`). Warnings and temporary suspensions are automatic (min. 5 reviews; warn below 3.5, suspend below 3.0 for 14 days by default; three very low ratings in 90 days also triggers). **Permanent bans are never automated** — they require an admin. `requireActiveUser` enforces standing per request, and `STANDING_DRY_RUN=true` logs proposed actions without enforcing them.
 - **Secure Authentication (JWT):** Inputs are strictly validated using **Zod**. Passwords are securely hashed and salted using **bcryptjs**. Stateless sessions are issued via signed **JSON Web Tokens (JWT)**.
 
+### 🎬 Marketing Video (Remotion)
+The promo ad is generated entirely from code with **Remotion** (`marketing-video/`) — no video editor involved:
+- **11 scenes · ~52 seconds** (1080p @ 30fps), covering the full journey: *Find → Book → Park → Save → List → Earn → Trust*.
+- **Bilingual:** every scene renders in English **and** Romanian via a shared `i18n` dictionary (including new UI copy such as "Park Plus", "Deposit waived", "Verified hosts").
+- **Scripted motion:** kinetic typography, spring-based entrances, animated phone mockups (live parking timer, wallet & passes, host availability grid) and a brand progress bar across the runtime.
+- Render with:
+  ```bash
+  cd marketing-video && npm run build   # outputs out/video.mp4
+  ```
+
 ---
 
 ## 💻 Tech Stack
@@ -48,7 +58,7 @@ The backend is a high-performance **Node.js** API using **Express** and the **Pr
 *   **Backend API:** Node.js, Express.js, TypeScript, Zod
 *   **Database & ORM:** PostgreSQL (Supabase), Prisma ORM v5
 *   **Security & Trust:** bcryptjs, jsonwebtoken, AsyncStorage, automated standing/reputation engine
-*   **Marketing Tooling:** Remotion (programmatic video generation in `marketing-video/`)
+*   **Marketing Tooling:** Remotion (11-scene bilingual ~52s promo ad, rendered programmatically — `cd marketing-video && npm run build`)
 
 ---
 
