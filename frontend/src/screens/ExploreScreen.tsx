@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePasses } from '../context/PassContext';
 import { useAlert } from '../context/AlertContext';
 import { ReviewModal, RatingBadge, PendingReview } from '../components/ReviewModal';
+import { getApiUrl } from '../api/config';
 
 import {
   DEFAULT_LOCATION,
@@ -823,7 +824,7 @@ export const ExploreScreen = () => {
               <View style={styles.headerRight}>
                 <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }]}>
                   {user?.avatarUrl ? (
-                    <Image source={{ uri: user.avatarUrl }} style={{ width: '100%', height: '100%' }} />
+                    <Image source={{ uri: user.avatarUrl.startsWith('http') ? user.avatarUrl : getApiUrl(user.avatarUrl) }} style={{ width: '100%', height: '100%' }} />
                   ) : (
                     <Text style={{ fontFamily: tokens.typography.heading, fontSize: 14, color: tokens.colors.white }}>
                       {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
