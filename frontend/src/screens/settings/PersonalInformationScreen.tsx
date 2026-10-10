@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../../theme/tokens';
 import { AuthContext } from '../../context/AuthContext';
 import { apiClient } from '../../api/client';
+import { getApiUrl } from '../../api/config';
 import * as ImagePicker from 'expo-image-picker';
 import { GlassPanel } from '../../components/GlassPanel';
 import { Screen, ScreenHeader } from '../../components/Screen';
@@ -58,7 +59,8 @@ export const PersonalInformationScreen = () => {
         },
       });
 
-      setAvatarUrl(res.data.url);
+      const uploadedUrl = res.data.url?.startsWith('http') ? res.data.url : getApiUrl(res.data.url);
+      setAvatarUrl(uploadedUrl);
 
       // Auto-save the new avatar URL to the profile
       const profileRes = await apiClient.put('/auth/profile', { firstName, lastName, avatarUrl: res.data.url });
@@ -125,7 +127,7 @@ export const PersonalInformationScreen = () => {
       <View style={styles.avatarBlock}>
         <View style={styles.avatarCircle}>
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+            <Image source={{ uri: avatarUrl?.startsWith('http') ? avatarUrl : getApiUrl(avatarUrl) }} style={styles.avatarImage} />
           ) : (
             <Text style={styles.avatarText}>
               {user?.firstName?.charAt(0)}

@@ -6,6 +6,7 @@ import { useContext, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
 import { tokens } from '../theme/tokens';
+import { getApiUrl } from '../api/config';
 import { GlassPanel } from '../components/GlassPanel';
 import { Screen } from '../components/Screen';
 import { BrandGradient } from '../components/Brand';
@@ -68,7 +69,7 @@ export const AccountScreen = () => {
         <View style={styles.heroProfile}>
           <View style={styles.avatarContainer}>
             {user?.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+              <Image source={{ uri: user.avatarUrl?.startsWith('http') ? user.avatarUrl : getApiUrl(user.avatarUrl) }} style={styles.avatarImage} />
             ) : (
               <Text style={styles.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
             )}
