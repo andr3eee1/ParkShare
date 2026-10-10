@@ -17,6 +17,7 @@ import { Map, getAvailability } from '../components/Map';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePasses } from '../context/PassContext';
 import { useAlert } from '../context/AlertContext';
+import { ReviewModal, RatingBadge, PendingReview } from '../components/ReviewModal';
 
 import {
   DEFAULT_LOCATION,
@@ -137,7 +138,52 @@ export const ExploreScreen = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [activeReservation, setActiveReservation] = useState<any | null>(null);
   const [currentTimer, setCurrentTimer] = useState<number>(0);
+  
+  const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
+  const [dismissedReviewIds, setDismissedReviewIds] = useState<Set<string>>(new Set());
+  const [depositQuote, setDepositQuote] = useState<{ deposit: number; tier: string; reason: string } | null>(null);
+  
   const searchInputRef = useRef<TextInput>(null);
+
+  const fetchPendingReviews = useCallback(async () => {
+    if (!token) { setPendingReviews([]); return; }
+    try {
+      const res = await apiClient.get('/reviews/pending');
+      setPendingReviews(res.data.pending || []);
+    } catch (err) {
+      console.warn('Failed to fetch pending reviews', err);
+    }
+  }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPendingReviews();
+    }, [fetchPendingReviews])
+  );
+
+  // Server-side trust-based deposit quote for the selected spot
+  useEffect(() => {
+    let cancelled = false;
+    setDepositQuote(null);
+    if (!selectedSpot) return;
+    // Estimate only (mirrors backend/src/deposit.ts); the server always charges its own computed amount
+    const fallback = {
+      deposit: Math.round(Math.min((selectedSpot.price || 0) * 5, 50) * 100) / 100,
+      tier: 'NEW',
+      reason: 'Estimated deposit',
+    };
+    if (!selectedSpot.id || !token || String(selectedSpot.id).startsWith('spot-')) {
+      setDepositQuote(fallback);
+      return;
+    }
+    apiClient.get('/bookings/deposit-quote', { params: { spotId: selectedSpot.id } })
+      .then((res) => { if (!cancelled) setDepositQuote(res.data.quote); })
+      .catch((err) => {
+        console.warn('Failed to fetch deposit quote', err);
+        if (!cancelled) setDepositQuote(fallback);
+      });
+    return () => { cancelled = true; };
+  }, [selectedSpot?.id, selectedSpot?.price, token]);
 
   useEffect(() => {
     if (selectedSpot) {
@@ -622,7 +668,8 @@ export const ExploreScreen = () => {
   const parkingCost = billableParkingCost - parkPlusDiscount;
   const { activePasses } = usePasses();
   const hasAnyPass = activePasses.length > 0;
-  const securityDeposit = hasAnyPass ? 0 : (selectedSpot?.price || 0) * 5;
+  // Authoritative deposit comes from the server (trust score + passes)
+  const securityDeposit = depositQuote ? depositQuote.deposit : 0;
 
   const handleZoomIn = () => {
     mapRef.current?.zoomIn();
@@ -979,6 +1026,9 @@ export const ExploreScreen = () => {
               <View style={styles.sheetHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.spotName}>{selectedSpot.name}</Text>
+                  <View style={{ marginTop: 2, marginBottom: 2 }}>
+                    <RatingBadge rating={selectedSpot.rating} count={selectedSpot.reviewsCount} />
+                  </View>
                   <Text style={styles.spotDetails}>
                     {selectedSpot.host} • {selectedSpot.type === 'private' ? 'Private space' : 'Municipal parking'}
                     {selectedSpot.evCharging ? ' • EV Charging' : ''}
@@ -1140,22 +1190,41 @@ export const ExploreScreen = () => {
                 )}
                 <View style={styles.receiptRow}>
                   <Text style={styles.receiptLabel}>Security Deposit (Refundable)</Text>
-                  <Text style={[styles.receiptValue, hasAnyPass && styles.waivedValue]}>{hasAnyPass ? 'WAIVED' : `50.00 RON`}</Text>
+                  {depositQuote === null ? (
+                    <ActivityIndicator size="small" color={tokens.colors.secondaryText} />
+                  ) : (
+                    <Text style={[styles.receiptValue, securityDeposit === 0 && styles.waivedValue]}>
+                      {securityDeposit === 0 ? 'WAIVED' : `${securityDeposit.toFixed(2)} RON`}
+                    </Text>
+                  )}
                 </View>
+                {depositQuote && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Ionicons
+                      name={depositQuote.tier === 'NEW' ? 'information-circle-outline' : 'shield-checkmark'}
+                      size={14}
+                      color={depositQuote.tier === 'NEW' ? tokens.colors.secondaryText : tokens.colors.availabilityGreen}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text style={{ flex: 1, fontSize: 12, color: tokens.colors.secondaryText, fontFamily: tokens.typography.body }}>
+                      {depositQuote.reason}
+                    </Text>
+                  </View>
+                )}
                 {appliedPass && (
                   <Text style={styles.passAppliedText}>{appliedPass.name} applied · GPS check-in enabled</Text>
                 )}
                 <View style={styles.receiptDivider} />
                 <View style={styles.receiptRow}>
                   <Text style={styles.receiptTotalLabel}>Total Due Now</Text>
-                  <Text style={styles.receiptTotalValue}>{hasAnyPass ? '0.00' : '50.00'} RON</Text>
+                  <Text style={styles.receiptTotalValue}>{securityDeposit.toFixed(2)} RON</Text>
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.reserveButton} onPress={() => {
+              <TouchableOpacity style={[styles.reserveButton, depositQuote === null && { opacity: 0.6 }]} disabled={depositQuote === null} onPress={() => {
                 setModalVisible(false);
                 (navigation as any).navigate('PaymentCheckout', {
-                  amount: hasAnyPass ? 0 : 50,
+                  amount: securityDeposit,
                   title: `Book ${selectedSpot.name}`,
                   actionType: 'BOOKING',
                   targetId: selectedSpot.id,
@@ -1240,6 +1309,7 @@ export const ExploreScreen = () => {
     const endParking = async () => {
       try {
         const res = await apiClient.put(`/bookings/${activeReservation.id}/status`, { status: 'COMPLETED' });
+        const finishedReservation = activeReservation;
         setActiveReservation(null);
         
         if (res.data.reservation && updateUser && user) {
@@ -1250,7 +1320,18 @@ export const ExploreScreen = () => {
           }
           
           const msg = `Your final cost was ${(finalCost || 0).toFixed(2)} RON. Your security deposit has been refunded minus this cost.`;
-          alert('Parking Ended', msg, undefined, 'success');
+          
+          // Ask the driver to rate the spot (skip when it's their own spot)
+          const queueReview = () => {
+            if (finishedReservation.spot?.ownerId === user.id) return;
+            const review: PendingReview = {
+              reservationId: finishedReservation.id,
+              role: 'DRIVER',
+              spot: finishedReservation.spot ? { id: finishedReservation.spot.id, name: finishedReservation.spot.name } : null,
+            };
+            setPendingReviews((prev) => prev.some((p) => p.reservationId === review.reservationId) ? prev : [review, ...prev]);
+          };
+          alert('Parking Ended', msg, [{ text: 'OK', onPress: queueReview }], 'success');
         }
 
         const spotsRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`);
@@ -1384,6 +1465,23 @@ export const ExploreScreen = () => {
         </View>
       )}
       {renderModal()}
+      <ReviewModal
+        pending={pendingReviews.find((p) => !dismissedReviewIds.has(p.reservationId)) || null}
+        onClose={(submitted) => {
+          const current = pendingReviews.find((p) => !dismissedReviewIds.has(p.reservationId));
+          if (!current) return;
+          if (submitted) {
+            setPendingReviews((prev) => prev.filter((p) => p.reservationId !== current.reservationId));
+            alert('Thank you!', 'Your review helps keep ParkShare safe and fair.', undefined, 'success');
+            fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`)
+              .then((r) => r.json())
+              .then((d) => d.spots && setSpots(d.spots))
+              .catch(() => {});
+          } else {
+            setDismissedReviewIds((prev) => new Set(prev).add(current.reservationId));
+          }
+        }}
+      />
     </>
   );
 };

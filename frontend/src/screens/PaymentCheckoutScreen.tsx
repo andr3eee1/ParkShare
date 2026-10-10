@@ -64,12 +64,17 @@ export const PaymentCheckoutScreen = () => {
         await apiClient.post('/bookings', {
           spotId: targetId,
           startTime,
-          securityDeposit: amount,
           paymentMethod: selectedMethod === 'wallet' ? 'wallet' : 'card'
         });
         
-        if (selectedMethod === 'wallet' && user) {
-          updateUser({ ...user, walletBalance: (user.walletBalance || 0) - amount });
+        // Deposit is computed server-side (trust score), so sync the real balance
+        try {
+          const me = await apiClient.get('/auth/me');
+          if (me.data.user) await updateUser(me.data.user);
+        } catch {
+          if (selectedMethod === 'wallet' && user) {
+            updateUser({ ...user, walletBalance: (user.walletBalance || 0) - amount });
+          }
         }
       }
 

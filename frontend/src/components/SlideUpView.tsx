@@ -7,9 +7,10 @@ interface SlideUpViewProps {
   draggable?: boolean;
   minimizedOffset?: number; // How far down it translates when minimized
   initialMinimized?: boolean;
+  pointerEvents?: 'box-none' | 'none' | 'box-only' | 'auto';
 }
 
-export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, draggable, minimizedOffset = 200, initialMinimized = false }) => {
+export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, draggable, minimizedOffset = 200, initialMinimized = false, pointerEvents }) => {
   const [isMinimized, setIsMinimized] = useState(initialMinimized);
   const isMinimizedRef = useRef(isMinimized);
   const slideAnim = useRef(new Animated.Value(400)).current;
@@ -68,7 +69,7 @@ export const SlideUpView: React.FC<SlideUpViewProps> = ({ children, style, dragg
   ).current;
 
   return (
-    <Animated.View {...(draggable ? panResponder.panHandlers : {})} style={[style, { transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View pointerEvents={pointerEvents} {...(draggable ? panResponder.panHandlers : {})} style={[style, { transform: [{ translateY: slideAnim }] }]}>
       {children}
     </Animated.View>
   );

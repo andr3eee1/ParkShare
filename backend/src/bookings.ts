@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, AuthRequest } from './middleware';
 import { z } from 'zod';
+import { quoteDeposit } from './deposit';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -10,7 +11,24 @@ const CreateBookingSchema = z.object({
   spotId: z.string(),
   startTime: z.string().datetime(),
   paymentMethod: z.enum(['wallet', 'card']), // for logging/logic
-  securityDeposit: z.number().optional().default(50.0)
+  securityDeposit: z.number().optional() // Deprecated: ignored, deposit is computed server-side
+});
+
+// Get the security deposit the current user would pay for a spot (trust-score based)
+router.get('/deposit-quote', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const spotId = String(req.query.spotId || '');
+    if (!spotId) return res.status(400).json({ error: 'spotId is required' });
+    const spot = await prisma.parkingSpot.findUnique({ where: { id: spotId }, select: { price: true } });
+    if (!spot) return res.status(404).json({ error: 'Spot not found' });
+    const quote = await quoteDeposit(prisma, userId, spot.price);
+    res.json({ quote });
+  } catch (error) {
+    console.error('Deposit quote error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Create a new booking
@@ -40,20 +58,23 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
       });
       if (overlapping) throw new Error('Spot is currently occupied by an active reservation');
 
+      // Determine security deposit server-side (client-sent value is ignored)
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) throw new Error('User not found');
+      const quote = await quoteDeposit(tx, userId, spot.price);
+      const requiredDeposit = quote.deposit;
+
       // Deduct security deposit if paying with wallet
-      if (data.paymentMethod === 'wallet') {
-        const user = await tx.user.findUnique({ where: { id: userId } });
-        if (!user || user.walletBalance < data.securityDeposit) {
+      if (data.paymentMethod === 'wallet' && requiredDeposit > 0) {
+        if (user.walletBalance < requiredDeposit) {
           throw new Error('Insufficient wallet balance for security deposit');
         }
 
         // Deduct deposit from buyer
         await tx.user.update({
           where: { id: userId },
-          data: { walletBalance: { decrement: data.securityDeposit } }
+          data: { walletBalance: { decrement: requiredDeposit } }
         });
-        
-        // We do not add to provider yet. That happens at completion.
       }
 
       // Create reservation
@@ -62,7 +83,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
           spotId: data.spotId,
           userId,
           startTime: new Date(data.startTime),
-          securityDeposit: data.securityDeposit,
+          securityDeposit: requiredDeposit,
           status: 'ACTIVE'
         },
         include: { spot: true }
@@ -164,7 +185,10 @@ router.put('/:id/status', requireAuth, async (req: AuthRequest, res: any): Promi
 
         await tx.user.update({
           where: { id: userId },
-          data: { walletBalance: newBalance }
+          data: { 
+            walletBalance: newBalance,
+            completedBookings: { increment: 1 }
+          }
         });
         
         // Give provider their 90% cut

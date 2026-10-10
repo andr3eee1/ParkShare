@@ -200,7 +200,9 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: any): Promise<any> 
         lastName: user.lastName,
         avatarUrl: user.avatarUrl,
         role: user.role,
-        walletBalance: user.walletBalance
+        walletBalance: user.walletBalance,
+        trustScore: user.trustScore,
+        completedBookings: user.completedBookings
       }
     });
   } catch (error: any) {

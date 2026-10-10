@@ -7,6 +7,7 @@ import walletRouter from './wallet';
 import spotsRouter from './spots';
 import bookingsRouter from './bookings';
 import adminRouter from './admin';
+import reviewsRouter from './reviews';
 
 import vehiclesRouter from './vehicles';
 
@@ -26,6 +27,7 @@ app.use('/spots', spotsRouter);
 app.use('/bookings', bookingsRouter);
 app.use('/vehicles', vehiclesRouter);
 app.use('/admin', adminRouter);
+app.use('/reviews', reviewsRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
