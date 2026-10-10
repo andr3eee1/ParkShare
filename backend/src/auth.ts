@@ -118,7 +118,7 @@ router.post('/login', async (req, res): Promise<any> => {
 const UpdateProfileSchema = z.object({
   firstName: z.string().min(2).optional(),
   lastName: z.string().min(2).optional(),
-  avatarUrl: z.string().url().optional().or(z.literal('')), 
+  avatarUrl: z.union([z.string().url(), z.string().startsWith('/'), z.literal('')]).optional(),
 });
 
 router.put('/profile', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
