@@ -9,6 +9,14 @@ type User = {
   avatarUrl?: string | null;
   walletBalance?: number;
   role: string;
+  trustScore?: number;
+  hostRating?: number;
+  accountStatus?: 'ACTIVE' | 'WARNING' | 'SUSPENDED' | 'BANNED';
+  suspendedUntil?: string | null;
+  warningCount?: number;
+  driverReviewsCount?: number;
+  hostReviewsCount?: number;
+  completedBookings?: number;
 };
 
 type AuthContextType = {

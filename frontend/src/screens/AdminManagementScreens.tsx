@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
-import { adminApi } from '../api/client';
+import { useAlert } from '../context/AlertContext';
+import { adminApi, adminPost } from '../api/client';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 type AdminRoute = 'AdminUsers' | 'AdminSpaces' | 'AdminBookings' | 'AdminReports';
@@ -20,6 +21,9 @@ type AdminRecord = {
   statusColor: string;
   icon: IconName;
   searchable: string;
+  entityType?: 'USER';
+  entityId?: string;
+  accountStatus?: string;
 };
 
 type PageConfig = {
@@ -111,11 +115,14 @@ const mapRecords = (routeName: string, data: any): AdminRecord[] => {
     id: item.id,
     title: `${item.firstName} ${item.lastName}`,
     subtitle: item.email,
-    meta: `Joined ${formatDate(item.createdAt)} · ${item._count.ownedSpots} spaces · ${item._count.reservations} bookings`,
+    meta: `Joined ${formatDate(item.createdAt)} · ${item._count.ownedSpots} spaces · ${item._count.reservations} bookings · ${item.accountStatus === 'ACTIVE' ? 'Good standing' : item.accountStatus}`,
     status: item.role.charAt(0) + item.role.slice(1).toLowerCase(),
     statusColor: item.role === 'ADMIN' ? tokens.colors.warningAmber : item.role === 'PROVIDER' ? '#7C3AED' : tokens.colors.municipalTeal,
     icon: item.role === 'ADMIN' ? 'shield-checkmark-outline' : 'person-outline',
-    searchable: `${item.firstName} ${item.lastName} ${item.email} ${item.role}`.toLowerCase(),
+    searchable: `${item.firstName} ${item.lastName} ${item.email} ${item.role} ${item.accountStatus}`.toLowerCase(),
+    entityType: 'USER',
+    entityId: item.id,
+    accountStatus: item.accountStatus,
   }));
   if (routeName === 'AdminSpaces') return (data.spaces || []).map((item: any) => ({
     id: item.id,
@@ -225,7 +232,7 @@ export const AdminManagementScreen = () => {
         ListHeaderComponent={<Text style={styles.resultCount}>{visibleRecords.length} {visibleRecords.length === 1 ? 'result' : 'results'}</Text>}
         ListEmptyComponent={<View style={styles.emptyState}>{loading ? <ActivityIndicator color={config.accent} /> : <Ionicons name="search-outline" size={38} color="#B7C0C6" />}<Text style={styles.emptyTitle}>{loading ? 'Loading records...' : error || 'Nothing found'}</Text><Text style={styles.emptyText}>{loading ? 'Reading from the database.' : error ? 'This section is not available in the current database.' : 'Try another search or filter.'}</Text></View>}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.recordCard} activeOpacity={0.8} onPress={() => navigation.navigate('AdminRecord', { title: item.title, subtitle: item.subtitle, meta: item.meta, status: item.status, statusColor: item.statusColor, icon: item.icon })}>
+          <TouchableOpacity style={styles.recordCard} activeOpacity={0.8} onPress={() => navigation.navigate('AdminRecord', { title: item.title, subtitle: item.subtitle, meta: item.meta, status: item.status, statusColor: item.statusColor, icon: item.icon, entityType: item.entityType, entityId: item.entityId, accountStatus: item.accountStatus })}>
             <View style={[styles.recordIcon, { backgroundColor: `${item.statusColor}18` }]}>
               <Ionicons name={item.icon} size={20} color={item.statusColor} />
             </View>
@@ -249,6 +256,61 @@ export const AdminRecordScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const record = route.params || {};
+  const { token } = useContext(AuthContext);
+  const { alert } = useAlert();
+  const isUser = record.entityType === 'USER' && !!record.entityId;
+
+  const [standing, setStanding] = useState<any>(null);
+  const [actions, setActions] = useState<any[]>([]);
+  const [loadingStanding, setLoadingStanding] = useState(!!isUser);
+  const [pendingAction, setPendingAction] = useState<null | 'WARN' | 'SUSPEND' | 'BAN' | 'REINSTATE'>(null);
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const loadStanding = async () => {
+    if (!isUser || !token) return;
+    try {
+      const data = await adminApi(token, `/admin/users/${record.entityId}/standing`);
+      setStanding(data.standing);
+      setActions(data.actions || []);
+    } catch (error: any) {
+      console.warn('Failed to load standing', error?.message);
+    } finally {
+      setLoadingStanding(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStanding();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [record.entityId, token]);
+
+  const confirmSanction = async () => {
+    if (!pendingAction || !token) return;
+    setSubmitting(true);
+    try {
+      await adminPost(token, `/admin/users/${record.entityId}/sanction`, {
+        action: pendingAction,
+        reason: reason.trim() || undefined,
+        durationDays: pendingAction === 'SUSPEND' ? 14 : undefined,
+      });
+      const applied = pendingAction;
+      setPendingAction(null);
+      setReason('');
+      alert('Done', `Action ${applied} applied to this user.`, undefined, 'success');
+      await loadStanding();
+    } catch (error: any) {
+      alert('Error', error?.message || 'Could not apply action', undefined, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const standingColor = (value?: string) =>
+    value === 'ACTIVE' ? tokens.colors.availabilityGreen
+      : value === 'WARNING' ? tokens.colors.warningAmber
+        : value === 'SUSPENDED' ? '#D97706'
+          : '#C24141';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -256,23 +318,111 @@ export const AdminRecordScreen = () => {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Go back">
           <Ionicons name="arrow-back" size={21} color={tokens.colors.primaryText} />
         </TouchableOpacity>
-        <View style={styles.headerCopy}><Text style={styles.title}>Record details</Text><Text style={styles.subtitle}>Database record</Text></View>
+        <View style={styles.headerCopy}><Text style={styles.title}>Record details</Text><Text style={styles.subtitle}>{isUser ? 'User standing & moderation' : 'Database record'}</Text></View>
       </View>
       <View style={styles.detailContent}>
         <View style={styles.detailIcon}><Ionicons name={record.icon || 'document-text-outline'} size={28} color={record.statusColor || tokens.colors.municipalTeal} /></View>
         <Text style={styles.detailTitle}>{record.title}</Text>
         <Text style={styles.detailSubtitle}>{record.subtitle}</Text>
         <View style={styles.detailPanel}>
-          <Text style={styles.detailLabel}>Status</Text>
-          <Text style={[styles.detailValue, { color: record.statusColor || tokens.colors.municipalTeal }]}>{record.status}</Text>
+          <Text style={styles.detailLabel}>Account status</Text>
+          <Text style={[styles.detailValue, { color: standingColor(standing?.status || record.accountStatus) }]}>
+            {standing?.status || record.accountStatus || record.status}
+          </Text>
           <Text style={styles.detailLabel}>Activity</Text>
           <Text style={styles.detailValue}>{record.meta}</Text>
         </View>
-        <View style={styles.mockNotice}>
-          <Ionicons name="information-circle-outline" size={18} color={tokens.colors.municipalTeal} />
-          <Text style={styles.mockNoticeText}>Read-only details loaded from the admin API.</Text>
-        </View>
+
+        {isUser && (
+          loadingStanding ? (
+            <ActivityIndicator style={{ marginTop: 20 }} color={tokens.colors.municipalTeal} />
+          ) : standing ? (
+            <>
+              <View style={styles.standingScores}>
+                <View style={styles.standingScore}>
+                  <Text style={styles.standingScoreValue}>{standing.driverScore?.toFixed(2)}</Text>
+                  <Text style={styles.standingScoreLabel}>Driver ({standing.driverReviews})</Text>
+                </View>
+                <View style={styles.standingScore}>
+                  <Text style={styles.standingScoreValue}>{standing.hostScore?.toFixed(2)}</Text>
+                  <Text style={styles.standingScoreLabel}>Host ({standing.hostReviews})</Text>
+                </View>
+                <View style={styles.standingScore}>
+                  <Text style={styles.standingScoreValue}>{standing.warningCount ?? 0}</Text>
+                  <Text style={styles.standingScoreLabel}>Warnings</Text>
+                </View>
+              </View>
+
+              <Text style={styles.detailLabel}>Manual action</Text>
+              <View style={styles.sanctionRow}>
+                {(['WARN', 'SUSPEND', 'BAN', 'REINSTATE'] as const).map((action) => {
+                  const color = action === 'WARN' ? tokens.colors.warningAmber
+                    : action === 'SUSPEND' ? '#D97706'
+                      : action === 'BAN' ? '#C24141'
+                        : tokens.colors.availabilityGreen;
+                  return (
+                    <TouchableOpacity key={action} style={[styles.sanctionButton, { borderColor: color }]} onPress={() => { setReason(''); setPendingAction(action); }}>
+                      <Text style={[styles.sanctionButtonText, { color }]}>{action.charAt(0) + action.slice(1).toLowerCase()}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {actions.length > 0 && (
+                <View style={styles.auditPanel}>
+                  <Text style={styles.detailLabel}>History</Text>
+                  {actions.slice(0, 6).map((a: any) => (
+                    <Text key={a.id} style={styles.auditRow}>
+                      {a.action.replace('AUTO_', 'Auto ')} · {new Date(a.createdAt).toLocaleDateString()}{a.actor ? ` · by ${a.actor.firstName}` : ''}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </>
+          ) : null
+        )}
+
+        {!isUser && (
+          <View style={styles.mockNotice}>
+            <Ionicons name="information-circle-outline" size={18} color={tokens.colors.municipalTeal} />
+            <Text style={styles.mockNoticeText}>Read-only details loaded from the admin API.</Text>
+          </View>
+        )}
       </View>
+
+      <Modal visible={!!pendingAction} transparent animationType="fade" onRequestClose={() => setPendingAction(null)}>
+        <Pressable style={styles.modalOverlay} onPress={() => !submitting && setPendingAction(null)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Confirm {pendingAction?.toLowerCase()}</Text>
+            <Text style={styles.modalText}>
+              {pendingAction === 'BAN'
+                ? 'This permanently bans the user. They will be able to appeal.'
+                : pendingAction === 'REINSTATE'
+                  ? 'This restores the account to good standing.'
+                  : pendingAction === 'SUSPEND'
+                    ? 'This suspends new bookings for 14 days.'
+                    : 'This records a warning and notifies the user.'}
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              value={reason}
+              onChangeText={setReason}
+              placeholder="Reason (optional, shown to the user)"
+              placeholderTextColor={tokens.colors.secondaryText}
+              multiline
+              editable={!submitting}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.modalButton, styles.modalCancel]} onPress={() => setPendingAction(null)} disabled={submitting}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, styles.modalConfirm]} onPress={confirmSanction} disabled={submitting}>
+                {submitting ? <ActivityIndicator color={tokens.colors.white} /> : <Text style={styles.modalConfirmText}>Confirm</Text>}
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -313,4 +463,24 @@ const styles = StyleSheet.create({
   detailValue: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 14, marginTop: 3 },
   mockNotice: { alignItems: 'center', backgroundColor: '#E8F1F5', borderRadius: 12, flexDirection: 'row', marginTop: 16, paddingHorizontal: 13, paddingVertical: 11 },
   mockNoticeText: { color: tokens.colors.municipalTeal, flex: 1, fontFamily: tokens.typography.body, fontSize: 12, marginLeft: 8 },
+  standingScores: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  standingScore: { alignItems: 'center', backgroundColor: tokens.colors.panelSurface, borderRadius: 14, flex: 1, paddingVertical: 14, ...tokens.shadows.soft },
+  standingScoreValue: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 20 },
+  standingScoreLabel: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10, marginTop: 3 },
+  sanctionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  sanctionButton: { borderRadius: 10, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 9 },
+  sanctionButtonText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 12 },
+  auditPanel: { backgroundColor: tokens.colors.panelSurface, borderRadius: 14, marginTop: 18, padding: 14, ...tokens.shadows.soft },
+  auditRow: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 12, marginTop: 6 },
+  modalOverlay: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', flex: 1, justifyContent: 'center', padding: 20 },
+  modalCard: { backgroundColor: tokens.colors.white, borderRadius: 18, maxWidth: 420, padding: 22, width: '100%' },
+  modalTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 19 },
+  modalText: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, lineHeight: 19, marginTop: 8 },
+  modalInput: { borderColor: '#E5E7EB', borderRadius: 12, borderWidth: 1, color: tokens.colors.primaryText, fontFamily: tokens.typography.body, fontSize: 14, marginTop: 14, minHeight: 72, padding: 12, textAlignVertical: 'top' },
+  modalButtons: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  modalButton: { alignItems: 'center', borderRadius: 12, flex: 1, paddingVertical: 13 },
+  modalCancel: { backgroundColor: '#EEF2F5' },
+  modalCancelText: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodySemiBold, fontSize: 14 },
+  modalConfirm: { backgroundColor: tokens.colors.primaryText },
+  modalConfirmText: { color: tokens.colors.white, fontFamily: tokens.typography.bodySemiBold, fontSize: 14 },
 });

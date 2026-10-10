@@ -168,7 +168,13 @@ export const ExploreScreen = () => {
   useFocusEffect(
     useCallback(() => {
       fetchPendingReviews();
-    }, [fetchPendingReviews])
+      // Keep the trust & safety standing fresh so warnings/suspensions surface.
+      if (token) {
+        apiClient.get('/auth/me')
+          .then((res) => { if (res.data?.user) updateUser(res.data.user); })
+          .catch(() => {});
+      }
+    }, [fetchPendingReviews, token])
   );
 
   // Restore the "already dismissed this set" marker once per login.
@@ -747,6 +753,31 @@ export const ExploreScreen = () => {
     </>
   );
 
+  const renderStandingNotice = () => {
+    const status = user?.accountStatus;
+    if (!status || status === 'ACTIVE') return null;
+    const meta: Record<string, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap; text: string }> = {
+      WARNING: { color: tokens.colors.warningAmber, bg: '#FEF3C7', icon: 'warning', text: 'Your rating is below standard. Improve it to avoid a suspension.' },
+      SUSPENDED: { color: '#D97706', bg: '#FEF3C7', icon: 'pause-circle', text: 'New bookings are paused during your suspension.' },
+      BANNED: { color: '#C24141', bg: '#FDECEC', icon: 'close-circle', text: 'Your account is banned. You can submit an appeal.' },
+    };
+    const info = meta[status] || meta.WARNING;
+    return (
+      <TouchableOpacity
+        style={[styles.standingNotice, { backgroundColor: info.bg, borderColor: info.color }]}
+        onPress={() => navigation.navigate('Standing')}
+        activeOpacity={0.85}
+      >
+        <Ionicons name={info.icon} size={18} color={info.color} />
+        <View style={{ flex: 1, marginLeft: 10 }}>
+          <Text style={[styles.standingNoticeTitle, { color: info.color }]}>Account {status.charAt(0) + status.slice(1).toLowerCase()}</Text>
+          <Text style={styles.standingNoticeText}>{info.text}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={info.color} />
+      </TouchableOpacity>
+    );
+  };
+
   const renderReviewPrompt = () => {
     if (!showReviewPrompt) return null;
     const count = pendingReviews.length;
@@ -1067,6 +1098,7 @@ export const ExploreScreen = () => {
             })()}
             </>
             )}
+            {renderStandingNotice()}
             {renderReviewPrompt()}
           </GlassPanel>
         </View>
@@ -1655,6 +1687,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 10,
+  },
+  standingNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  standingNoticeTitle: {
+    fontFamily: tokens.typography.bodySemiBold,
+    fontSize: 13,
+  },
+  standingNoticeText: {
+    fontFamily: tokens.typography.body,
+    fontSize: 11,
+    color: tokens.colors.secondaryText,
+    marginTop: 2,
   },
   reviewPromptIcon: {
     width: 32,

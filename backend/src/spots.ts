@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { requireAuth, AuthRequest } from './middleware';
+import { requireAuth, requireActiveUser, AuthRequest } from './middleware';
 import { z } from 'zod';
 
 const router = Router();
@@ -49,7 +49,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: any): Promise<any> 
 });
 
 // POST create a new spot
-router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+router.post('/', requireAuth, requireActiveUser, async (req: AuthRequest, res: any): Promise<any> => {
   try {
     const userId = req.user?.userId;
     const role = req.user?.role;

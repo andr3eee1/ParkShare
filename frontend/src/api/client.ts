@@ -29,3 +29,21 @@ export const adminApi = async (token: string, path: string): Promise<any> => {
   if (!response.ok) throw new Error(body.error || 'Unable to load admin data');
   return body;
 };
+
+export const adminPost = async (token: string, path: string, payload: any = {}): Promise<any> => {
+  const baseURL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8745';
+  const response = await fetch(`${baseURL}${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = typeof body.error === 'string' ? body.error : 'Unable to apply admin action';
+    throw new Error(message);
+  }
+  return body;
+};

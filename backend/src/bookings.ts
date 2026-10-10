@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { requireAuth, AuthRequest } from './middleware';
+import { requireAuth, requireActiveUser, AuthRequest } from './middleware';
 import { z } from 'zod';
 import { quoteDeposit } from './deposit';
 
@@ -32,7 +32,7 @@ router.get('/deposit-quote', requireAuth, async (req: AuthRequest, res: any): Pr
 });
 
 // Create a new booking
-router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+router.post('/', requireAuth, requireActiveUser, async (req: AuthRequest, res: any): Promise<any> => {
   try {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });

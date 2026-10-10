@@ -1,16 +1,38 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
-import { useContext } from 'react';
+import { useContext, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { apiClient } from '../api/client';
 import { tokens } from '../theme/tokens';
+
+const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
+  ACTIVE: { label: 'Good standing', color: tokens.colors.availabilityGreen, bg: '#E6F5EE' },
+  WARNING: { label: 'Warning', color: tokens.colors.warningAmber, bg: '#FEF3C7' },
+  SUSPENDED: { label: 'Suspended', color: '#D97706', bg: '#FEF3C7' },
+  BANNED: { label: 'Banned', color: '#C24141', bg: '#FDECEC' },
+};
 
 export const AccountScreen = () => {
   const navigation = useNavigation<any>();
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, token, updateUser } = useContext(AuthContext) as any;
   const isAdmin = user?.role === 'ADMIN';
+  const status = STATUS_STYLE[user?.accountStatus || 'ACTIVE'] || STATUS_STYLE.ACTIVE;
+
+  // Refresh standing whenever the tab is focused so warnings appear promptly.
+  useFocusEffect(
+    useCallback(() => {
+      if (!token) return;
+      let active = true;
+      apiClient
+        .get('/auth/me')
+        .then((res) => { if (active && res.data?.user) updateUser(res.data.user); })
+        .catch(() => {});
+      return () => { active = false; };
+    }, [token])
+  );
 
   const handleLogout = async () => {
     await logout();
@@ -18,6 +40,7 @@ export const AccountScreen = () => {
 
   const menuItems = [
     ...(isAdmin ? [{ icon: 'shield-checkmark-outline', title: 'Admin Panel', subtitle: 'Manage the ParkShare marketplace', route: 'AdminDashboard' }] : []),
+    { icon: 'shield-half-outline', title: 'Trust & Safety', subtitle: 'Rating, standing, and appeals', route: 'Standing' },
     { icon: 'person-outline', title: 'Personal Information', subtitle: 'Name, Email, Phone', route: 'PersonalInformation' },
     { icon: 'card-outline', title: 'Wallet', subtitle: 'Manage balance and cards', route: 'PaymentMethods' },
     { icon: 'car-outline', title: 'My Vehicles', subtitle: 'License plates and vehicle details', route: 'MyVehicles' },
@@ -53,8 +76,27 @@ export const AccountScreen = () => {
             <View style={styles.roleBadge}>
               <Text style={styles.roleText}>{isAdmin ? 'Platform Administrator' : user?.role === 'PROVIDER' ? 'Parking Provider' : 'Verified User'}</Text>
             </View>
+            <TouchableOpacity onPress={() => navigation.navigate('Standing')} style={[styles.statusPill, { backgroundColor: status.bg }]}>
+              <Ionicons name="star" size={11} color={status.color} />
+              <Text style={[styles.statusPillText, { color: status.color }]}>{status.label}</Text>
+            </TouchableOpacity>
           </View>
         </View>
+
+        {user?.accountStatus && user.accountStatus !== 'ACTIVE' && (
+          <TouchableOpacity
+            style={[styles.standingBanner, { backgroundColor: status.bg, borderColor: status.color }]}
+            onPress={() => navigation.navigate('Standing')}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="warning-outline" size={20} color={status.color} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.standingBannerTitle, { color: status.color }]}>Account {status.label.toLowerCase()}</Text>
+              <Text style={styles.standingBannerText}>Tap to view details and submit an appeal.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={status.color} />
+          </TouchableOpacity>
+        )}
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
@@ -176,6 +218,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: tokens.colors.availabilityGreen,
+  },
+  statusPill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginTop: 6,
+  },
+  statusPillText: {
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  standingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 24,
+    marginTop: -16,
+  },
+  standingBannerTitle: {
+    fontFamily: tokens.typography.bodySemiBold,
+    fontSize: 14,
+  },
+  standingBannerText: {
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+    color: tokens.colors.secondaryText,
+    marginTop: 2,
   },
   menuContainer: {
     backgroundColor: tokens.colors.white,

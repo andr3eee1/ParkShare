@@ -13,36 +13,55 @@ enum Role {
   ADMIN
 }
 
+enum AccountStatus {
+  ACTIVE
+  WARNING
+  SUSPENDED
+  BANNED
+}
+
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  firstName    String
-  lastName     String
-  avatarUrl    String?  // Optional URL to profile picture
-  role         Role       @default(USER)
-  walletBalance Float     @default(0.0)
-  trustScore    Float     @default(5.0) // 1.0 to 5.0 rating
-  completedBookings Int   @default(0)   // Number of successful bookings
-  cards        CreditCard[]
-  ownedSpots   ParkingSpot[]
-  reservations Reservation[]
-  passes       UserPass[]
-  vehicles     Vehicle[]
-  reportedIssues Report[]  @relation("Reporter")
-  reviewsGiven Review[]    @relation("Reviewer")
-  reviewsReceived Review[] @relation("ReviewedUser")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                  String             @id @default(uuid())
+  email               String             @unique
+  passwordHash        String
+  firstName           String
+  lastName            String
+  avatarUrl           String? // Optional URL to profile picture
+  role                Role               @default(USER)
+  walletBalance       Float              @default(0.0)
+  trustScore          Float              @default(5.0) // 1.0 to 5.0 rating (as a driver)
+  completedBookings   Int                @default(0) // Number of successful bookings
+  // --- Trust & safety / moderation ---
+  accountStatus       AccountStatus      @default(ACTIVE)
+  suspendedUntil      DateTime?
+  standingUpdatedAt   DateTime?
+  warningCount        Int                @default(0)
+  driverReviewsCount  Int                @default(0) // reviews received as a driver
+  hostRating          Float              @default(5.0) // aggregated rating as a spot owner
+  hostReviewsCount    Int                @default(0)
+  cards               CreditCard[]
+  ownedSpots          ParkingSpot[]
+  reservations        Reservation[]
+  passes              UserPass[]
+  vehicles            Vehicle[]
+  reportedIssues      Report[]           @relation("Reporter")
+  reviewsGiven        Review[]           @relation("Reviewer")
+  reviewsReceived     Review[]           @relation("ReviewedUser")
+  notifications       Notification[]     @relation("NotificationRecipient")
+  moderationReceived  ModerationAction[] @relation("ModerationTarget")
+  moderationPerformed ModerationAction[] @relation("ModerationActor")
+  appeals             Appeal[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 }
 
 model UserPass {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  passKind    String   // 'commuter', 'night-owl', 'park-plus'
+  user        User      @relation(fields: [userId], references: [id])
+  passKind    String // 'commuter', 'night-owl', 'park-plus'
   activeUntil DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   @@unique([userId, passKind]) // A user can only have one active instance of a specific pass type at a time
 }
@@ -60,29 +79,29 @@ model CreditCard {
 }
 
 model ParkingSpot {
-  id          String   @id @default(uuid())
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  name        String
-  description String?
-  latitude    Float
-  longitude   Float
-  price       Float
-  isAvailable Boolean  @default(true)
-  imageUrl    String?
-  rating      Float    @default(5.0)
-  reviewsCount Int     @default(0)
+  id           String        @id @default(uuid())
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id])
+  name         String
+  description  String?
+  latitude     Float
+  longitude    Float
+  price        Float
+  isAvailable  Boolean       @default(true)
+  imageUrl     String?
+  rating       Float         @default(5.0)
+  reviewsCount Int           @default(0)
   reservations Reservation[]
-  reviews      Review[] @relation("ReviewedSpot")
-  createdAt   DateTime @default(now())
+  reviews      Review[]      @relation("ReviewedSpot")
+  createdAt    DateTime      @default(now())
 }
 
 model Reservation {
-  id          String   @id @default(uuid())
-  spotId      String
-  spot        ParkingSpot @relation(fields: [spotId], references: [id])
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  id              String      @id @default(uuid())
+  spotId          String
+  spot            ParkingSpot @relation(fields: [spotId], references: [id])
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
   startTime       DateTime
   endTime         DateTime?
   totalPrice      Float?
@@ -96,29 +115,29 @@ model Vehicle {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  name      String   // e.g. "My Car"
-  plate     String   // e.g. "B-12-ABC"
+  name      String // e.g. "My Car"
+  plate     String // e.g. "B-12-ABC"
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  reviewerId  String
-  reviewer    User     @relation("Reviewer", fields: [reviewerId], references: [id])
-  
+  id         String @id @default(uuid())
+  reviewerId String
+  reviewer   User   @relation("Reviewer", fields: [reviewerId], references: [id])
+
   // A review can be for a user (driver/host) or a parking spot
   targetUserId String?
-  targetUser   User?    @relation("ReviewedUser", fields: [targetUserId], references: [id])
+  targetUser   User?        @relation("ReviewedUser", fields: [targetUserId], references: [id])
   targetSpotId String?
   targetSpot   ParkingSpot? @relation("ReviewedSpot", fields: [targetSpotId], references: [id])
-  
-  rating      Int      // 1-5
-  comment     String?
+
+  rating        Int // 1-5
+  comment       String?
   // The completed reservation this review is based on (prevents fake/spam reviews)
   reservationId String?
   reservation   Reservation? @relation(fields: [reservationId], references: [id])
-  createdAt   DateTime @default(now())
+  createdAt     DateTime     @default(now())
 
   @@unique([reservationId, reviewerId]) // One review per side per booking
   @@index([targetUserId])
@@ -132,7 +151,54 @@ model Report {
   status      String   @default("OPEN") // 'OPEN', 'RESOLVED', 'DISMISSED'
   reporterId  String
   reporter    User     @relation("Reporter", fields: [reporterId], references: [id])
-  targetId    String?  // Could be spot ID, user ID, or booking ID
+  targetId    String? // Could be spot ID, user ID, or booking ID
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+/// Audit trail for every trust & safety decision (automated or manual).
+model ModerationAction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("ModerationTarget", fields: [userId], references: [id])
+  actorId   String?
+  actor     User?    @relation("ModerationActor", fields: [actorId], references: [id])
+  action    String // WARN | SUSPEND | BAN | REINSTATE | AUTO_WARN | AUTO_SUSPEND | AUTO_REINSTATE
+  reason    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+/// In-app notifications shown to a user (warnings, sanctions, appeal updates).
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("NotificationRecipient", fields: [userId], references: [id])
+  type      String // STANDING_WARNING | SANCTION | REINSTATE | APPEAL
+  title     String
+  body      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+/// A user's appeal against a sanction. Reviewed by admins.
+model Appeal {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  message        String
+  status         String    @default("OPEN") // OPEN | APPROVED | REJECTED
+  resolutionNote String?
+  resolvedById   String?
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }

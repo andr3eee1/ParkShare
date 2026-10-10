@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { z } from 'zod';
 import { AuthRequest, requireAdmin, requireAuth } from './middleware';
+import { applySanction, evaluateStanding, getStandingSnapshot } from './standing';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -89,6 +91,7 @@ router.get('/overview', async (req: AuthRequest, res: any): Promise<any> => {
       limitations: {
         reports: false,
         paymentReviews: false,
+        moderation: false,
       },
     });
   } catch (error) {
@@ -123,6 +126,13 @@ router.get('/users', async (req: AuthRequest, res: any): Promise<any> => {
         role: true,
         walletBalance: true,
         createdAt: true,
+        trustScore: true,
+        hostRating: true,
+        accountStatus: true,
+        suspendedUntil: true,
+        warningCount: true,
+        driverReviewsCount: true,
+        hostReviewsCount: true,
         _count: { select: { ownedSpots: true, reservations: true, passes: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -223,6 +233,170 @@ router.get('/reports', async (_req, res) => {
   } catch (error) {
     console.error('Fetch reports error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+const SanctionSchema = z.object({
+  action: z.enum(['WARN', 'SUSPEND', 'BAN', 'REINSTATE']),
+  reason: z.string().trim().max(500).optional(),
+  durationDays: z.number().int().min(1).max(365).optional(),
+});
+
+/**
+ * GET /admin/users/:id/standing
+ * Full trust & safety picture for a user (refreshes standing first).
+ */
+router.get('/users/:id/standing', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = req.params.id as string;
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true },
+    });
+    if (!target) return res.status(404).json({ error: 'User not found' });
+
+    await evaluateStanding(prisma, userId);
+    const [standing, actions, appeals] = await Promise.all([
+      getStandingSnapshot(prisma, userId),
+      prisma.moderationAction.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        include: { actor: { select: { firstName: true, lastName: true } } },
+      }),
+      prisma.appeal.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
+    ]);
+
+    res.json({ user: target, standing, actions, appeals });
+  } catch (error) {
+    console.error('Admin standing error:', error);
+    res.status(500).json({ error: 'Failed to load standing' });
+  }
+});
+
+/**
+ * POST /admin/users/:id/sanction
+ * Manual moderation: WARN || SUSPEND || BAN || REINSTATE.
+ */
+router.post('/users/:id/sanction', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = req.params.id as string;
+    const data = SanctionSchema.parse(req.body);
+
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!target) return res.status(404).json({ error: 'User not found' });
+
+    await applySanction(prisma, {
+      userId,
+      action: data.action,
+      reason: data.reason,
+      actorId: req.user?.userId,
+      durationDays: data.durationDays,
+      automated: false,
+    });
+
+    const standing = await getStandingSnapshot(prisma, userId);
+    res.json({ message: `Action ${data.action} applied`, standing });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
+    console.error('Admin sanction error:', error);
+    res.status(500).json({ error: 'Failed to apply sanction' });
+  }
+});
+
+/**
+ * GET /admin/appeals?status=OPEN
+ */
+router.get('/appeals', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const status = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : undefined;
+    const appeals = await prisma.appeal.findMany({
+      where: status && ['OPEN', 'APPROVED', 'REJECTED'].includes(status) ? { status } : {},
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { id: true, firstName: true, lastName: true, email: true, accountStatus: true },
+        },
+      },
+    });
+    res.json({ appeals });
+  } catch (error) {
+    console.error('Admin appeals error:', error);
+    res.status(500).json({ error: 'Failed to load appeals' });
+  }
+});
+
+const ResolveAppealSchema = z.object({
+  status: z.enum(['APPROVED', 'REJECTED']),
+  note: z.string().trim().max(500).optional(),
+});
+
+/**
+ * POST /admin/appeals/:id/resolve
+ * Approving an appeal reinstates the user; rejecting it keeps the sanction.
+ */
+router.post('/appeals/:id/resolve', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const data = ResolveAppealSchema.parse(req.body);
+    const appeal = await prisma.appeal.findUnique({ where: { id: req.params.id as string } });
+    if (!appeal) return res.status(404).json({ error: 'Appeal not found' });
+    if (appeal.status !== 'OPEN') return res.status(400).json({ error: 'Appeal already resolved' });
+
+    const updated = await prisma.appeal.update({
+      where: { id: appeal.id },
+      data: {
+        status: data.status,
+        resolutionNote: data.note ?? null,
+        resolvedById: req.user?.userId ?? null,
+        resolvedAt: new Date(),
+      },
+    });
+
+    if (data.status === 'APPROVED') {
+      await applySanction(prisma, {
+        userId: appeal.userId,
+        action: 'REINSTATE',
+        reason: data.note || 'Your appeal was approved.',
+        actorId: req.user?.userId,
+        automated: false,
+      });
+    } else {
+      await prisma.notification.create({
+        data: {
+          userId: appeal.userId,
+          type: 'APPEAL',
+          title: 'Appeal reviewed',
+          body: data.note || 'After review, your appeal was not approved. The original decision stands.',
+        },
+      });
+    }
+
+    res.json({ message: `Appeal ${data.status.toLowerCase()}`, appeal: updated });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
+    console.error('Resolve appeal error:', error);
+    res.status(500).json({ error: 'Failed to resolve appeal' });
+  }
+});
+
+/**
+ * GET /admin/moderation
+ * Recent trust & safety audit trail.
+ */
+router.get('/moderation', async (_req, res) => {
+  try {
+    const actions = await prisma.moderationAction.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        actor: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+    res.json({ actions });
+  } catch (error) {
+    console.error('Admin moderation log error:', error);
+    res.status(500).json({ error: 'Failed to load moderation log' });
   }
 });
 

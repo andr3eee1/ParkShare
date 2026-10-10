@@ -1,6 +1,7 @@
 import { Router, Request } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { requireAuth, AuthRequest } from './middleware';
+import { requireAuth, requireActiveUser, AuthRequest } from './middleware';
+import { recomputeHostRating, evaluateStanding } from './standing';
 import { z } from 'zod';
 
 const router = Router();
@@ -34,7 +35,7 @@ class HttpError extends Error {
  * - Spot owner reviewing a booking -> rates the DRIVER (updates user.trustScore,
  *   which drives the dynamic security deposit).
  */
-router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+router.post('/', requireAuth, requireActiveUser, async (req: AuthRequest, res: any): Promise<any> => {
   try {
     const reviewerId = req.user?.userId;
     if (!reviewerId) return res.status(401).json({ error: 'Unauthorized' });
@@ -87,6 +88,9 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
             reviewsCount: agg._count.rating,
           },
         });
+        // The driver rates the spot, which reflects on the owner's host standing.
+        await recomputeHostRating(tx, reservation.spot.ownerId);
+        await evaluateStanding(tx, reservation.spot.ownerId);
       } else {
         const agg = await tx.review.aggregate({
           where: { targetUserId: reservation.userId },
@@ -98,8 +102,13 @@ router.post('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> =
         const score = (PRIOR_MEAN * PRIOR_WEIGHT + sum) / (PRIOR_WEIGHT + n);
         await tx.user.update({
           where: { id: reservation.userId },
-          data: { trustScore: Math.round(score * 100) / 100 },
+          data: {
+            trustScore: Math.round(score * 100) / 100,
+            driverReviewsCount: n,
+          },
         });
+        // Re-evaluate the driver's standing after every new rating.
+        await evaluateStanding(tx, reservation.userId);
       }
 
       return newReview;

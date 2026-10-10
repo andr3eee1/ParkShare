@@ -11,6 +11,25 @@ const router = Router();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_in_production';
 
+/** Shape of the user object safe to return to the client (includes standing). */
+const toPublicUser = (user: any) => ({
+  id: user.id,
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  avatarUrl: user.avatarUrl,
+  role: user.role,
+  walletBalance: user.walletBalance,
+  trustScore: user.trustScore,
+  hostRating: user.hostRating,
+  accountStatus: user.accountStatus,
+  suspendedUntil: user.suspendedUntil,
+  warningCount: user.warningCount,
+  driverReviewsCount: user.driverReviewsCount,
+  hostReviewsCount: user.hostReviewsCount,
+  completedBookings: user.completedBookings,
+});
+
 const RegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -54,15 +73,7 @@ router.post('/register', async (req, res): Promise<any> => {
     res.status(201).json({
       message: 'User created successfully',
       token,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        walletBalance: user.walletBalance
-      }
+      user: toPublicUser(user),
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -93,15 +104,7 @@ router.post('/login', async (req, res): Promise<any> => {
     res.json({
       message: 'Login successful',
       token,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        walletBalance: user.walletBalance
-      }
+      user: toPublicUser(user),
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -193,17 +196,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: any): Promise<any> 
     }
 
     res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        walletBalance: user.walletBalance,
-        trustScore: user.trustScore,
-        completedBookings: user.completedBookings
-      }
+      user: toPublicUser(user),
     });
   } catch (error: any) {
     console.error('Get profile error:', error);

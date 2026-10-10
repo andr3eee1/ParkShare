@@ -8,6 +8,7 @@ import spotsRouter from './spots';
 import bookingsRouter from './bookings';
 import adminRouter from './admin';
 import reviewsRouter from './reviews';
+import moderationRouter from './moderation';
 
 import vehiclesRouter from './vehicles';
 
@@ -28,6 +29,7 @@ app.use('/bookings', bookingsRouter);
 app.use('/vehicles', vehiclesRouter);
 app.use('/admin', adminRouter);
 app.use('/reviews', reviewsRouter);
+app.use('/moderation', moderationRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
