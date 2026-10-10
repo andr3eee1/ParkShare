@@ -37,4 +37,26 @@ export const styles = StyleSheet.create({
   managementLabel: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 13, marginTop: 12 },
   managementDescription: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10, marginTop: 3 },
   managementArrow: { bottom: 13, position: 'absolute', right: 13 },
+
+  diagnosticsPanel: { paddingHorizontal: 15, paddingVertical: 5 },
+  diagnosticRow: {
+    alignItems: 'flex-start',
+    borderBottomColor: tokens.colors.borderLight,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 13,
+  },
+  diagnosticCopy: { flex: 1, gap: 4 },
+  diagnosticLabel: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 13 },
+  diagnosticDetail: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 11, lineHeight: 17 },
+  diagnosticStatus: { alignItems: 'center', flexDirection: 'row', gap: 6, marginLeft: 8 },
+  diagnosticStatusText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 11 },
+  diagnosticFooter: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, gap: 10 },
+  refreshTimes: { flex: 1, gap: 3 },
+  checkedAtText: { color: tokens.colors.secondaryText, flex: 1, fontFamily: tokens.typography.body, fontSize: 10 },
+  refreshButton: { alignItems: 'center', borderColor: tokens.colors.municipalTeal, borderRadius: 9, borderWidth: 1, flexDirection: 'row', gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
+  refreshButtonText: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 11 },
+
 });
