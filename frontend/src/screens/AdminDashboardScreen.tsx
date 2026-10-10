@@ -181,7 +181,7 @@ export const AdminDashboardScreen = () => {
         </View>
 
         <Text style={styles.sectionTitle}>Connection diagnostics</Text>
-        <GlassPanel style={styles.diagnosticsPanel} borderRadius={16} intensity={30} overlayColor={tokens.colors.panelSurface}>
+        <GlassPanel style={[styles.diagnosticsPanel, { marginBottom: 12 }]} borderRadius={16} intensity={30} overlayColor={tokens.colors.panelSurface}>
           <DiagnosticRow label="Backend API" status={diagnostics.backend} detail={`${API_BASE_URL} · ${API_URL_SOURCE === 'environment' ? 'configured by environment' : 'deployed fallback'}`} />
           <DiagnosticRow label="Database" status={diagnostics.database} detail="Verified through the health check and statistics query" />
           <DiagnosticRow label="Admin access" status={diagnostics.admin} detail="Authenticated statistics request" />
