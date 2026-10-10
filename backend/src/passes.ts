@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import { requireAuth, AuthRequest } from './middleware';
 import { z } from 'zod';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all active passes for the user
 router.get('/', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {

@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import { z } from 'zod';
 import { requireAuth, AuthRequest } from './middleware';
 import { getStandingSnapshot, evaluateStanding } from './standing';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const AppealSchema = z.object({
   message: z.string().trim().min(10).max(1000),

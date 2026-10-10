@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import { requireAuth } from './middleware';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get user's vehicles
 router.get('/', requireAuth, async (req: any, res: any) => {

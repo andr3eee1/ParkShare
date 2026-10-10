@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import { requireAuth, requireActiveUser, AuthRequest } from './middleware';
 import { z } from 'zod';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const SpotSchema = z.object({
   name: z.string().min(2),

@@ -1,11 +1,11 @@
 import { Router, Request } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from './prisma';
 import { requireAuth, requireActiveUser, AuthRequest } from './middleware';
 import { recomputeHostRating, evaluateStanding } from './standing';
 import { z } from 'zod';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * Bayesian prior for a user's trust score. New users start at PRIOR_MEAN and a

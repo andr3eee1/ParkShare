@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import { requireAuth, requireActiveUser, AuthRequest } from './middleware';
 import { z } from 'zod';
 import { quoteDeposit } from './deposit';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const CreateBookingSchema = z.object({
   spotId: z.string(),

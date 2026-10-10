@@ -1,14 +1,13 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import { z } from 'zod';
 import multer from 'multer';
 import path from 'path';
 import { requireAuth, AuthRequest } from './middleware';
 
 const router = Router();
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_in_production';
 
 /** Shape of the user object safe to return to the client (includes standing). */

@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import { requireAuth, AuthRequest } from './middleware';
 import { z } from 'zod';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const DepositSchema = z.object({
   amount: z.number().positive()

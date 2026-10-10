@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './prisma';
 import { z } from 'zod';
 import { AuthRequest, requireAdmin, requireAuth } from './middleware';
 import { applySanction, evaluateStanding, getStandingSnapshot } from './standing';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.use(requireAuth, requireAdmin);
 
