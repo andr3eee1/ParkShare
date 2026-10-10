@@ -523,6 +523,9 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           maxZoom={22}
           zoomControl={false}
           inertia={false}
+          tap={false}
+          dragging={true}
+          touchZoom={true}
           style={{ width: '100%', height: '100%', position: 'absolute' }}
           ref={webMapRef}
         >
