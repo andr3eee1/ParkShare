@@ -141,14 +141,23 @@ ParkShare nu este doar o idee de afaceri, ci un produs tehnic complet funcționa
 
 == 1. Frontend & Mobile (User Experience)
 - Dezvoltat folosind ecosistemul React.
-- Design System modern ("Apple/Linear style") utilizând culori personalizate (Emerald Green #009967).
+- Design System modern ("Apple/Linear style") utilizând culori personalizate (Emerald Green #009967), aplicat unitar prin componente partajate (`Screen` / `ScreenHeader` și panouri de tip "glass") pentru consistență vizuală pe toate ecranele.
 - Hărți interactive pentru găsirea locurilor de parcare live.
+- Ecran dedicat "Trust & Safety" (status, scoruri, notificări și apeluri) și consolă completă de administrare (dashboard, moderare utilizatori, spații, rezervări și rapoarte).
 
 == 2. Infrastructura Backend
 - Arhitectură robustă care gestionează tranzacții, sisteme de rating (Host & Guest) și status-ul live al locurilor de parcare.
-- Implementare de WebSockets pentru actualizarea în timp real a disponibilității (evitând situațiile de "dublă rezervare").
+- Prevenirea "dublei rezervări" se face server-side, printr-o verificare atomică a suprapunerilor de rezervări în interiorul unei tranzacții de bază de date (Prisma `$transaction`), garantând consistența fără a depinde de conexiuni persistente.
 
-== 3. Marketing Video Programatic (Remotion)
+== 3. Trust & Safety & Moderare (Reputație)
+Spre deosebire de platformele concurente, ParkShare integrează un sistem complet de reputație și siguranță, atât pentru *șoferi*, cât și pentru *gazde*:
+- *Rating bidirecțional:* După fiecare cursă, șoferul și gazda se pot evalua reciproc. Recenziile sunt opționale — un banner discret, ușor de închis, în locul unei ferestre pop-up forțate.
+- *Scor de încredere (Standing):* Fiecare cont are un status vizibil — `ACTIVE`, `WARNING`, `SUSPENDED` sau `BANNED` — calculat pe baza notelor primite (minim 5 recenzii înainte de automatizare).
+- *Sancțiuni automate, proporționale:* Sub 3.5 stele se emite un avertisment; sub 3.0 stele contul este suspendat temporar (14 zile implicit); 3 note foarte mici în 90 de zile declanșează aceeași măsură. Blocările permanente (ban) sunt confirmate exclusiv manual de un administrator.
+- *Dreptul la apel:* Utilizatorii sancționați pot trimite un apel direct din ecranul de Trust & Safety și pot fi reabilitați de un administrator.
+- *Notificări & audit:* Fiecare acțiune de moderare este înregistrată (audit log), iar utilizatorul este notificat în aplicație.
+
+== 4. Marketing Video Programatic (Remotion)
 O componentă tehnică inovatoare a proiectului nostru este generarea materialelor de marketing direct din cod. Am construit un sistem video bazat pe `Remotion` (React):
 - Renderizează videoclipuri promoționale high-end (1080p, 60fps) cu efecte de *Kinetic Typography* (blur-up, spring animations).
 - Permite generarea programatică a reclamelor în mai multe limbi (suport i18n pentru română și engleză) fără intervenția unui editor video uman.
