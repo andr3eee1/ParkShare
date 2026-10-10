@@ -1,4 +1,4 @@
-const DEFAULT_API_URL = 'http://pana.com.ro:8745';
+const DEFAULT_API_URL = 'https://park-share.ro/api';
 const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 
 export const API_BASE_URL = (configuredApiUrl || DEFAULT_API_URL).replace(/\/+$/, '');

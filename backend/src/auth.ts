@@ -172,9 +172,15 @@ router.post('/upload-avatar', requireAuth, upload.single('avatar'), async (req: 
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     
     // Construct the public URL
-    const protocol = req.protocol;
     const host = req.get('host');
-    const url = `${protocol}://${host}/uploads/${req.file.filename}`;
+    let baseUrl = process.env.API_PUBLIC_URL;
+    if (!baseUrl) {
+      const protocol = req.headers['x-forwarded-proto'] as string || req.protocol;
+      baseUrl = `${protocol}://${host}`;
+    }
+    const base = baseUrl.replace(/\/$/, '');
+    // Return just the path relative to the public root; frontend can prefix with API_BASE_URL
+    const url = `/uploads/${req.file.filename}`;
     
     res.json({ url });
   } catch (error) {
