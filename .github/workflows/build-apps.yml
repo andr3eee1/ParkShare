@@ -102,16 +102,22 @@ jobs:
       - name: Build iOS App
         working-directory: ./frontend/ios
         # Note: We build for the Simulator because building a physical .ipa requires Apple Developer Certificates injected into GitHub Secrets.
+        # The workspace/scheme are named after the app's `name` in app.json (Xcode-sanitized),
+        # so resolve them dynamically instead of hardcoding a name that renames will break.
         env:
           EXPO_PUBLIC_API_URL: https://park-share.ro/api
-        run: xcodebuild -workspace frontend.xcworkspace -scheme frontend -configuration Release -sdk iphonesimulator -derivedDataPath build
+        run: |
+          WORKSPACE=$(ls -d *.xcworkspace | head -n1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          echo "Building workspace '$WORKSPACE' with scheme '$SCHEME'"
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator -derivedDataPath build
 
       - name: Upload iOS Artifact
         id: upload-ios
         uses: actions/upload-artifact@v4
         with:
           name: ParkShare-iOS-Simulator-App
-          path: frontend/ios/build/Build/Products/Release-iphonesimulator/frontend.app
+          path: frontend/ios/build/Build/Products/Release-iphonesimulator/*.app
           retention-days: 7
 
       - name: Send Discord Notification (iOS)
