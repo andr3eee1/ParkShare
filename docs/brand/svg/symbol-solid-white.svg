@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ParkShare · Share-P symbol — solid white, simplified bowl (tiny sizes, favicon) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 66" width="52" height="66" role="img" aria-label="ParkShare symbol">
+  <g transform="translate(9 2)">
+    <rect x="0" y="0" width="13" height="62" rx="6" fill="#FFFFFF"/>
+    <path d="M 15 0 A 19 19 0 0 1 15 38 Z" fill="#FFFFFF"/>
+  </g>
+</svg>

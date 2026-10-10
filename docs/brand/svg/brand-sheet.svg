@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ParkShare · Brand Sheet v1.0 (1920×1080)
+  Overview: mark, variants, palette, typography, lockups, motto.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080" role="img" aria-label="ParkShare brand sheet">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#009967"/>
+      <stop offset="1" stop-color="#006552"/>
+    </linearGradient>
+
+    <g id="markColor">
+      <rect x="0" y="0" width="13" height="62" rx="6" fill="#101826"/>
+      <path d="M 15 0 L 15 38 A 19 19 0 0 0 23.95 35.76 L 23.95 2.24 A 19 19 0 0 0 15 0 Z" fill="#009967"/>
+      <path d="M 25.05 2.87 L 25.05 35.13 A 19 19 0 0 0 25.05 2.87 Z" fill="#006552"/>
+    </g>
+    <g id="markMono">
+      <rect x="0" y="0" width="13" height="62" rx="6" fill="#101826"/>
+      <path d="M 15 0 L 15 38 A 19 19 0 0 0 23.95 35.76 L 23.95 2.24 A 19 19 0 0 0 15 0 Z" fill="#101826"/>
+      <path d="M 25.05 2.87 L 25.05 35.13 A 19 19 0 0 0 25.05 2.87 Z" fill="#101826"/>
+    </g>
+    <g id="markWhite">
+      <rect x="0" y="0" width="13" height="62" rx="6" fill="#FFFFFF"/>
+      <path d="M 15 0 L 15 38 A 19 19 0 0 0 23.95 35.76 L 23.95 2.24 A 19 19 0 0 0 15 0 Z" fill="#FFFFFF"/>
+      <path d="M 25.05 2.87 L 25.05 35.13 A 19 19 0 0 0 25.05 2.87 Z" fill="#FFFFFF"/>
+    </g>
+    <g id="markSolidWhite">
+      <rect x="0" y="0" width="13" height="62" rx="6" fill="#FFFFFF"/>
+      <path d="M 15 0 A 19 19 0 0 1 15 38 Z" fill="#FFFFFF"/>
+    </g>
+
+    <g id="lockHC">
+      <g transform="translate(0 0)">
+        <g transform="translate(48 39.4) scale(2.6)">
+          <use href="#markColor"/>
+        </g>
+        <text x="190" y="148" font-family="Space Grotesk, Inter, sans-serif" font-weight="700" font-size="78" fill="#101826" style="letter-spacing:0.6px">ParkShare</text>
+        <text x="192" y="199" font-family="Inter, sans-serif" font-weight="500" font-size="21" fill="#62748E" style="letter-spacing:2.5px">Park smarter. Share more.</text>
+      </g>
+    </g>
+    <g id="lockHW">
+      <g transform="translate(0 0)">
+        <g transform="translate(48 39.4) scale(2.6)">
+          <use href="#markWhite"/>
+        </g>
+        <text x="190" y="148" font-family="Space Grotesk, Inter, sans-serif" font-weight="700" font-size="78" fill="#FFFFFF" style="letter-spacing:0.6px">ParkShare</text>
+        <text x="192" y="199" font-family="Inter, sans-serif" font-weight="500" font-size="21" fill="#AFC3D9" style="letter-spacing:2.5px">Park smarter. Share more.</text>
+      </g>
+    </g>
+    <g id="lockStacked">
+      <g transform="translate(0 0)">
+        <g transform="translate(239.2 64) scale(2.4)">
+          <use href="#markColor"/>
+        </g>
+        <text x="280" y="312" text-anchor="middle" font-family="Space Grotesk, Inter, sans-serif" font-weight="700" font-size="60" fill="#101826" style="letter-spacing:0.8px">ParkShare</text>
+        <rect x="240" y="336" width="80" height="6" rx="3" fill="#009967"/>
+        <text x="280" y="384" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="21" fill="#62748E" style="letter-spacing:2.5px">Park smarter. Share more.</text>
+      </g>
+    </g>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#F9FAFB"/>
+
+  <!-- ===== Header band ===== -->
+  <rect width="1920" height="180" fill="#101826"/>
+  <g transform="translate(60 30) scale(2.0)">
+    <use href="#markWhite"/>
+  </g>
+  <text x="196" y="92" font-family="Space Grotesk, Inter, sans-serif" font-weight="700" font-size="72" fill="#FFFFFF" style="letter-spacing:0.6px">ParkShare</text>
+  <text x="198" y="136" font-family="Inter, sans-serif" font-weight="500" font-size="22" fill="#AFC3D9" style="letter-spacing:2px">BRAND GUIDELINES · V1.0</text>
+  <text x="1860" y="96" text-anchor="end" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="34" fill="#FFFFFF">Park smarter. Share more.</text>
+  <text x="1860" y="134" text-anchor="end" font-family="Inter, sans-serif" font-weight="500" font-size="18" fill="#AFC3D9" style="letter-spacing:1.5px">OCTOBER 2026 · DOCS/BRAND</text>
+
+  <!-- ===== Column A · The Mark ===== -->
+  <text x="60" y="248" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="26" fill="#101826">The Mark · Share-P</text>
+  <rect x="60" y="264" width="64" height="4" rx="2" fill="#009967"/>
+  <text x="60" y="306" font-family="Inter, sans-serif" font-weight="500" font-size="17" fill="#62748E">The parking “P” split into two interlocking halves —</text>
+  <text x="60" y="328" font-family="Inter, sans-serif" font-weight="500" font-size="17" fill="#62748E">two parties, one spot. Stem = ink.</text>
+
+  <rect x="60" y="360" width="560" height="510" rx="28" fill="#FFFFFF" stroke="#E5EAF0" stroke-width="2"/>
+  <g transform="translate(217.6 391.8) scale(7.2)">
+    <use href="#markColor"/>
+  </g>
+  <text x="340" y="910" text-anchor="middle" font-family="Inter, sans-serif" font-weight="500" font-size="16" fill="#62748E">Two-tone emerald — for light surfaces</text>
+
+  <!-- variant chips -->
+  <rect x="60" y="936" width="150" height="110" rx="16" fill="#101826"/>
+  <g transform="translate(106.95 939.9) scale(1.65)"><use href="#markWhite"/></g>
+  <rect x="226" y="936" width="150" height="110" rx="16" fill="#FFFFFF" stroke="#E5EAF0" stroke-width="2"/>
+  <g transform="translate(272.95 939.9) scale(1.65)"><use href="#markMono"/></g>
+  <rect x="392" y="936" width="150" height="110" rx="16" fill="url(#bg)"/>
+  <g transform="translate(438.95 939.9) scale(1.65)"><use href="#markSolidWhite"/></g>
+  <text x="135" y="1072" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="14" fill="#62748E">On dark</text>
+  <text x="301" y="1072" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="14" fill="#62748E">On light</text>
+  <text x="467" y="1072" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="14" fill="#62748E">Gradient</text>
+
+  <!-- ===== Column B · Palette & Typography ===== -->
+  <text x="688" y="248" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="26" fill="#101826">Palette</text>
+  <rect x="688" y="264" width="56" height="4" rx="2" fill="#009967"/>
+  <text x="688" y="306" font-family="Inter, sans-serif" font-weight="500" font-size="17" fill="#62748E">Light-first, trust-green identity.</text>
+
+  <!-- swatches row 1 -->
+  <g font-family="Inter, sans-serif">
+    <rect x="688" y="360" width="118" height="118" rx="16" fill="#009967"/>
+    <rect x="812" y="360" width="118" height="118" rx="16" fill="#006552"/>
+    <rect x="936" y="360" width="118" height="118" rx="16" fill="#D7F8E8" stroke="#E5EAF0" stroke-width="2"/>
+    <rect x="1060" y="360" width="118" height="118" rx="16" fill="#101826"/>
+    <text x="747" y="500" text-anchor="middle" font-weight="600" font-size="15" fill="#101826">Emerald 500</text>
+    <text x="747" y="522" text-anchor="middle" font-weight="500" font-size="13" fill="#62748E">Primary</text>
+    <text x="871" y="500" text-anchor="middle" font-weight="600" font-size="15" fill="#101826">Emerald 700</text>
+    <text x="871" y="522" text-anchor="middle" font-weight="500" font-size="13" fill="#62748E">Deep green</text>
+    <text x="995" y="500" text-anchor="middle" font-weight="600" font-size="15" fill="#101826">Emerald 100</text>
+    <text x="995" y="522" text-anchor="middle" font-weight="500" font-size="13" fill="#62748E">Tint / accent</text>
+    <text x="1119" y="500" text-anchor="middle" font-weight="600" font-size="15" fill="#101826">Ink</text>
+    <text x="1119" y="522" text-anchor="middle" font-weight="500" font-size="13" fill="#62748E">Text &amp; stem</text>
+  </g>
+  <!-- swatches row 2 -->
+  <g font-family="Inter, sans-serif">
+    <rect x="688" y="540" width="118" height="118" rx="16" fill="#F9FAFB" stroke="#E5EAF0" stroke-width="2"/>
+    <rect x="812" y="540" width="118" height="118" rx="16" fill="#62748E"/>
+    <rect x="936" y="540" width="118" height="118" rx="16" fill="#0F766E"/>
+    <rect x="1060" y="540" width="118" height="118" rx="16" fill="#D97706"/>
+    <text x="747" y="680" text-anchor="middle" font-weight="600" font-size="15" fill="#101826">Paper</text>
+    <text x="747" y="702" text-anchor="middle" font-weight="500" font-size="13" fill="#62748E">Background</text>
+    <text x="871" y="680" text-anchor="middle" font-weight="600" font-size="15" fill="#101826">Slate</text>
+    <text x="871" y="702" text-anchor="middle" font-weight="500" font-size="13" fill="#62748E">Muted text</text>
+    <text x="995" y="680" text-anchor="middle" font-weight="600" font-size="15" fill="#101826">Teal</text>
+    <text x="995" y="702" text-anchor="middle" font-weight="500" font-size="13" fill="#62748E">Civic / trust</text>
+    <text x="1119" y="680" text-anchor="middle" font-weight="600" font-size="15" fill="#101826">Amber</text>
+    <text x="1119" y="702" text-anchor="middle" font-weight="500" font-size="13" fill="#62748E">Warning</text>
+  </g>
+
+  <!-- typography -->
+  <text x="688" y="764" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="26" fill="#101826">Typography</text>
+  <rect x="688" y="780" width="56" height="4" rx="2" fill="#009967"/>
+  <text x="688" y="858" font-family="Space Grotesk, Inter, sans-serif" font-weight="700" font-size="84" fill="#101826">Aa</text>
+  <text x="800" y="820" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="24" fill="#101826">Space Grotesk</text>
+  <text x="800" y="848" font-family="Inter, sans-serif" font-weight="500" font-size="15" fill="#62748E">Display · headings · numbers</text>
+  <text x="800" y="872" font-family="Inter, sans-serif" font-weight="500" font-size="15" fill="#62748E">500 Medium · 600 SemiBold · 700 Bold</text>
+  <text x="688" y="984" font-family="Inter, sans-serif" font-weight="400" font-size="84" fill="#101826">Aa</text>
+  <text x="800" y="946" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="24" fill="#101826">Inter</text>
+  <text x="800" y="974" font-family="Inter, sans-serif" font-weight="500" font-size="15" fill="#62748E">UI · body · paragraphs</text>
+  <text x="800" y="998" font-family="Inter, sans-serif" font-weight="500" font-size="15" fill="#62748E">400 Regular · 500 Medium · 600 SemiBold</text>
+
+  <!-- ===== Column C · Lockups ===== -->
+  <text x="1312" y="248" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="26" fill="#101826">Lockups &amp; Motion</text>
+  <rect x="1312" y="264" width="64" height="4" rx="2" fill="#009967"/>
+  <text x="1312" y="306" font-family="Inter, sans-serif" font-weight="500" font-size="17" fill="#62748E">One mark, every size, two languages.</text>
+
+  <rect x="1312" y="360" width="520" height="150" rx="20" fill="#FFFFFF" stroke="#E5EAF0" stroke-width="2"/>
+  <use href="#lockHC" transform="translate(1338 372.6) scale(0.52)"/>
+
+  <rect x="1312" y="540" width="520" height="150" rx="20" fill="#101826"/>
+  <use href="#lockHW" transform="translate(1338 552.6) scale(0.52)"/>
+
+  <text x="1312" y="726" font-family="Inter, sans-serif" font-weight="500" font-size="15" fill="#62748E">Light — default &#160;&#183;&#160; Dark — on ink &amp; photos</text>
+
+  <rect x="1312" y="760" width="230" height="300" rx="20" fill="#FFFFFF" stroke="#E5EAF0" stroke-width="2"/>
+  <use href="#lockStacked" transform="translate(1326.2 798.4) scale(0.36)"/>
+
+  <text x="1580" y="812" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="22" fill="#101826">Motto</text>
+  <text x="1580" y="856" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="40" fill="#101826">Park smarter.</text>
+  <text x="1580" y="904" font-family="Space Grotesk, Inter, sans-serif" font-weight="600" font-size="40" fill="#101826">Share more.</text>
+  <text x="1580" y="968" font-family="Inter, sans-serif" font-weight="500" font-size="16" fill="#62748E">Clear space — one bowl radius on all sides.</text>
+  <text x="1580" y="992" font-family="Inter, sans-serif" font-weight="500" font-size="16" fill="#62748E">Minimums — 16 px symbol · 120 px lockup.</text>
+</svg>
