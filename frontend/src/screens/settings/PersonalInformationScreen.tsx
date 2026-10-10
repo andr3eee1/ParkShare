@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   successBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#D1FAE5',
+    backgroundColor: tokens.colors.emeraldTint,
     padding: 12,
     borderRadius: 12,
     marginBottom: 16,
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   disabledInput: { backgroundColor: '#F3F4F6', color: tokens.colors.secondaryText },
   helperText: { fontFamily: tokens.typography.body, fontSize: 12, color: tokens.colors.secondaryText, marginTop: 6 },
   button: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',

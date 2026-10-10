@@ -7,13 +7,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
 import { tokens } from '../theme/tokens';
 import { GlassPanel } from '../components/GlassPanel';
-import { Screen, ScreenHeader } from '../components/Screen';
+import { Screen } from '../components/Screen';
+import { BrandGradient } from '../components/Brand';
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  ACTIVE: { label: 'Good standing', color: tokens.colors.availabilityGreen, bg: '#E6F5EE' },
+  ACTIVE: { label: 'Good standing', color: tokens.colors.availabilityGreen, bg: tokens.colors.emeraldTint },
   WARNING: { label: 'Warning', color: tokens.colors.warningAmber, bg: '#FEF3C7' },
-  SUSPENDED: { label: 'Suspended', color: '#D97706', bg: '#FEF3C7' },
-  BANNED: { label: 'Banned', color: '#C24141', bg: '#FDECEC' },
+  SUSPENDED: { label: 'Suspended', color: tokens.colors.warningAmber, bg: '#FEF3C7' },
+  BANNED: { label: 'Banned', color: tokens.colors.danger, bg: '#FDECEC' },
 };
 
 export const AccountScreen = () => {
@@ -52,38 +53,40 @@ export const AccountScreen = () => {
 
   return (
     <Screen>
-      <ScreenHeader
-        title="Account"
-        subtitle="Your profile and preferences"
-        showBack={false}
-        right={
-          <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('PersonalInformation')}>
+      {/* Profile hero */}
+      <BrandGradient style={styles.hero}>
+        <View pointerEvents="none" style={styles.heroSheen} />
+        <View style={styles.heroTopRow}>
+          <Text style={styles.heroEyebrow}>ACCOUNT</Text>
+          <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('PersonalInformation')} activeOpacity={0.85}>
+            <Ionicons name="create-outline" size={15} color={tokens.colors.white} />
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
-        }
-      />
+        </View>
 
-      {/* Profile Card */}
-      <GlassPanel style={styles.profileCard} borderRadius={20} intensity={40} overlayColor={tokens.colors.panelSurface}>
-        <View style={styles.avatarContainer}>
-          {user?.avatarUrl ? (
-            <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <Text style={styles.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
-          )}
-        </View>
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{user?.firstName} {user?.lastName}</Text>
-          <Text style={styles.profileEmail}>{user?.email}</Text>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>{isAdmin ? 'Platform Administrator' : user?.role === 'PROVIDER' ? 'Parking Provider' : 'Verified User'}</Text>
+        <View style={styles.heroProfile}>
+          <View style={styles.avatarContainer}>
+            {user?.avatarUrl ? (
+              <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</Text>
+            )}
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Standing')} style={[styles.statusPill, { backgroundColor: status.bg }]}>
-            <Ionicons name="star" size={11} color={status.color} />
-            <Text style={[styles.statusPillText, { color: status.color }]}>{status.label}</Text>
-          </TouchableOpacity>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName} numberOfLines={1}>{user?.firstName} {user?.lastName}</Text>
+            <Text style={styles.profileEmail} numberOfLines={1}>{user?.email}</Text>
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleText}>{isAdmin ? 'Platform Administrator' : user?.role === 'PROVIDER' ? 'Parking Provider' : 'Verified User'}</Text>
+            </View>
+          </View>
         </View>
-      </GlassPanel>
+
+        <TouchableOpacity onPress={() => navigation.navigate('Standing')} style={styles.heroStatusPill} activeOpacity={0.85}>
+          <Ionicons name="star" size={12} color={status.color} />
+          <Text style={[styles.heroStatusText, { color: status.color }]}>{status.label}</Text>
+          <Ionicons name="chevron-forward" size={13} color={status.color} />
+        </TouchableOpacity>
+      </BrandGradient>
 
       {user?.accountStatus && user.accountStatus !== 'ACTIVE' && (
         <TouchableOpacity
@@ -110,7 +113,7 @@ export const AccountScreen = () => {
             activeOpacity={0.7}
           >
             <View style={styles.menuIconContainer}>
-              <Ionicons name={item.icon as any} size={20} color={tokens.colors.municipalTeal} />
+              <Ionicons name={item.icon as any} size={20} color={tokens.colors.emerald} />
             </View>
             <View style={styles.menuTextContainer}>
               <Text style={styles.menuTitle}>{item.title}</Text>
@@ -123,7 +126,7 @@ export const AccountScreen = () => {
 
       {/* Logout Button */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-        <Ionicons name="log-out-outline" size={22} color="#DC2626" />
+        <Ionicons name="log-out-outline" size={22} color={tokens.colors.danger} />
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
 
@@ -136,47 +139,77 @@ export const AccountScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    backgroundColor: tokens.colors.panelSurface,
-    borderRadius: tokens.radii.pill,
+  hero: {
+    borderRadius: tokens.radii.upperSheet,
+    overflow: 'hidden',
+    padding: 20,
+    marginBottom: 20,
     ...tokens.shadows.soft,
   },
-  editButtonText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.primaryText, fontSize: 13 },
-  profileCard: { flexDirection: 'row', padding: 18, alignItems: 'center', marginBottom: 20 },
+  heroSheen: {
+    position: 'absolute',
+    right: -60,
+    top: -80,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  heroEyebrow: {
+    fontFamily: tokens.typography.bodySemiBold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: tokens.radii.pill,
+  },
+  editButtonText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.white, fontSize: 13, marginLeft: 5 },
+  heroProfile: { flexDirection: 'row', alignItems: 'center' },
   avatarContainer: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  avatarText: { fontFamily: tokens.typography.heading, fontSize: 24, color: tokens.colors.white },
+  avatarText: { fontFamily: tokens.typography.headingBold, fontSize: 24, color: tokens.colors.emeraldDeep },
   avatarImage: { width: '100%', height: '100%', borderRadius: 32 },
   profileInfo: { flex: 1 },
-  profileName: { fontFamily: tokens.typography.headingBold, fontSize: 20, color: tokens.colors.primaryText, marginBottom: 2 },
-  profileEmail: { fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.secondaryText, marginBottom: 8 },
+  profileName: { fontFamily: tokens.typography.headingBold, fontSize: 22, color: tokens.colors.white, marginBottom: 2 },
+  profileEmail: { fontFamily: tokens.typography.body, fontSize: 13, color: 'rgba(255, 255, 255, 0.85)', marginBottom: 8 },
   roleBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(15, 118, 110, 0.1)',
-    paddingHorizontal: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 7,
   },
-  roleText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 12, color: tokens.colors.municipalTeal },
-  statusPill: {
+  roleText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 11, color: tokens.colors.white },
+  heroStatusPill: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginTop: 6,
+    backgroundColor: tokens.colors.white,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: tokens.radii.pill,
+    marginTop: 16,
   },
-  statusPillText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 12, marginLeft: 4 },
+  heroStatusText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 12, marginLeft: 5, marginRight: 3 },
   standingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -189,12 +222,12 @@ const styles = StyleSheet.create({
   standingBannerText: { fontFamily: tokens.typography.body, fontSize: 12, color: tokens.colors.secondaryText, marginTop: 2 },
   menuContainer: { paddingHorizontal: 4, marginBottom: 24 },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 12 },
-  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#EEF1F4' },
+  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#EDF1EF' },
   menuIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: '#E8F1F5',
+    backgroundColor: tokens.colors.emeraldTint,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -211,7 +244,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginBottom: 20,
   },
-  logoutText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: '#DC2626', marginLeft: 8 },
+  logoutText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: tokens.colors.danger, marginLeft: 8 },
   versionText: { fontFamily: tokens.typography.body, fontSize: 13, color: '#9CA3AF', textAlign: 'center' },
   brandFooter: {
     flexDirection: 'row',

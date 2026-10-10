@@ -10,6 +10,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { FormInput } from '../components/FormInput';
+import { GlassPanel } from '../components/GlassPanel';
+import { BrandGradient } from '../components/Brand';
 
 const registerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -50,134 +52,163 @@ export const RegisterScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={tokens.colors.primaryText} />
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <BrandGradient style={StyleSheet.absoluteFill} />
 
-          <View style={styles.headerContainer}>
-            <Image source={require('../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
-            <Text style={styles.logo}>ParkShare</Text>
-            <Text style={styles.subtitle}>Create your account</Text>
-          </View>
-
-          {error ? (
-            <View style={styles.errorBox}>
-              <Ionicons name="warning" size={20} color={tokens.colors.primaryText} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : null}
-
-          <View style={styles.row}>
-            <View style={{ flex: 1, marginRight: 6 }}>
-              <FormInput
-                control={control}
-                name="firstName"
-                label="First name"
-                placeholder="Jane"
-              />
-            </View>
-            <View style={{ flex: 1, marginLeft: 6 }}>
-              <FormInput
-                control={control}
-                name="lastName"
-                label="Last name"
-                placeholder="Doe"
-              />
-            </View>
-          </View>
-
-          <FormInput
-            control={control}
-            name="email"
-            label="Email address"
-            placeholder="name@example.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <FormInput
-            control={control}
-            name="password"
-            label="Password"
-            placeholder="Min 6 characters"
-            secureTextEntry
-            onSubmitEditing={handleSubmit(onSubmit)}
-            returnKeyType="go"
-          />
-
-          <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <ActivityIndicator color={tokens.colors.white} />
-            ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.footerLink}>Sign in</Text>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back">
+              <Ionicons name="arrow-back" size={22} color={tokens.colors.white} />
             </TouchableOpacity>
+
+            <View style={styles.headerContainer}>
+              <View style={styles.logoBadge}>
+                <Image source={require('../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
+              </View>
+              <Text style={styles.logo}>ParkShare</Text>
+              <Text style={styles.subtitle}>Create your account</Text>
+            </View>
+
+            <GlassPanel style={styles.card} borderRadius={24} intensity={40} overlayColor="rgba(255, 255, 255, 0.97)">
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Ionicons name="warning" size={20} color="#991B1B" />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.row}>
+                <View style={{ flex: 1, marginRight: 6 }}>
+                  <FormInput
+                    control={control}
+                    name="firstName"
+                    label="First name"
+                    placeholder="Jane"
+                  />
+                </View>
+                <View style={{ flex: 1, marginLeft: 6 }}>
+                  <FormInput
+                    control={control}
+                    name="lastName"
+                    label="Last name"
+                    placeholder="Doe"
+                  />
+                </View>
+              </View>
+
+              <FormInput
+                control={control}
+                name="email"
+                label="Email address"
+                placeholder="name@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <FormInput
+                control={control}
+                name="password"
+                label="Password"
+                placeholder="Min 6 characters"
+                secureTextEntry
+                onSubmitEditing={handleSubmit(onSubmit)}
+                returnKeyType="go"
+              />
+
+              <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)} disabled={isSubmitting} activeOpacity={0.9}>
+                {isSubmitting ? (
+                  <ActivityIndicator color={tokens.colors.white} />
+                ) : (
+                  <Text style={styles.buttonText}>Create Account</Text>
+                )}
+              </TouchableOpacity>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Already have an account? </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                  <Text style={styles.footerLink}>Sign in</Text>
+                </TouchableOpacity>
+              </View>
+            </GlassPanel>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.paleMapBackground,
+    backgroundColor: tokens.colors.emeraldDeep,
   },
-  scrollContent: {
+  flex: { flex: 1 },
+  scroll: {
     flexGrow: 1,
     justifyContent: 'center',
   },
   content: {
     padding: 24,
-    paddingTop: 48,
-    maxWidth: 420,
+    paddingTop: 32,
+    maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
   },
   backButton: {
-    position: 'absolute',
-    top: 24,
-    left: 24,
-    zIndex: 10,
+    alignSelf: 'flex-start',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    marginBottom: 8,
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 48,
-    marginTop: 24,
+    marginBottom: 28,
+    marginTop: 4,
   },
-  logoMark: {
+  logoBadge: {
     width: 88,
     height: 88,
-    marginBottom: 10,
+    borderRadius: 26,
+    backgroundColor: tokens.colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+    ...tokens.shadows.soft,
+  },
+  logoMark: {
+    width: 54,
+    height: 54,
   },
   logo: {
     fontFamily: tokens.typography.headingBold,
-    fontSize: 40,
-    color: tokens.colors.primaryText,
-    marginBottom: 8,
+    fontSize: 36,
+    color: tokens.colors.white,
+    marginBottom: 6,
   },
   subtitle: {
     fontFamily: tokens.typography.body,
-    fontSize: 18,
-    color: tokens.colors.secondaryText,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  card: {
+    padding: 22,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FEE2E2',
     padding: 12,
-    borderRadius: 8,
-    marginBottom: 24,
+    borderRadius: 12,
+    marginBottom: 20,
   },
   errorText: {
     fontFamily: tokens.typography.body,
@@ -185,32 +216,14 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  formGroup: {
-    marginBottom: 24,
-  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  label: {
-    fontFamily: tokens.typography.body,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: tokens.colors.primaryText,
-  },
-  input: {
-    backgroundColor: tokens.colors.white,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    padding: 16,
-    fontFamily: tokens.typography.body,
-    fontSize: 16,
-  },
   button: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
   },
@@ -222,15 +235,14 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 32,
+    marginTop: 24,
   },
   footerText: {
     fontFamily: tokens.typography.body,
     color: tokens.colors.secondaryText,
   },
   footerLink: {
-    fontFamily: tokens.typography.body,
-    fontWeight: '600',
-    color: tokens.colors.primaryText,
+    fontFamily: tokens.typography.bodySemiBold,
+    color: tokens.colors.emerald,
   }
 });

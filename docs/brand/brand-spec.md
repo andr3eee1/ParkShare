@@ -156,8 +156,10 @@ docs/brand/
   - `icon` → `app-icon.png` (1024², no alpha)
   - `android.adaptiveIcon` → gradient `backgroundImage` + white `foregroundImage` + `monochromeImage` (mark kept inside the safe zone)
   - `web.favicon` → `favicon-64.png`
-  - `expo-splash-screen` plugin → paper (`#F7F9FB`) background + `splash-icon.png` (`imageWidth: 180`)
+  - `expo-splash-screen` plugin → paper (`#F9FAFB`) background + `splash-icon.png` (`imageWidth: 180`)
 - **App UI** — `logo-mark.png` anchors the Sign In, Create Account and boot (loading) screens plus the Account footer; headers use the `Space Grotesk 700` wordmark via `tokens.typography.headingBold`.
+- **App color system** — `frontend/src/theme/tokens.ts` maps the palette above directly: `emerald` (`#009967`) is the action color for every primary CTA, active tab, selected chip and avatar, plus the map's "available" signal; `emeraldDeep` (`#006552`) backs dark text-bearing fills (Passes hero); `emeraldTint` (`#D7F8E8`) is the success/selected wash; `ink`/`paper`/`slate` replace the old neutral greys. Map markers read green = available, teal = yours, slate = unavailable — no more purple/blue/red rainbow.
+- **Green-forward surfaces** — the brand gradient `#009967 → #006552` (`tokens.gradients.brand`, exposed via `frontend/src/components/Brand.tsx`) is the signature surface: it fills the Sign In / Create Account backgrounds, the Account profile hero, the shared `ScreenHeader` band on every pushed screen, and the History / My Spots headers. Tinted cards, icon chips, menu rows and success states use `emeraldTint` / `emeraldWash` so green reads as the app's default accent; teal is reserved for civic/trust moments (municipal notices, standings, admin) and red/amber only for destructive and warning states.
 - **Marketing video** — `marketing-video/src/components/BrandMark.tsx` draws the symbol as inline SVG; Scene 3 (Reveal) and Scene 7 (Outro) render it white inside the gradient app-icon tile, matching the real icon.
 - **Backend/docs** — lockups on the README and Typst cover.
 

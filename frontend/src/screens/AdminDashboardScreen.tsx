@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 10, letterSpacing: 1.1 },
   screenTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 30, marginTop: 3 },
   subtitle: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, marginTop: 3 },
-  adminBadge: { alignItems: 'center', backgroundColor: '#E6F5EE', borderRadius: tokens.radii.pill, flexDirection: 'row', gap: 5, paddingHorizontal: 11, paddingVertical: 8 },
+  adminBadge: { alignItems: 'center', backgroundColor: tokens.colors.emeraldTint, borderRadius: tokens.radii.pill, flexDirection: 'row', gap: 5, paddingHorizontal: 11, paddingVertical: 8 },
   adminBadgeText: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 12 },
   mockNotice: { alignItems: 'center', backgroundColor: '#E8F1F5', borderRadius: 12, flexDirection: 'row', marginBottom: 20, paddingHorizontal: 13, paddingVertical: 11 },
   mockNoticeText: { color: tokens.colors.municipalTeal, flex: 1, fontFamily: tokens.typography.body, fontSize: 12, marginLeft: 8 },

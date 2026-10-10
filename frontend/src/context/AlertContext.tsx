@@ -52,7 +52,7 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
         break;
       case 'error':
         iconName = 'close-circle';
-        color = '#C24141';
+        color = tokens.colors.danger;
         break;
     }
     return (
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   button: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: tokens.radii.inputControl,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     minWidth: 100,
   },
   buttonDestructive: {
-    backgroundColor: '#C24141',
+    backgroundColor: tokens.colors.danger,
   },
   buttonCancel: {
     backgroundColor: '#EEF2F5',

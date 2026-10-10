@@ -84,7 +84,7 @@ export const PaymentMethodsScreen = () => {
       <GlassPanel style={styles.walletCard} borderRadius={20} intensity={40} overlayColor={tokens.colors.panelSurface}>
         <View style={styles.walletHeader}>
           <View style={styles.walletIcon}>
-            <Ionicons name="wallet-outline" size={20} color={tokens.colors.municipalTeal} />
+            <Ionicons name="wallet-outline" size={20} color={tokens.colors.emerald} />
           </View>
           <Text style={styles.walletTitle}>ParkShare Balance</Text>
         </View>
@@ -98,14 +98,14 @@ export const PaymentMethodsScreen = () => {
       <Text style={styles.sectionTitle}>Saved Cards</Text>
 
       {loading ? (
-        <ActivityIndicator color={tokens.colors.municipalTeal} style={{ marginTop: 12 }} />
+        <ActivityIndicator color={tokens.colors.emerald} style={{ marginTop: 12 }} />
       ) : cards.length === 0 ? (
         <Text style={styles.emptyText}>No saved cards yet.</Text>
       ) : (
         cards.map((card, idx) => (
           <GlassPanel key={idx} style={styles.cardItem} borderRadius={16} intensity={40} overlayColor={tokens.colors.panelSurface}>
             <View style={styles.cardIcon}>
-              <Ionicons name="card-outline" size={20} color={tokens.colors.municipalTeal} />
+              <Ionicons name="card-outline" size={20} color={tokens.colors.emerald} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardBrand}>
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   walletHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   walletIcon: {
     alignItems: 'center',
-    backgroundColor: '#E8F1F5',
+    backgroundColor: tokens.colors.emeraldTint,
     borderRadius: 10,
     height: 34,
     justifyContent: 'center',
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: tokens.radii.pill,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   cardItem: { flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 12 },
   cardIcon: {
     alignItems: 'center',
-    backgroundColor: '#E8F1F5',
+    backgroundColor: tokens.colors.emeraldTint,
     borderRadius: 10,
     height: 38,
     justifyContent: 'center',
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: tokens.colors.primaryText,
   },
-  submitButton: { flex: 1, backgroundColor: tokens.colors.primaryText, padding: 13, borderRadius: 12, alignItems: 'center' },
+  submitButton: { flex: 1, backgroundColor: tokens.colors.emerald, padding: 13, borderRadius: 12, alignItems: 'center' },
   cancelButton: { backgroundColor: '#EEF2F5' },
   submitButtonText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.white, fontSize: 14 },
 });

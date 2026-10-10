@@ -75,7 +75,7 @@ export default function App() {
               else if (route.name === 'Account') iconName = 'person';
               return <Ionicons name={iconName} size={size} color={color} />;
             },
-            tabBarActiveTintColor: tokens.colors.primaryText,
+            tabBarActiveTintColor: tokens.colors.emerald,
             tabBarInactiveTintColor: tokens.colors.secondaryText,
             tabBarStyle: {
               backgroundColor: tokens.colors.white,

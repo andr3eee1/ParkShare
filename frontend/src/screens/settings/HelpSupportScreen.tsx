@@ -25,7 +25,7 @@ export const HelpSupportScreen = () => {
         >
           <GlassPanel style={styles.card} borderRadius={18} intensity={40} overlayColor={tokens.colors.panelSurface}>
             <View style={styles.iconContainer}>
-              <Ionicons name={channel.icon} size={24} color={tokens.colors.municipalTeal} />
+              <Ionicons name={channel.icon} size={24} color={tokens.colors.emerald} />
             </View>
             <View style={styles.textContainer}>
               <Text style={styles.label}>{channel.label}</Text>
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   card: { alignItems: 'center', flexDirection: 'row', padding: 18, marginBottom: 14 },
   iconContainer: {
     alignItems: 'center',
-    backgroundColor: '#E8F1F5',
+    backgroundColor: tokens.colors.emeraldTint,
     borderRadius: 22,
     height: 44,
     justifyContent: 'center',

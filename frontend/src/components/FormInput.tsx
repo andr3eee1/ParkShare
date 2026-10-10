@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TextInputProps, StyleSheet } from 'react-native';
 import { useController, Control } from 'react-hook-form';
 import { tokens } from '../theme/tokens';
@@ -16,6 +16,8 @@ export const FormInput: React.FC<FormInputProps> = ({
   name, control, label, helperText, disabled, ...textInputProps 
 }) => {
   const { field, fieldState } = useController({ name, control });
+  const [focused, setFocused] = useState(false);
+  const { onFocus, onBlur, ...rest } = textInputProps;
 
   return (
     <View style={styles.container}>
@@ -23,15 +25,17 @@ export const FormInput: React.FC<FormInputProps> = ({
       <TextInput
         style={[
           styles.input,
+          focused && styles.inputFocused,
           fieldState.error && styles.inputError,
           disabled && styles.disabledInput
         ]}
         value={field.value}
         onChangeText={field.onChange}
-        onBlur={field.onBlur}
+        onFocus={(e) => { setFocused(true); onFocus?.(e); }}
+        onBlur={(e) => { setFocused(false); field.onBlur(); onBlur?.(e); }}
         editable={!disabled}
         placeholderTextColor={tokens.colors.secondaryText}
-        {...textInputProps}
+        {...rest}
       />
       {fieldState.error ? (
         <View style={styles.errorContainer}>
@@ -65,8 +69,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: tokens.colors.primaryText,
   },
+  inputFocused: {
+    borderColor: tokens.colors.emerald,
+    backgroundColor: tokens.colors.emeraldWash,
+  },
   inputError: {
     borderColor: '#991B1B',
+    backgroundColor: '#FEF2F2',
   },
   disabledInput: {
     backgroundColor: '#F3F4F6',

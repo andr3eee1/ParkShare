@@ -217,8 +217,8 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
     {clusters.map((cluster) => {
       if (isClusteredView || cluster.spots.length > 1) {
         const hasMySpot = cluster.spots.some((s: any) => s.bookedByMe);
-        const clusterBg = hasMySpot ? '#8B5CF6' : '#86EFAC';
-        const clusterColor = hasMySpot ? '#FFFFFF' : '#14532D';
+        const clusterBg = hasMySpot ? tokens.colors.teal : tokens.colors.emeraldTint;
+        const clusterColor = hasMySpot ? tokens.colors.white : tokens.colors.emeraldDeep;
 
         const icon = new DivIcon({
           className: 'cluster-leaflet-marker',
@@ -245,14 +245,14 @@ const WebMapSpots = ({ spots, selectedSpot, onSelectSpot }: {
       const avail = getAvailability(spot.available, spot.reservations || []);
       const isUnavail = !avail.isAvailable;
       
-      let bgColor = isMunicipal
-        ? (isSelected ? '#1E3A8A' : '#3B82F6')
-        : (isSelected ? '#14532D' : '#22C55E');
-        
+      // Brand signal: green = available, teal = yours, slate = unavailable.
+      // The M/P badge already communicates municipal vs private.
+      let bgColor = isSelected ? tokens.colors.emeraldDeep : tokens.colors.emerald;
+
       if (spot.bookedByMe) {
-        bgColor = isSelected ? '#5B21B6' : '#8B5CF6'; // Purple for user's own active booking
+        bgColor = isSelected ? '#0B5D57' : tokens.colors.teal; // Teal for user's own active booking
       } else if (isUnavail) {
-        bgColor = isSelected ? '#7F1D1D' : '#EF4444';
+        bgColor = isSelected ? '#414D5F' : tokens.colors.slate;
       }
       
       const contentHtml = isUnavail && !spot.bookedByMe
@@ -484,10 +484,10 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            background-color: #86EFAC;
+            background-color: #D7F8E8;
             border: 3px solid #FFFFFF;
             box-shadow: 0 4px 8px rgba(0,0,0,0.25);
-            color: #14532D;
+            color: #006552;
             font-family: 'Space Grotesk', sans-serif;
             font-size: 15px;
             font-weight: bold;
@@ -496,7 +496,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             width: 24px;
             height: 24px;
             border-radius: 50% 50% 50% 0;
-            background-color: #EF4444;
+            background-color: #101826;
             border: 2px solid #FFFFFF;
             box-shadow: 0 4px 8px rgba(0,0,0,0.25);
             transform: rotate(-45deg);
@@ -595,10 +595,10 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            background-color: #86EFAC;
+            background-color: #D7F8E8;
             border: 3px solid #FFFFFF;
             box-shadow: 0 4px 8px rgba(0,0,0,0.25);
-            color: #14532D;
+            color: #006552;
             font-family: sans-serif;
             font-size: 15px;
             font-weight: bold;
@@ -607,7 +607,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             width: 24px;
             height: 24px;
             border-radius: 50% 50% 50% 0;
-            background-color: #EF4444;
+            background-color: #101826;
             border: 2px solid #FFFFFF;
             box-shadow: 0 4px 8px rgba(0,0,0,0.25);
             transform: rotate(-45deg);
@@ -756,11 +756,12 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             var avail = getAvailability(spot.available, spot.reservations || []);
             var isUnavail = !avail.isAvailable;
             
-            var color = isMunicipal ? (isSelected ? '#1E3A8A' : '#3B82F6') : (isSelected ? '#14532D' : '#22C55E');
+            // Brand signal: green = available, teal = yours, slate = unavailable.
+            var color = isSelected ? '#006552' : '#009967';
             if (spot.bookedByMe) {
-              color = isSelected ? '#5B21B6' : '#8B5CF6';
+              color = isSelected ? '#0B5D57' : '#0F766E';
             } else if (isUnavail) {
-              color = isSelected ? '#7F1D1D' : '#EF4444';
+              color = isSelected ? '#414D5F' : '#62748E';
             }
             
             var scale = isSelected ? 'translate(-50%, -50%) scale(1.2)' : 'translate(-50%, -50%) scale(1)';
@@ -815,8 +816,8 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
             clusters.forEach(function(cluster) {
               if (zoom < ${CLUSTER_ZOOM_THRESHOLD} || cluster.spots.length > 1) {
                 var hasMySpot = cluster.spots.some(function(s) { return s.bookedByMe; });
-                var clusterBg = hasMySpot ? '#8B5CF6' : '#86EFAC';
-                var clusterColor = hasMySpot ? '#FFFFFF' : '#14532D';
+                var clusterBg = hasMySpot ? '#0F766E' : '#D7F8E8';
+                var clusterColor = hasMySpot ? '#FFFFFF' : '#006552';
 
                 L.marker(cluster.center, {
                   icon: L.divIcon({

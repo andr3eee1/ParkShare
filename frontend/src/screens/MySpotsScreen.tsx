@@ -6,6 +6,7 @@ import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { apiClient } from '../api/client';
+import { BrandGradient } from '../components/Brand';
 
 export const MySpotsScreen = () => {
   const { token } = useContext(AuthContext);
@@ -72,7 +73,7 @@ export const MySpotsScreen = () => {
             style={styles.deleteButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="trash-outline" size={28} color="#EF4444" />
+            <Ionicons name="trash-outline" size={28} color={tokens.colors.danger} />
           </TouchableOpacity>
         </View>
         <Text style={styles.spotPrice}>{item.price.toFixed(2)} RON / hr</Text>
@@ -85,9 +86,10 @@ export const MySpotsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+      <BrandGradient style={styles.header}>
+        <View pointerEvents="none" style={styles.headerSheen} />
         <Text style={styles.headerTitle}>My Parking Spots</Text>
-      </View>
+      </BrandGradient>
       
       {loading ? (
         <ActivityIndicator color={tokens.colors.primaryText} style={{ marginTop: 40 }} />
@@ -116,17 +118,28 @@ export const MySpotsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: { flex: 1, backgroundColor: tokens.colors.paleMapBackground },
   header: {
-    padding: 16,
-    backgroundColor: tokens.colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+    overflow: 'hidden',
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
+    ...tokens.shadows.soft,
+  },
+  headerSheen: {
+    position: 'absolute',
+    right: -40,
+    top: -60,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
   },
   headerTitle: {
-    fontFamily: tokens.typography.heading,
-    fontSize: 24,
-    color: tokens.colors.primaryText,
+    fontFamily: tokens.typography.headingBold,
+    fontSize: 26,
+    color: tokens.colors.white,
   },
   spotCard: {
     backgroundColor: tokens.colors.white,
@@ -168,7 +181,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   statusBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: tokens.colors.emeraldTint,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,

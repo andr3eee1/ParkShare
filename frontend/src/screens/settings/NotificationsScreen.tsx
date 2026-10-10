@@ -12,7 +12,7 @@ export const NotificationsScreen = () => {
 
       <GlassPanel style={styles.card} borderRadius={20} intensity={40} overlayColor={tokens.colors.panelSurface}>
         <View style={styles.iconWrap}>
-          <Ionicons name="notifications-outline" size={26} color={tokens.colors.municipalTeal} />
+          <Ionicons name="notifications-outline" size={26} color={tokens.colors.emerald} />
         </View>
         <Text style={styles.title}>You're all caught up</Text>
         <Text style={styles.body}>Push and email alert settings will appear here soon.</Text>
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   card: { padding: 28, alignItems: 'center' },
   iconWrap: {
     alignItems: 'center',
-    backgroundColor: '#E8F1F5',
+    backgroundColor: tokens.colors.emeraldTint,
     borderRadius: 28,
     height: 56,
     justifyContent: 'center',

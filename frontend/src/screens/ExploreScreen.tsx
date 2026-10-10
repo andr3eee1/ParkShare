@@ -758,8 +758,8 @@ export const ExploreScreen = () => {
     if (!status || status === 'ACTIVE') return null;
     const meta: Record<string, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap; text: string }> = {
       WARNING: { color: tokens.colors.warningAmber, bg: '#FEF3C7', icon: 'warning', text: 'Your rating is below standard. Improve it to avoid a suspension.' },
-      SUSPENDED: { color: '#D97706', bg: '#FEF3C7', icon: 'pause-circle', text: 'New bookings are paused during your suspension.' },
-      BANNED: { color: '#C24141', bg: '#FDECEC', icon: 'close-circle', text: 'Your account is banned. You can submit an appeal.' },
+      SUSPENDED: { color: tokens.colors.warningAmber, bg: '#FEF3C7', icon: 'pause-circle', text: 'New bookings are paused during your suspension.' },
+      BANNED: { color: tokens.colors.danger, bg: '#FDECEC', icon: 'close-circle', text: 'Your account is banned. You can submit an appeal.' },
     };
     const info = meta[status] || meta.WARNING;
     return (
@@ -832,8 +832,8 @@ export const ExploreScreen = () => {
               </View>
             </View>
 
-            <View style={styles.searchContainer}>
-              <Ionicons name="search" size={20} color={tokens.colors.secondaryText} style={styles.searchIcon} />
+            <View style={[styles.searchContainer, searchFocused && styles.searchContainerFocused]}>
+              <Ionicons name="search" size={20} color={searchFocused ? tokens.colors.emerald : tokens.colors.secondaryText} style={styles.searchIcon} />
               <TextInput 
                 ref={searchInputRef}
                 placeholder="Where are you going?" 
@@ -1019,7 +1019,7 @@ export const ExploreScreen = () => {
                       />
                       <Text style={{ fontFamily: tokens.typography.body, fontSize: 13, color: tokens.colors.secondaryText, flexShrink: 0 }} numberOfLines={1}>RON/hr</Text>
                     </View>
-                    <TouchableOpacity style={{ backgroundColor: tokens.colors.primaryText, paddingHorizontal: 16, height: 40, borderRadius: 20, justifyContent: 'center', flexShrink: 0 }} onPress={applyPrice}>
+                    <TouchableOpacity style={{ backgroundColor: tokens.colors.emerald, paddingHorizontal: 16, height: 40, borderRadius: 20, justifyContent: 'center', flexShrink: 0 }} onPress={applyPrice}>
                       <Text style={{ color: tokens.colors.white, fontWeight: 'bold' }}>Set</Text>
                     </TouchableOpacity>
                   </View>
@@ -1087,7 +1087,7 @@ export const ExploreScreen = () => {
                     />
                   </View>
                   
-                  <TouchableOpacity style={{ backgroundColor: tokens.colors.primaryText, paddingVertical: 10, paddingHorizontal: 32, borderRadius: 20, alignItems: 'center', marginTop: 12 }} onPress={() => {
+                  <TouchableOpacity style={{ backgroundColor: tokens.colors.emerald, paddingVertical: 10, paddingHorizontal: 32, borderRadius: 20, alignItems: 'center', marginTop: 12 }} onPress={() => {
                     setTimeLimit(`${tempHour}:${tempMinute}`);
                     setActiveDropdown(null);
                   }}>
@@ -1151,7 +1151,7 @@ export const ExploreScreen = () => {
               </View>
 
               {selectedSpot.bookedByMe ? (
-                <View style={[styles.municipalWarning, { backgroundColor: '#E8F5E9', borderColor: '#A7F3D0' }]}>
+                <View style={[styles.municipalWarning, { backgroundColor: tokens.colors.emeraldTint, borderColor: '#A7F3D0' }]}>
                   <Text style={[styles.municipalWarningText, { color: tokens.colors.availabilityGreen }]}>This is your active reservation.</Text>
                 </View>
               ) : (sliderMin > sliderMax || isCurrentlyOccupied) ? (
@@ -1271,7 +1271,7 @@ export const ExploreScreen = () => {
 
               {/* Booking Info */}
               <View style={styles.modalSection}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FDF4', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tokens.colors.emeraldTint, padding: 12, borderRadius: 8, marginBottom: 16 }}>
                   <Ionicons name="time-outline" size={24} color={tokens.colors.availabilityGreen} style={{ marginRight: 8 }} />
                   <Text style={{ fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.primaryText, flex: 1 }}>
                     Pay-as-you-go. Timer starts when you book. You'll only be charged for the time you use when you leave.
@@ -1648,7 +1648,7 @@ const styles = StyleSheet.create({
   locationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(31, 157, 99, 0.1)',
+    backgroundColor: 'rgba(0, 153, 103, 0.10)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: tokens.radii.pill,
@@ -1676,7 +1676,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
   },
   reviewPrompt: {
     flexDirection: 'row',
@@ -1732,7 +1732,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   reviewPromptAction: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     borderRadius: 8,
     paddingVertical: 7,
     paddingHorizontal: 12,
@@ -1756,6 +1756,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  searchContainerFocused: {
+    borderColor: tokens.colors.emerald,
+    backgroundColor: tokens.colors.emeraldWash,
   },
   searchIcon: {
     marginRight: 8,
@@ -1821,8 +1825,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filterChipActive: {
-    backgroundColor: tokens.colors.primaryText,
-    borderColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
+    borderColor: tokens.colors.emerald,
   },
   filterText: {
     fontFamily: tokens.typography.body,
@@ -1967,7 +1971,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   reserveButton: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     paddingVertical: 16,
     borderRadius: tokens.radii.inputControl,
     alignItems: 'center',
@@ -2028,7 +2032,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   vehicleChipSelected: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
   },
   vehicleChipText: {
     fontFamily: tokens.typography.body,
@@ -2051,7 +2055,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.primaryText,
   },
   saveVehicleBtn: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     borderRadius: tokens.radii.inputControl,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -2076,8 +2080,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   timeChipActive: {
-    backgroundColor: tokens.colors.primaryText,
-    borderColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
+    borderColor: tokens.colors.emerald,
   },
   timeText: {
     fontFamily: tokens.typography.body,

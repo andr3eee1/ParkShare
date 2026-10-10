@@ -98,7 +98,7 @@ export const PaymentCheckoutScreen = () => {
       {paymentSuccess ? (
         <View style={styles.successOverlay}>
           <View style={styles.successModal}>
-            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: tokens.colors.emeraldTint, justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
               <Ionicons name="checkmark" size={48} color="#059669" />
             </View>
             <Text style={{ fontFamily: tokens.typography.heading, fontSize: 24, color: tokens.colors.primaryText, textAlign: 'center' }}>
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   closeButton: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   topUpButton: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   payButton: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',

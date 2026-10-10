@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../components/GlassPanel';
+import { BrandGradient } from '../components/Brand';
 import { ReviewModal, PendingReview } from '../components/ReviewModal';
 import { useAlert } from '../context/AlertContext';
 import { tokens } from '../theme/tokens';
@@ -80,9 +81,9 @@ const mockBookings: MockBooking[] = [
 ];
 
 const statusColors: Record<BookingStatus, { background: string; text: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  Upcoming: { background: '#E6F5EE', text: tokens.colors.availabilityGreen, icon: 'time-outline' },
+  Upcoming: { background: tokens.colors.emeraldTint, text: tokens.colors.availabilityGreen, icon: 'time-outline' },
   Completed: { background: '#E8F1F5', text: tokens.colors.municipalTeal, icon: 'checkmark-circle-outline' },
-  Cancelled: { background: '#FDECEC', text: '#C24141', icon: 'close-circle-outline' },
+  Cancelled: { background: '#FDECEC', text: tokens.colors.danger, icon: 'close-circle-outline' },
 };
 
 export const HistoryScreen = () => {
@@ -163,20 +164,21 @@ export const HistoryScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
+        <BrandGradient style={styles.header}>
+          <View pointerEvents="none" style={styles.headerSheen} />
           <View>
             <Text style={styles.screenTitle}>History</Text>
             <Text style={styles.subtitle}>Keep track of your parking trips</Text>
           </View>
           <View style={styles.headerIcon}>
-            <Ionicons name="receipt-outline" size={22} color={tokens.colors.primaryText} />
+            <Ionicons name="receipt-outline" size={22} color={tokens.colors.white} />
           </View>
-        </View>
+        </BrandGradient>
 
         <GlassPanel style={styles.summaryCard} borderRadius={20} intensity={45} overlayColor={tokens.colors.panelSurface}>
           <View style={styles.summaryHeader}>
             <View style={styles.summaryIcon}>
-              <Ionicons name="car-outline" size={21} color={tokens.colors.municipalTeal} />
+              <Ionicons name="car-outline" size={21} color={tokens.colors.emerald} />
             </View>
             <View style={styles.summaryText}>
               <Text style={styles.summaryTitle}>Your parking activity</Text>
@@ -253,7 +255,7 @@ const BookingCard = ({ booking, onRate }: { booking: MockBooking; onRate?: () =>
     <GlassPanel style={styles.bookingCard} borderRadius={18} intensity={35} overlayColor={tokens.colors.panelSurface}>
       <View style={styles.cardTopRow}>
         <View style={styles.locationIcon}>
-          <Ionicons name={booking.type === 'Private' ? 'home-outline' : 'business-outline'} size={20} color={tokens.colors.municipalTeal} />
+          <Ionicons name={booking.type === 'Private' ? 'home-outline' : 'business-outline'} size={20} color={tokens.colors.emerald} />
         </View>
         <View style={styles.locationInfo}>
           <Text style={styles.locationName} numberOfLines={1}>{booking.location}</Text>
@@ -314,28 +316,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderRadius: tokens.radii.upperSheet,
+    overflow: 'hidden',
+    padding: 18,
     marginBottom: 20,
+    ...tokens.shadows.soft,
+  },
+  headerSheen: {
+    position: 'absolute',
+    right: -50,
+    top: -70,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
   },
   screenTitle: {
-    color: tokens.colors.primaryText,
+    color: tokens.colors.white,
     fontFamily: tokens.typography.headingBold,
     fontSize: 32,
     lineHeight: 38,
   },
   subtitle: {
-    color: tokens.colors.secondaryText,
+    color: 'rgba(255, 255, 255, 0.85)',
     fontFamily: tokens.typography.body,
     fontSize: 14,
     marginTop: 4,
   },
   headerIcon: {
     alignItems: 'center',
-    backgroundColor: tokens.colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     borderRadius: 22,
     height: 44,
     justifyContent: 'center',
     width: 44,
-    ...tokens.shadows.soft,
   },
   summaryCard: {
     padding: 18,
@@ -347,7 +361,7 @@ const styles = StyleSheet.create({
   },
   summaryIcon: {
     alignItems: 'center',
-    backgroundColor: '#DDF1EB',
+    backgroundColor: tokens.colors.emeraldTint,
     borderRadius: 14,
     height: 42,
     justifyContent: 'center',
@@ -420,7 +434,7 @@ const styles = StyleSheet.create({
   },
   locationIcon: {
     alignItems: 'center',
-    backgroundColor: '#E7F0F2',
+    backgroundColor: tokens.colors.emeraldTint,
     borderRadius: 12,
     height: 40,
     justifyContent: 'center',

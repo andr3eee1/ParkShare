@@ -91,15 +91,15 @@ const pageConfigs: Record<AdminRoute, PageConfig> = {
     title: 'Reports',
     subtitle: 'Trust, safety, and community issues',
     icon: 'flag-outline',
-    accent: '#C24141',
+    accent: tokens.colors.danger,
     filters: [
       { label: 'All reports', value: 'all' },
       { label: 'Open', value: 'open' },
       { label: 'Resolved', value: 'resolved' },
     ],
     records: [
-      { id: 'r1', title: 'Vehicle blocking access', subtitle: 'Universitate Central Parking · Reported by Maria Ionescu', meta: 'Received 18 min ago', status: 'Open', statusColor: '#C24141', icon: 'alert-circle-outline', searchable: 'vehicle blocking access universitate maria open' },
-      { id: 'r2', title: 'Listing information mismatch', subtitle: 'Dorobanți Courtyard · Reported by Andrei Popescu', meta: 'Received 46 min ago', status: 'Open', statusColor: '#C24141', icon: 'alert-circle-outline', searchable: 'listing information mismatch dorobanti andrei open' },
+      { id: 'r1', title: 'Vehicle blocking access', subtitle: 'Universitate Central Parking · Reported by Maria Ionescu', meta: 'Received 18 min ago', status: 'Open', statusColor: tokens.colors.danger, icon: 'alert-circle-outline', searchable: 'vehicle blocking access universitate maria open' },
+      { id: 'r2', title: 'Listing information mismatch', subtitle: 'Dorobanți Courtyard · Reported by Andrei Popescu', meta: 'Received 46 min ago', status: 'Open', statusColor: tokens.colors.danger, icon: 'alert-circle-outline', searchable: 'listing information mismatch dorobanti andrei open' },
       { id: 'r3', title: 'Payment dispute resolved', subtitle: 'Calea Victoriei Loft · Reviewed by support', meta: 'Resolved 2 hrs ago', status: 'Resolved', statusColor: tokens.colors.availabilityGreen, icon: 'checkmark-circle-outline', searchable: 'payment dispute resolved calea victoriei' },
       { id: 'r4', title: 'Damaged gate reported', subtitle: 'Piața Romană Residence · Reported by Vlad Dumitrescu', meta: 'Resolved yesterday', status: 'Resolved', statusColor: tokens.colors.availabilityGreen, icon: 'checkmark-circle-outline', searchable: 'damaged gate piata romana vlad resolved' },
     ],
@@ -140,7 +140,7 @@ const mapRecords = (routeName: string, data: any): AdminRecord[] => {
     subtitle: `Reported by ${item.reporterName}`,
     meta: `Created ${formatDate(item.createdAt)}`,
     status: item.status.charAt(0) + item.status.slice(1).toLowerCase(),
-    statusColor: item.status === 'OPEN' ? '#C24141' : item.status === 'RESOLVED' ? tokens.colors.availabilityGreen : tokens.colors.secondaryText,
+    statusColor: item.status === 'OPEN' ? tokens.colors.danger : item.status === 'RESOLVED' ? tokens.colors.availabilityGreen : tokens.colors.secondaryText,
     icon: 'alert-circle-outline',
     searchable: `${item.title} ${item.description} ${item.reporterName} ${item.status}`.toLowerCase(),
   }));
@@ -150,7 +150,7 @@ const mapRecords = (routeName: string, data: any): AdminRecord[] => {
     subtitle: `${item.user.firstName} ${item.user.lastName} · ${item.spot.name}`,
     meta: `${item.totalPrice} RON · ${formatDate(item.startTime)}`,
     status: item.status.charAt(0) + item.status.slice(1).toLowerCase(),
-    statusColor: item.status === 'COMPLETED' ? tokens.colors.availabilityGreen : item.status === 'CANCELLED' ? '#C24141' : tokens.colors.warningAmber,
+    statusColor: item.status === 'COMPLETED' ? tokens.colors.availabilityGreen : item.status === 'CANCELLED' ? tokens.colors.danger : tokens.colors.warningAmber,
     icon: item.status === 'COMPLETED' ? 'checkmark-circle-outline' : 'card-outline',
     searchable: `${item.id} ${item.user.email} ${item.user.firstName} ${item.user.lastName} ${item.spot.name} ${item.status}`.toLowerCase(),
   }));
@@ -309,8 +309,8 @@ export const AdminRecordScreen = () => {
   const standingColor = (value?: string) =>
     value === 'ACTIVE' ? tokens.colors.availabilityGreen
       : value === 'WARNING' ? tokens.colors.warningAmber
-        : value === 'SUSPENDED' ? '#D97706'
-          : '#C24141';
+        : value === 'SUSPENDED' ? tokens.colors.warningAmber
+          : tokens.colors.danger;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -357,8 +357,8 @@ export const AdminRecordScreen = () => {
               <View style={styles.sanctionRow}>
                 {(['WARN', 'SUSPEND', 'BAN', 'REINSTATE'] as const).map((action) => {
                   const color = action === 'WARN' ? tokens.colors.warningAmber
-                    : action === 'SUSPEND' ? '#D97706'
-                      : action === 'BAN' ? '#C24141'
+                    : action === 'SUSPEND' ? tokens.colors.warningAmber
+                      : action === 'BAN' ? tokens.colors.danger
                         : tokens.colors.availabilityGreen;
                   return (
                     <TouchableOpacity key={action} style={[styles.sanctionButton, { borderColor: color }]} onPress={() => { setReason(''); setPendingAction(action); }}>
@@ -481,6 +481,6 @@ const styles = StyleSheet.create({
   modalButton: { alignItems: 'center', borderRadius: 12, flex: 1, paddingVertical: 13 },
   modalCancel: { backgroundColor: '#EEF2F5' },
   modalCancelText: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodySemiBold, fontSize: 14 },
-  modalConfirm: { backgroundColor: tokens.colors.primaryText },
+  modalConfirm: { backgroundColor: tokens.colors.emerald },
   modalConfirmText: { color: tokens.colors.white, fontFamily: tokens.typography.bodySemiBold, fontSize: 14 },
 });

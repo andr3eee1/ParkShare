@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
   },
   submitButton: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',

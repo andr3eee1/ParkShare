@@ -105,14 +105,14 @@ export const MyVehiclesScreen = () => {
       <ScreenHeader title="My Vehicles" subtitle="License plates and defaults" />
 
       {loading ? (
-        <ActivityIndicator color={tokens.colors.municipalTeal} style={{ marginTop: 12 }} />
+        <ActivityIndicator color={tokens.colors.emerald} style={{ marginTop: 12 }} />
       ) : vehicles.length === 0 ? (
         <Text style={styles.emptyText}>No vehicles added yet.</Text>
       ) : (
         vehicles.map((v, idx) => (
           <GlassPanel key={idx} style={styles.cardItem} borderRadius={16} intensity={40} overlayColor={tokens.colors.panelSurface}>
             <View style={styles.cardIcon}>
-              <Ionicons name="car-outline" size={20} color={tokens.colors.municipalTeal} />
+              <Ionicons name="car-outline" size={20} color={tokens.colors.emerald} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardName}>{v.name}</Text>
@@ -128,7 +128,7 @@ export const MyVehiclesScreen = () => {
                 <Ionicons name="pencil-outline" size={19} color={tokens.colors.secondaryText} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteVehicle(v.id)} style={styles.actionIcon}>
-                <Ionicons name="trash-outline" size={19} color="#EF4444" />
+                <Ionicons name="trash-outline" size={19} color={tokens.colors.danger} />
               </TouchableOpacity>
             </View>
           </GlassPanel>
@@ -167,7 +167,7 @@ export const MyVehiclesScreen = () => {
             <Ionicons
               name={isDefault ? 'checkbox' : 'square-outline'}
               size={22}
-              color={isDefault ? tokens.colors.municipalTeal : tokens.colors.secondaryText}
+              color={isDefault ? tokens.colors.emerald : tokens.colors.secondaryText}
             />
             <Text style={styles.checkboxLabel}>Set as Default Vehicle</Text>
           </TouchableOpacity>
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   cardItem: { flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 12 },
   cardIcon: {
     alignItems: 'center',
-    backgroundColor: '#E8F1F5',
+    backgroundColor: tokens.colors.emeraldTint,
     borderRadius: 10,
     height: 38,
     justifyContent: 'center',
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: 4 },
   checkboxLabel: { marginLeft: 8, fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.primaryText },
-  submitButton: { flex: 1, backgroundColor: tokens.colors.primaryText, padding: 13, borderRadius: 12, alignItems: 'center' },
+  submitButton: { flex: 1, backgroundColor: tokens.colors.emerald, padding: 13, borderRadius: 12, alignItems: 'center' },
   cancelButton: { backgroundColor: '#EEF2F5' },
   submitButtonText: { fontFamily: tokens.typography.bodySemiBold, color: tokens.colors.white, fontSize: 14 },
 });

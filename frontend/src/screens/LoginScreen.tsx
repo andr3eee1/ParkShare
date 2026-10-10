@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
@@ -10,6 +10,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { FormInput } from '../components/FormInput';
+import { GlassPanel } from '../components/GlassPanel';
+import { BrandGradient } from '../components/Brand';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -39,99 +41,128 @@ export const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.headerContainer}>
-          <Image source={require('../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
-          <Text style={styles.logo}>ParkShare</Text>
-          <Text style={styles.subtitle}>Welcome back</Text>
-        </View>
+    <View style={styles.container}>
+      <BrandGradient style={StyleSheet.absoluteFill} />
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <Ionicons name="warning" size={20} color={tokens.colors.primaryText} />
-            <Text style={styles.errorText}>{error}</Text>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            <View style={styles.headerContainer}>
+              <View style={styles.logoBadge}>
+                <Image source={require('../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
+              </View>
+              <Text style={styles.logo}>ParkShare</Text>
+              <Text style={styles.subtitle}>Park smarter. Share more.</Text>
+            </View>
+
+            <GlassPanel style={styles.card} borderRadius={24} intensity={40} overlayColor="rgba(255, 255, 255, 0.97)">
+              {error ? (
+                <View style={styles.errorBox}>
+                  <Ionicons name="warning" size={20} color="#991B1B" />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
+
+              <FormInput
+                control={control}
+                name="email"
+                label="Email address"
+                placeholder="name@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <FormInput
+                control={control}
+                name="password"
+                label="Password"
+                placeholder="••••••••"
+                secureTextEntry
+                onSubmitEditing={handleSubmit(onSubmit)}
+                returnKeyType="go"
+              />
+
+              <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)} disabled={isSubmitting} activeOpacity={0.9}>
+                {isSubmitting ? (
+                  <ActivityIndicator color={tokens.colors.white} />
+                ) : (
+                  <Text style={styles.buttonText}>Sign In</Text>
+                )}
+              </TouchableOpacity>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Don't have an account? </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                  <Text style={styles.footerLink}>Create one</Text>
+                </TouchableOpacity>
+              </View>
+            </GlassPanel>
           </View>
-        ) : null}
-
-        <FormInput
-          control={control}
-          name="email"
-          label="Email address"
-          placeholder="name@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <FormInput
-          control={control}
-          name="password"
-          label="Password"
-          placeholder="••••••••"
-          secureTextEntry
-          onSubmitEditing={handleSubmit(onSubmit)}
-          returnKeyType="go"
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)} disabled={isSubmitting}>
-          {isSubmitting ? (
-            <ActivityIndicator color={tokens.colors.white} />
-          ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.footerLink}>Create one</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tokens.colors.paleMapBackground,
+    backgroundColor: tokens.colors.emeraldDeep,
+  },
+  flex: { flex: 1 },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   content: {
-    flex: 1,
-    justifyContent: 'center',
     padding: 24,
-    maxWidth: 420,
+    maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 30,
+  },
+  logoBadge: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
+    backgroundColor: tokens.colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    ...tokens.shadows.soft,
   },
   logoMark: {
-    width: 88,
-    height: 88,
-    marginBottom: 10,
+    width: 60,
+    height: 60,
   },
   logo: {
     fontFamily: tokens.typography.headingBold,
     fontSize: 40,
-    color: tokens.colors.primaryText,
-    marginBottom: 8,
+    color: tokens.colors.white,
+    marginBottom: 6,
   },
   subtitle: {
     fontFamily: tokens.typography.body,
-    fontSize: 18,
-    color: tokens.colors.secondaryText,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  card: {
+    padding: 22,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FEE2E2',
     padding: 12,
-    borderRadius: 8,
-    marginBottom: 24,
+    borderRadius: 12,
+    marginBottom: 20,
   },
   errorText: {
     fontFamily: tokens.typography.body,
@@ -139,28 +170,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  formGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    fontFamily: tokens.typography.body,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: tokens.colors.primaryText,
-  },
-  input: {
-    backgroundColor: tokens.colors.white,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    padding: 16,
-    fontFamily: tokens.typography.body,
-    fontSize: 16,
-  },
   button: {
-    backgroundColor: tokens.colors.primaryText,
+    backgroundColor: tokens.colors.emerald,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
   },
@@ -172,15 +185,14 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 32,
+    marginTop: 24,
   },
   footerText: {
     fontFamily: tokens.typography.body,
     color: tokens.colors.secondaryText,
   },
   footerLink: {
-    fontFamily: tokens.typography.body,
-    fontWeight: '600',
-    color: tokens.colors.primaryText,
+    fontFamily: tokens.typography.bodySemiBold,
+    color: tokens.colors.emerald,
   }
 });
