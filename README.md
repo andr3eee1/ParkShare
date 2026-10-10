@@ -89,7 +89,7 @@ The promo ad is generated entirely from code with **Remotion** (`marketing-video
 
 ### 2. Start the Frontend App
 1. Open a separate terminal and navigate into the `frontend` folder.
-2. Ensure you have a `.env` file pointing to your backend API if testing locally (e.g. `EXPO_PUBLIC_API_URL=http://localhost:8745` — the API's default port).
+2. Copy `frontend/.env.example` to `frontend/.env` when you need to override the deployed API. Use `EXPO_PUBLIC_API_URL=http://localhost:8745` for a local backend; when the variable is absent, the app uses the deployed API and shows a warning in development logs.
 3. Install dependencies: `npm install`
 4. Launch the Expo bundler:
    ```bash

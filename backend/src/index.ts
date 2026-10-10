@@ -9,6 +9,7 @@ import bookingsRouter from './bookings';
 import adminRouter from './admin';
 import reviewsRouter from './reviews';
 import moderationRouter from './moderation';
+import { prisma } from './prisma';
 
 import vehiclesRouter from './vehicles';
 
@@ -31,8 +32,14 @@ app.use('/admin', adminRouter);
 app.use('/reviews', reviewsRouter);
 app.use('/moderation', moderationRouter);
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'connected', time: new Date().toISOString() });
+  } catch (error) {
+    console.error('Health check database error:', error);
+    res.status(503).json({ status: 'degraded', database: 'unavailable', time: new Date().toISOString() });
+  }
 });
 
 app.listen(port, () => {

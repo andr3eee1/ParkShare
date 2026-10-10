@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../api/config';
 
 type User = {
   id: string;
@@ -55,9 +56,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setUser(parsedUser);
 
               // Fetch the latest user profile to sync wallet balance and other data
-              const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
               try {
-                const response = await fetch(`${apiUrl}/auth/me`, {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
                   method: 'GET',
                   headers: {
                     'Authorization': `Bearer ${storedToken}`,
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   }
                 } else if (response.status === 404) {
                   // Fallback: If /auth/me is not deployed yet, use PUT /profile with empty body
-                  const fallbackResponse = await fetch(`${apiUrl}/auth/profile`, {
+                  const fallbackResponse = await fetch(`${API_BASE_URL}/auth/profile`, {
                     method: 'PUT',
                     headers: {
                       'Authorization': `Bearer ${storedToken}`,
