@@ -1,10 +1,13 @@
-import React, { useMemo, useState, useEffect, useContext } from 'react';
+import React, { useMemo, useState, useContext, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { ActivityIndicator } from 'react-native';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../components/GlassPanel';
+import { ReviewModal, PendingReview } from '../components/ReviewModal';
+import { useAlert } from '../context/AlertContext';
 import { tokens } from '../theme/tokens';
 import { apiClient } from '../api/client';
 
@@ -13,6 +16,7 @@ type BookingStatus = 'Upcoming' | 'Completed' | 'Cancelled';
 
 type MockBooking = {
   id: string;
+  reservationId?: string;
   location: string;
   address: string;
   date: string;
@@ -83,14 +87,13 @@ const statusColors: Record<BookingStatus, { background: string; text: string; ic
 
 export const HistoryScreen = () => {
   const { token } = useContext(AuthContext);
+  const { alert } = useAlert();
   const [bookings, setBookings] = useState<any[]>([]);
+  const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
+  const [activeReview, setActiveReview] = useState<PendingReview | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       const res = await apiClient.get('/bookings/me');
       // Transform backend bookings to UI format
@@ -114,6 +117,7 @@ export const HistoryScreen = () => {
 
         return {
           id: b.id.substring(0, 8).toUpperCase(),
+          reservationId: b.id,
           location: b.spot.name,
           address: 'Lat: ' + b.spot.latitude + ' Lng: ' + b.spot.longitude,
           date: startDate.toLocaleDateString(),
@@ -131,7 +135,30 @@ export const HistoryScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const fetchPendingReviews = useCallback(async () => {
+    if (!token) { setPendingReviews([]); return; }
+    try {
+      const res = await apiClient.get('/reviews/pending');
+      setPendingReviews(res.data.pending || []);
+    } catch (err) {
+      console.warn('Failed to fetch pending reviews', err);
+    }
+  }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBookings();
+      fetchPendingReviews();
+    }, [fetchBookings, fetchPendingReviews])
+  );
+
+  const pendingByReservation = useMemo(() => {
+    const map = new Map<string, PendingReview>();
+    pendingReviews.forEach((p) => map.set(p.reservationId, p));
+    return map;
+  }, [pendingReviews]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -181,7 +208,16 @@ export const HistoryScreen = () => {
         </View>
 
         <View style={styles.bookingList}>
-          {bookings.map((booking) => <BookingCard key={booking.id} booking={booking} />)}
+          {bookings.map((booking) => {
+            const pending = booking.reservationId ? pendingByReservation.get(booking.reservationId) : undefined;
+            return (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                onRate={pending ? () => setActiveReview(pending) : undefined}
+              />
+            );
+          })}
         </View>
 
         {bookings.length === 0 && (
@@ -194,11 +230,23 @@ export const HistoryScreen = () => {
           </View>
         )}
       </ScrollView>
+
+      <ReviewModal
+        pending={activeReview}
+        onClose={(submitted) => {
+          const current = activeReview;
+          setActiveReview(null);
+          if (current && submitted) {
+            setPendingReviews((prev) => prev.filter((p) => p.reservationId !== current.reservationId));
+            alert('Thank you!', 'Your review helps keep ParkShare safe and fair.', undefined, 'success');
+          }
+        }}
+      />
     </SafeAreaView>
   );
 };
 
-const BookingCard = ({ booking }: { booking: MockBooking }) => {
+const BookingCard = ({ booking, onRate }: { booking: MockBooking; onRate?: () => void }) => {
   const status = statusColors[booking.status];
 
   return (
@@ -238,6 +286,13 @@ const BookingCard = ({ booking }: { booking: MockBooking }) => {
           <Text style={styles.priceLabel}>total</Text>
         </View>
       </View>
+
+      {onRate && (
+        <TouchableOpacity style={styles.rateButton} onPress={onRate} accessibilityLabel={`Rate ${booking.location}`}>
+          <Ionicons name="star" size={15} color="#F5B301" />
+          <Text style={styles.rateButtonText}>Rate this trip</Text>
+        </TouchableOpacity>
+      )}
     </GlassPanel>
   );
 };
@@ -449,6 +504,23 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 10,
     marginTop: 1,
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    backgroundColor: '#FFFBEB',
+  },
+  rateButtonText: {
+    marginLeft: 6,
+    color: tokens.colors.primaryText,
+    fontFamily: tokens.typography.bodySemiBold,
+    fontSize: 13,
   },
   emptyState: {
     alignItems: 'center',

@@ -28,6 +28,13 @@ import {
 
 const DEFAULT_USER_LOCATION = { latitude: 44.4720, longitude: 26.1020 };
 
+/**
+ * Remembers the exact set of bookings the user waved away so the review prompt
+ * doesn't nag them on every app launch. When a new booking becomes reviewable
+ * the signature changes and the prompt politely comes back.
+ */
+const REVIEW_PROMPT_DISMISSED_KEY = 'reviewPromptDismissedSignature';
+
 const WheelPicker = ({ items, selectedValue, onValueChange, disabledItems = [], itemHeight = 40 }: { items: string[], selectedValue: string, onValueChange: (val: string) => void, disabledItems?: string[], itemHeight?: number }) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const offsetRef = useRef(0);
@@ -140,7 +147,10 @@ export const ExploreScreen = () => {
   const [currentTimer, setCurrentTimer] = useState<number>(0);
   
   const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
-  const [dismissedReviewIds, setDismissedReviewIds] = useState<Set<string>>(new Set());
+  // Reviews are opt-in: a slim banner nudges the user, but the full-screen
+  // modal only opens when they tap "Review" (or right after a session ends).
+  const [dismissedReviewSignature, setDismissedReviewSignature] = useState<string | null | undefined>(undefined);
+  const [activeReview, setActiveReview] = useState<PendingReview | null>(null);
   const [depositQuote, setDepositQuote] = useState<{ deposit: number; tier: string; reason: string } | null>(null);
   
   const searchInputRef = useRef<TextInput>(null);
@@ -160,6 +170,37 @@ export const ExploreScreen = () => {
       fetchPendingReviews();
     }, [fetchPendingReviews])
   );
+
+  // Restore the "already dismissed this set" marker once per login.
+  useEffect(() => {
+    AsyncStorage.getItem(REVIEW_PROMPT_DISMISSED_KEY)
+      .then((value) => setDismissedReviewSignature(value))
+      .catch(() => {});
+  }, [token]);
+
+  const pendingReviewSignature = useMemo(
+    () => pendingReviews.map((p) => p.reservationId).sort().join(','),
+    [pendingReviews]
+  );
+  const nextPendingReview = pendingReviews[0] ?? null;
+  const showReviewPrompt =
+    pendingReviews.length > 0 &&
+    !activeReview &&
+    dismissedReviewSignature !== undefined &&
+    dismissedReviewSignature !== pendingReviewSignature;
+
+  const openNextReview = useCallback(() => {
+    if (nextPendingReview) setActiveReview(nextPendingReview);
+  }, [nextPendingReview]);
+
+  const dismissReviewPrompt = useCallback(async () => {
+    setDismissedReviewSignature(pendingReviewSignature);
+    try {
+      await AsyncStorage.setItem(REVIEW_PROMPT_DISMISSED_KEY, pendingReviewSignature);
+    } catch (err) {
+      // Non-fatal: the prompt will simply reappear on the next launch.
+    }
+  }, [pendingReviewSignature]);
 
   // Server-side trust-based deposit quote for the selected spot
   useEffect(() => {
@@ -706,6 +747,35 @@ export const ExploreScreen = () => {
     </>
   );
 
+  const renderReviewPrompt = () => {
+    if (!showReviewPrompt) return null;
+    const count = pendingReviews.length;
+    return (
+      <View style={styles.reviewPrompt}>
+        <View style={styles.reviewPromptIcon}>
+          <Ionicons name="star" size={18} color="#F5B301" />
+        </View>
+        <View style={styles.reviewPromptTextWrapper}>
+          <Text style={styles.reviewPromptTitle}>
+            {count === 1 ? 'You have 1 trip to review' : `You have ${count} trips to review`}
+          </Text>
+          <Text style={styles.reviewPromptSubtitle}>Share how it went — it keeps ParkShare fair.</Text>
+        </View>
+        <TouchableOpacity style={styles.reviewPromptAction} onPress={openNextReview} accessibilityLabel="Review your trips">
+          <Text style={styles.reviewPromptActionText}>Review</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.reviewPromptClose}
+          onPress={dismissReviewPrompt}
+          accessibilityLabel="Dismiss review reminder"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="close" size={16} color={tokens.colors.secondaryText} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const renderSearchPanel = () => {
     if (selectedSpot) return null;
     return (
@@ -997,6 +1067,7 @@ export const ExploreScreen = () => {
             })()}
             </>
             )}
+            {renderReviewPrompt()}
           </GlassPanel>
         </View>
     </>
@@ -1330,6 +1401,8 @@ export const ExploreScreen = () => {
               spot: finishedReservation.spot ? { id: finishedReservation.spot.id, name: finishedReservation.spot.name } : null,
             };
             setPendingReviews((prev) => prev.some((p) => p.reservationId === review.reservationId) ? prev : [review, ...prev]);
+            // Finishing a session is the one moment a review is expected, so open it right away.
+            setActiveReview(review);
           };
           alert('Parking Ended', msg, [{ text: 'OK', onPress: queueReview }], 'success');
         }
@@ -1466,9 +1539,10 @@ export const ExploreScreen = () => {
       )}
       {renderModal()}
       <ReviewModal
-        pending={pendingReviews.find((p) => !dismissedReviewIds.has(p.reservationId)) || null}
+        pending={activeReview}
         onClose={(submitted) => {
-          const current = pendingReviews.find((p) => !dismissedReviewIds.has(p.reservationId));
+          const current = activeReview;
+          setActiveReview(null);
           if (!current) return;
           if (submitted) {
             setPendingReviews((prev) => prev.filter((p) => p.reservationId !== current.reservationId));
@@ -1478,7 +1552,8 @@ export const ExploreScreen = () => {
               .then((d) => d.spots && setSpots(d.spots))
               .catch(() => {});
           } else {
-            setDismissedReviewIds((prev) => new Set(prev).add(current.reservationId));
+            // "Not now" – remember the decision so we don't ask again this session/launch.
+            dismissReviewPrompt();
           }
         }}
       />
@@ -1570,6 +1645,55 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: tokens.colors.primaryText,
+  },
+  reviewPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  reviewPromptIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewPromptTextWrapper: {
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 8,
+  },
+  reviewPromptTitle: {
+    fontFamily: tokens.typography.bodySemiBold,
+    fontSize: 13,
+    color: tokens.colors.primaryText,
+  },
+  reviewPromptSubtitle: {
+    fontFamily: tokens.typography.body,
+    fontSize: 11,
+    color: tokens.colors.secondaryText,
+    marginTop: 2,
+  },
+  reviewPromptAction: {
+    backgroundColor: tokens.colors.primaryText,
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  reviewPromptActionText: {
+    color: tokens.colors.white,
+    fontFamily: tokens.typography.bodySemiBold,
+    fontSize: 12,
+  },
+  reviewPromptClose: {
+    padding: 4,
+    marginLeft: 4,
   },
   searchContainer: {
     flexDirection: 'row',
