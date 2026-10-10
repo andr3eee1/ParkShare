@@ -515,6 +515,7 @@ export const Map = forwardRef(({ spots, selectedSpot, onSelectSpot, onMapClick, 
           .leaflet-control-attribution { display: none; }
           .leaflet-zoom-anim .leaflet-zoom-animated { transition-duration: 0.05s !important; }
           .leaflet-fade-anim .leaflet-tile { transition-duration: 0.05s !important; }
+          .leaflet-container { touch-action: none !important; outline: none; }
         `}</style>
         
         <MapContainer 
