@@ -1,6 +1,6 @@
 import { AlertProvider } from "./src/context/AlertContext";
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Platform, Text } from 'react-native';
+import { View, StyleSheet, Platform, Text, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { useContext } from 'react';
@@ -106,8 +106,9 @@ export default function App() {
 
     if (isLoading) {
       return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: tokens.colors.paleMapBackground }}>
-          <Text style={{ fontFamily: tokens.typography.heading, fontSize: 24, color: tokens.colors.primaryText }}>ParkShare</Text>
+        <View style={styles.loadingContainer}>
+          <Image source={require('./assets/logo-mark.png')} style={styles.loadingMark} resizeMode="contain" />
+          <Text style={styles.loadingTitle}>ParkShare</Text>
         </View>
       );
     }
@@ -180,5 +181,21 @@ const styles = StyleSheet.create({
   },
   mobileContainer: {
     // Deprecated fixed size constraints
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: tokens.colors.paleMapBackground,
+  },
+  loadingMark: {
+    width: 96,
+    height: 96,
+    marginBottom: 12,
+  },
+  loadingTitle: {
+    fontFamily: tokens.typography.headingBold,
+    fontSize: 28,
+    color: tokens.colors.primaryText,
   },
 });

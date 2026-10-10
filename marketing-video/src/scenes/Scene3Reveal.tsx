@@ -1,8 +1,8 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
-import { Car } from 'lucide-react';
 import { theme } from '../theme';
 import { KineticText } from '../components/KineticText';
+import { BrandMark } from '../components/BrandMark';
 import { useTranslation } from '../i18n';
 
 export const Scene3Reveal: React.FC = () => {
@@ -30,7 +30,7 @@ export const Scene3Reveal: React.FC = () => {
           transform: `translateY(${iconY}px) rotate(${iconRot}deg)`,
           boxShadow: '0 30px 60px rgba(16, 185, 129, 0.3)'
         }}>
-          <Car size={72} color={theme.colors.white} strokeWidth={2.5} />
+          <BrandMark size={82} />
         </div>
 
         {/* Title */}

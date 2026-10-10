@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
@@ -58,6 +58,7 @@ export const RegisterScreen = () => {
           </TouchableOpacity>
 
           <View style={styles.headerContainer}>
+            <Image source={require('../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
             <Text style={styles.logo}>ParkShare</Text>
             <Text style={styles.subtitle}>Create your account</Text>
           </View>
@@ -154,8 +155,13 @@ const styles = StyleSheet.create({
     marginBottom: 48,
     marginTop: 24,
   },
+  logoMark: {
+    width: 88,
+    height: 88,
+    marginBottom: 10,
+  },
   logo: {
-    fontFamily: tokens.typography.heading,
+    fontFamily: tokens.typography.headingBold,
     fontSize: 40,
     color: tokens.colors.primaryText,
     marginBottom: 8,

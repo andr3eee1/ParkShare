@@ -11,7 +11,7 @@
 // Title Page
 #align(center)[
   #v(4cm)
-  #text(size: 32pt, weight: "bold", fill: brand-green)[ParkShare]
+  #image("brand/png/lockup-horizontal.png", width: 9cm)
   #v(1cm)
   #text(size: 18pt, weight: "semibold", fill: brand-dark)[Business Plan & Arhitectură Tehnică]
   #v(0.5cm)

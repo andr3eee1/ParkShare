@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ParkShare · Splash image (tight mark, transparent; rendered via expo-splash-screen plugin, imageWidth 200) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 254" width="200" height="254" role="img" aria-label="ParkShare">
+  <g transform="translate(3.8 14.5) scale(3.63)">
+    <rect x="0" y="0" width="13" height="62" rx="6" fill="#101826"/>
+    <path d="M 15 0 L 15 38 A 19 19 0 0 0 23.95 35.76 L 23.95 2.24 A 19 19 0 0 0 15 0 Z" fill="#009967"/>
+    <path d="M 25.05 2.87 L 25.05 35.13 A 19 19 0 0 0 25.05 2.87 Z" fill="#006552"/>
+  </g>
+</svg>

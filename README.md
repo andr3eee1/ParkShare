@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/brand/png/lockup-horizontal.png" alt="ParkShare — Park smarter. Share more." width="360" />
+</p>
+
 # ParkShare 🚗
 
 **The Ultimate Peer-to-Peer Parking Network**

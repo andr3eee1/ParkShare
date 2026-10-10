@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
@@ -42,6 +42,7 @@ export const LoginScreen = () => {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <View style={styles.content}>
         <View style={styles.headerContainer}>
+          <Image source={require('../../assets/logo-mark.png')} style={styles.logoMark} resizeMode="contain" />
           <Text style={styles.logo}>ParkShare</Text>
           <Text style={styles.subtitle}>Welcome back</Text>
         </View>
@@ -108,8 +109,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 48,
   },
+  logoMark: {
+    width: 88,
+    height: 88,
+    marginBottom: 10,
+  },
   logo: {
-    fontFamily: tokens.typography.heading,
+    fontFamily: tokens.typography.headingBold,
     fontSize: 40,
     color: tokens.colors.primaryText,
     marginBottom: 8,

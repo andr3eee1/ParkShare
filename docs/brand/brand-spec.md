@@ -139,17 +139,27 @@ docs/brand/
 │   ├── lockup-horizontal.svg
 │   ├── lockup-horizontal-dark.svg
 │   ├── lockup-stacked.svg
+│   ├── logo-mark.svg                  (512² transparent, in-app mark)
+│   ├── android-icon-background.svg    (512² gradient tile)
+│   ├── android-icon-foreground.svg    (512² white mark in safe zone)
+│   ├── android-icon-monochrome.svg    (512² themed-icon alpha mask)
+│   ├── splash-icon.svg                (tight mark for expo-splash-screen)
 │   └── brand-sheet.svg               (one-page overview poster)
 └── png/                              (raster exports; symbol 1024, icons 1024/192,
-                                        favicon 64/32, lockups 1200/560, sheet 1920)
+                                        favicon 64/32, lockups 1200/560, sheet 1920,
+                                        logo-mark 512, android-icon-* 512, splash 1024)
 ```
 
-### Cutting the brand in (follow-on, not yet applied)
+### Where the brand is wired in
 
-- `frontend/app.json` → `icon: docs/brand/png/app-icon.png` (1024 square, no alpha), splash/favicon assets.
-- Web export favicon → `docs/brand/png/favicon-64.png` / `favicon-32.png`.
-- Marketing video → replace the placeholder Car-in-rounded-square mark in Scene 3/7 with the Share-P symbol.
-- Backend/docs → favicon + lockup on the README and Typst cover.
+- **App icon / splash / web favicon** — `frontend/app.json` points at the raster copies in `frontend/assets/`:
+  - `icon` → `app-icon.png` (1024², no alpha)
+  - `android.adaptiveIcon` → gradient `backgroundImage` + white `foregroundImage` + `monochromeImage` (mark kept inside the safe zone)
+  - `web.favicon` → `favicon-64.png`
+  - `expo-splash-screen` plugin → paper (`#F7F9FB`) background + `splash-icon.png` (`imageWidth: 180`)
+- **App UI** — `logo-mark.png` anchors the Sign In, Create Account and boot (loading) screens plus the Account footer; headers use the `Space Grotesk 700` wordmark via `tokens.typography.headingBold`.
+- **Marketing video** — `marketing-video/src/components/BrandMark.tsx` draws the symbol as inline SVG; Scene 3 (Reveal) and Scene 7 (Outro) render it white inside the gradient app-icon tile, matching the real icon.
+- **Backend/docs** — lockups on the README and Typst cover.
 
 ---
 

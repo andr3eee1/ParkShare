@@ -1,8 +1,9 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
-import { Car, Globe, Smartphone } from 'lucide-react';
+import { Globe, Smartphone } from 'lucide-react';
 import { theme } from '../theme';
 import { KineticText } from '../components/KineticText';
+import { BrandMark } from '../components/BrandMark';
 import { useTranslation } from '../i18n';
 
 export const Scene7Outro: React.FC = () => {
@@ -28,7 +29,7 @@ export const Scene7Outro: React.FC = () => {
           transform: `scale(${iconScale})`,
           boxShadow: '0 20px 40px rgba(16, 185, 129, 0.3)'
         }}>
-          <Car size={60} color={theme.colors.white} strokeWidth={2.5} />
+          <BrandMark size={70} />
         </div>
 
         {/* Headline */}

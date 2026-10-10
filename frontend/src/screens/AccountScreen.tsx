@@ -127,7 +127,10 @@ export const AccountScreen = () => {
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
 
-      <Text style={styles.versionText}>ParkShare App v1.0.0</Text>
+      <View style={styles.brandFooter}>
+        <Image source={require('../../assets/logo-mark.png')} style={styles.brandMark} />
+        <Text style={styles.versionText}>ParkShare App v1.0.0</Text>
+      </View>
     </Screen>
   );
 };
@@ -210,4 +213,16 @@ const styles = StyleSheet.create({
   },
   logoutText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 15, color: '#DC2626', marginLeft: 8 },
   versionText: { fontFamily: tokens.typography.body, fontSize: 13, color: '#9CA3AF', textAlign: 'center' },
+  brandFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 28,
+    marginBottom: 4,
+  },
+  brandMark: {
+    width: 18,
+    height: 18,
+    marginRight: 8,
+  },
 });
