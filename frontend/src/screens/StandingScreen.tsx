@@ -1,17 +1,16 @@
 import React, { useCallback, useContext, useState } from 'react';
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../components/GlassPanel';
+import { Screen, ScreenHeader } from '../components/Screen';
 import { AuthContext } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { apiClient } from '../api/client';
@@ -142,17 +141,12 @@ export const StandingScreen = () => {
     }
   };
 
-  const canAppeal = standing && (standing.status === 'SUSPENDED' || standing.status === 'BANNED') && !pendingAppeal;
   const meta = standing ? STATUS_META[standing.status] : STATUS_META.ACTIVE;
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.screenTitle}>Trust & Safety</Text>
-          <Text style={styles.subtitle}>Your standing, ratings, and notices</Text>
-        </View>
+    <Screen>
+      <ScreenHeader title="Trust & Safety" subtitle="Your standing, ratings, and notices" />
 
         {loading ? (
           <View style={styles.loading}><ActivityIndicator color={tokens.colors.municipalTeal} /></View>
@@ -267,17 +261,11 @@ export const StandingScreen = () => {
             )}
           </>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: tokens.colors.paleMapBackground },
-  scrollContent: { width: '100%', maxWidth: 640, alignSelf: 'center', padding: 20, paddingBottom: 48 },
-  header: { marginBottom: 18, marginTop: 8 },
-  screenTitle: { fontFamily: tokens.typography.headingBold, fontSize: 32, color: tokens.colors.primaryText },
-  subtitle: { fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.secondaryText, marginTop: 4 },
   loading: { paddingTop: 60, alignItems: 'center' },
   statusCard: { padding: 22, alignItems: 'center' },
   statusIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },

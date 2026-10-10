@@ -1,122 +1,65 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassPanel } from '../../components/GlassPanel';
+import { Screen, ScreenHeader } from '../../components/Screen';
 import { tokens } from '../../theme/tokens';
 
+type IconName = keyof typeof Ionicons.glyphMap;
+
+const channels: { icon: IconName; label: string; value: string; href: string }[] = [
+  { icon: 'mail-outline', label: 'Email Support', value: 'tibi.enache2010@gmail.com', href: 'mailto:tibi.enache2010@gmail.com' },
+  { icon: 'call-outline', label: 'Phone Support', value: '0770 240 139', href: 'tel:0770240139' },
+];
+
 export const HelpSupportScreen = () => {
-  const navigation = useNavigation();
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={tokens.colors.primaryText} />
+    <Screen>
+      <ScreenHeader title="Help & Support" subtitle="We're here to help" />
+
+      {channels.map((channel) => (
+        <TouchableOpacity
+          key={channel.label}
+          activeOpacity={0.8}
+          onPress={() => Linking.openURL(channel.href)}
+        >
+          <GlassPanel style={styles.card} borderRadius={18} intensity={40} overlayColor={tokens.colors.panelSurface}>
+            <View style={styles.iconContainer}>
+              <Ionicons name={channel.icon} size={24} color={tokens.colors.municipalTeal} />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={styles.label}>{channel.label}</Text>
+              <Text style={styles.valueText}>{channel.value}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={tokens.colors.secondaryText} />
+          </GlassPanel>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & Support</Text>
-        <View style={{ width: 40 }} />
-      </View>
-      <ScrollView contentContainerStyle={styles.content}>
-        
-        <View style={styles.infoCard}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="mail-outline" size={28} color={tokens.colors.primaryText} />
-          </View>
-          <View style={styles.textContainer}>
-            <Text style={styles.label}>Email Support</Text>
-            <TouchableOpacity onPress={() => Linking.openURL('mailto:tibi.enache2010@gmail.com')}>
-              <Text style={styles.valueText}>tibi.enache2010@gmail.com</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      ))}
 
-        <View style={styles.infoCard}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="call-outline" size={28} color={tokens.colors.primaryText} />
-          </View>
-          <View style={styles.textContainer}>
-            <Text style={styles.label}>Phone Support</Text>
-            <TouchableOpacity onPress={() => Linking.openURL('tel:0770240139')}>
-              <Text style={styles.valueText}>0770 240 139</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        <Text style={styles.footerText}>We are available Monday to Friday, 9:00 AM - 5:00 PM.</Text>
-
-      </ScrollView>
-    </SafeAreaView>
+      <Text style={styles.footerText}>We are available Monday to Friday, 9:00 AM - 5:00 PM.</Text>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EEF2F5',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: tokens.colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
-  },
-  headerTitle: {
-    fontFamily: tokens.typography.heading,
-    fontSize: 18,
-    color: tokens.colors.primaryText,
-  },
-  content: {
-    padding: 24,
-    maxWidth: 600,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: tokens.colors.white,
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
-  },
+  card: { alignItems: 'center', flexDirection: 'row', padding: 18, marginBottom: 14 },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    backgroundColor: '#E8F1F5',
+    borderRadius: 22,
+    height: 44,
+    justifyContent: 'center',
+    marginRight: 14,
+    width: 44,
   },
-  textContainer: {
-    flex: 1,
-  },
-  label: {
-    fontFamily: tokens.typography.body,
-    fontSize: 14,
-    color: tokens.colors.secondaryText,
-    marginBottom: 4,
-  },
-  valueText: {
-    fontFamily: tokens.typography.heading,
-    fontSize: 16,
-    color: tokens.colors.primaryText,
-  },
+  textContainer: { flex: 1 },
+  label: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, marginBottom: 3 },
+  valueText: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodySemiBold, fontSize: 15 },
   footerText: {
-    fontFamily: tokens.typography.body,
-    fontSize: 14,
     color: tokens.colors.secondaryText,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    marginTop: 12,
     textAlign: 'center',
-    marginTop: 24,
-  }
+  },
 });

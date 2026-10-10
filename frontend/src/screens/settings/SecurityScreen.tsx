@@ -1,64 +1,43 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassPanel } from '../../components/GlassPanel';
+import { Screen, ScreenHeader } from '../../components/Screen';
 import { tokens } from '../../theme/tokens';
 
 export const SecurityScreen = () => {
-  const navigation = useNavigation();
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={tokens.colors.primaryText} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Security</Text>
-        <View style={{ width: 40 }} />
-      </View>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.placeholder}>Coming soon</Text>
-      </ScrollView>
-    </SafeAreaView>
+    <Screen>
+      <ScreenHeader title="Security" subtitle="Password and account protection" />
+
+      <GlassPanel style={styles.card} borderRadius={20} intensity={40} overlayColor={tokens.colors.panelSurface}>
+        <View style={styles.iconWrap}>
+          <Ionicons name="shield-checkmark-outline" size={26} color={tokens.colors.municipalTeal} />
+        </View>
+        <Text style={styles.title}>Coming soon</Text>
+        <Text style={styles.body}>Password and two-factor authentication settings will land here soon.</Text>
+      </GlassPanel>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EEF2F5',
-  },
-  header: {
-    flexDirection: 'row',
+  card: { padding: 28, alignItems: 'center' },
+  iconWrap: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: tokens.colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#E8F1F5',
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
+    marginBottom: 14,
+    width: 56,
   },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
-  },
-  headerTitle: {
-    fontFamily: tokens.typography.heading,
-    fontSize: 18,
-    color: tokens.colors.primaryText,
-  },
-  content: {
-    padding: 24,
-    maxWidth: 600,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  placeholder: {
-    fontFamily: tokens.typography.body,
-    fontSize: 16,
+  title: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingMedium, fontSize: 17 },
+  body: {
     color: tokens.colors.secondaryText,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    marginTop: 6,
     textAlign: 'center',
-    marginTop: 48,
-  }
+  },
 });
