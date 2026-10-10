@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
   managementDescription: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10, marginTop: 3 },
   managementArrow: { bottom: 13, position: 'absolute', right: 13 },
 
-  diagnosticsPanel: { paddingHorizontal: 14, paddingVertical: 4 },
+  diagnosticsPanel: { paddingHorizontal: 14, paddingVertical: 4, marginBottom: 16 },
   diagnosticRow: {
     alignItems: 'flex-start',
     borderBottomColor: tokens.colors.borderLight,
@@ -46,17 +46,17 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   diagnosticCopy: { flex: 1, gap: 4 },
-  diagnosticLabel: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 13 },
-  diagnosticDetail: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 11, lineHeight: 17 },
+  diagnosticLabel: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodyMedium, fontSize: 12 },
+  diagnosticDetail: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 10, lineHeight: 15 },
   diagnosticStatus: { alignItems: 'center', flexDirection: 'row', gap: 6, marginLeft: 8 },
   diagnosticStatusText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 11 },
-  diagnosticFooter: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, gap: 10 },
+  diagnosticFooter: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, gap: 8 },
   refreshTimes: { flex: 1, gap: 3 },
-  checkedAtText: { color: tokens.colors.secondaryText, flex: 1, fontFamily: tokens.typography.body, fontSize: 10 },
+  checkedAtText: { color: tokens.colors.secondaryText, flex: 1, fontFamily: tokens.typography.body, fontSize: 9 },
   refreshButton: { alignItems: 'center', borderColor: tokens.colors.municipalTeal, borderRadius: 9, borderWidth: 1, flexDirection: 'row', gap: 5, paddingHorizontal: 10, paddingVertical: 7 },
-  refreshButtonText: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 11 },
+  refreshButtonText: { color: tokens.colors.municipalTeal, fontFamily: tokens.typography.bodySemiBold, fontSize: 10 },
 
 });
