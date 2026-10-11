@@ -1,6 +1,10 @@
 <p align="center">
-  <img src="docs/brand/png/lockup-horizontal.png" alt="ParkShare — Park smarter. Share more." width="360" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/png/lockup-horizontal-dark.png">
+    <img alt="ParkShare — Park smarter. Share more." src="docs/brand/png/lockup-horizontal.png" width="360" />
+  </picture>
 </p>
+
 
 # ParkShare 🚗
 
