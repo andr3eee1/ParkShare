@@ -7,7 +7,8 @@
     "start": "ts-node src/index.ts",
     "dev": "nodemon src/index.ts",
     "test:standing": "ts-node src/standing.selftest.ts",
-    "test:email": "ts-node src/test-email.ts"
+    "test:email": "ts-node src/test-email.ts",
+    "test:auth": "ts-node src/auth-flow.selftest.ts"
   },
   "keywords": [],
   "author": "",

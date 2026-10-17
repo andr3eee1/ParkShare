@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from './prisma';
 import { requireAuth, AuthRequest } from './middleware';
 import { z } from 'zod';
+import { sendPassActivatedEmail } from './email';
 
 const router = Router();
 
@@ -51,14 +52,25 @@ router.post('/toggle', requireAuth, async (req: AuthRequest, res: any): Promise<
       res.json({ message: 'Pass removed successfully', status: 'removed' });
     } else {
       // User doesn't have it, so add it
-      await prisma.userPass.create({
+      const activeUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const newPass = await prisma.userPass.create({
         data: {
           userId,
           passKind,
-          // activeUntil could be set to 1 month from now
-          activeUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        }
+          activeUntil
+        },
+        include: { user: true }
       });
+
+      if (newPass.user?.email) {
+        sendPassActivatedEmail({
+          email: newPass.user.email,
+          firstName: newPass.user.firstName,
+          passKind,
+          activeUntil,
+        }).catch(err => console.error('[Pass Activated Email Error]:', err));
+      }
+
       res.json({ message: 'Pass added successfully', status: 'added' });
     }
   } catch (error: any) {

@@ -31,6 +31,17 @@ model User {
   walletBalance       Float              @default(0.0)
   trustScore          Float              @default(5.0) // 1.0 to 5.0 rating (as a driver)
   completedBookings   Int                @default(0) // Number of successful bookings
+  // --- Email verification ---
+  emailVerified       Boolean            @default(false)
+  verificationCode    String?
+  verificationExpires DateTime?
+  // --- Password reset ---
+  resetPasswordCode   String?
+  resetPasswordExpires DateTime?
+  // --- Two-Factor Authentication (2FA) ---
+  twoFactorEnabled    Boolean            @default(false)
+  twoFactorCode       String?
+  twoFactorExpires    DateTime?
   // --- Trust & safety / moderation ---
   accountStatus       AccountStatus      @default(ACTIVE)
   suspendedUntil      DateTime?

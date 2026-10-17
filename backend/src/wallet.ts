@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from './prisma';
 import { requireAuth, AuthRequest } from './middleware';
 import { z } from 'zod';
+import { sendWalletDepositEmail } from './email';
 
 const router = Router();
 
@@ -24,6 +25,13 @@ router.post('/deposit', requireAuth, async (req: AuthRequest, res: any): Promise
         }
       }
     });
+
+    sendWalletDepositEmail({
+      email: updatedUser.email,
+      firstName: updatedUser.firstName,
+      amount,
+      newBalance: updatedUser.walletBalance,
+    }).catch(err => console.error('[Wallet Deposit Email Error]:', err));
 
     res.json({
       message: 'Deposit successful',

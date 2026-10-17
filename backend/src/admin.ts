@@ -3,6 +3,7 @@ import { prisma } from './prisma';
 import { z } from 'zod';
 import { AuthRequest, requireAdmin, requireAuth } from './middleware';
 import { applySanction, evaluateStanding, getStandingSnapshot } from './standing';
+import { sendEmail } from './email';
 
 const router = Router();
 
@@ -368,6 +369,30 @@ router.post('/appeals/:id/resolve', async (req: AuthRequest, res: any): Promise<
           body: data.note || 'After review, your appeal was not approved. The original decision stands.',
         },
       });
+
+      const user = await prisma.user.findUnique({
+        where: { id: appeal.userId },
+        select: { email: true, firstName: true }
+      });
+      if (user?.email) {
+        sendEmail({
+          to: user.email,
+          subject: 'Update regarding your ParkShare appeal',
+          html: `
+            <div style="font-family: sans-serif; max-width: 500px; padding: 20px;">
+              <h2>ParkShare Appeal Status</h2>
+              <p>Hello ${user.firstName},</p>
+              <p>After careful review by our moderation team, your appeal was not approved. The original standing decision stands.</p>
+              <div style="background-color: #f8fafc; padding: 12px; border-radius: 6px; margin: 16px 0; border: 1px solid #e2e8f0;">
+                <strong>Reviewer Note:</strong><br/>
+                ${data.note || 'No specific notes provided.'}
+              </div>
+              <p style="font-size: 12px; color: #64748b;">ParkShare Trust & Safety Team</p>
+            </div>
+          `,
+          text: `Hello ${user.firstName},\n\nYour appeal was reviewed and was not approved. Reviewer Note: ${data.note || 'None'}.\n\nParkShare Trust & Safety`,
+        }).catch(err => console.error('[Appeal Reject Email Error]:', err));
+      }
     }
 
     res.json({ message: `Appeal ${data.status.toLowerCase()}`, appeal: updated });

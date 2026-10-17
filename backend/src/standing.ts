@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient } from '@prisma/client';
+import { sendModerationNoticeEmail } from './email';
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -202,7 +203,7 @@ export async function applySanction(db: Db, input: SanctionInput) {
   const updated = await db.user.update({
     where: { id: input.userId },
     data,
-    select: { id: true, accountStatus: true, suspendedUntil: true, warningCount: true },
+    select: { id: true, email: true, firstName: true, accountStatus: true, suspendedUntil: true, warningCount: true },
   });
 
   const actionName = input.automated ? `AUTO_${input.action}` : input.action;
@@ -220,6 +221,16 @@ export async function applySanction(db: Db, input: SanctionInput) {
     await db.notification.create({
       data: { userId: input.userId, type: input.action === 'WARN' ? 'STANDING_WARNING' : 'SANCTION', title, body },
     });
+
+    if (updated.email) {
+      sendModerationNoticeEmail({
+        email: updated.email,
+        firstName: updated.firstName,
+        action: input.action,
+        reason: input.reason,
+        suspendedUntil: updated.suspendedUntil,
+      }).catch(err => console.error('[Moderation Notice Email Error]:', err));
+    }
   }
 
   return updated;

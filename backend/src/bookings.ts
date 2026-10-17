@@ -3,7 +3,12 @@ import { prisma } from './prisma';
 import { requireAuth, requireActiveUser, AuthRequest } from './middleware';
 import { z } from 'zod';
 import { quoteDeposit } from './deposit';
-import { sendBookingConfirmationEmail } from './email';
+import {
+  sendBookingConfirmationEmail,
+  sendHostSpotBookedEmail,
+  sendBookingCompletedDriverEmail,
+  sendHostEarningsEmail,
+} from './email';
 
 const router = Router();
 
@@ -86,13 +91,16 @@ router.post('/', requireAuth, requireActiveUser, async (req: AuthRequest, res: a
           securityDeposit: requiredDeposit,
           status: 'ACTIVE'
         },
-        include: { spot: true, user: true }
+        include: {
+          spot: { include: { owner: true } },
+          user: true
+        }
       });
 
       return reservation;
     });
 
-    // Send confirmation email asynchronously via Resend
+    // Send confirmation email asynchronously to driver via Resend
     if (result && (result as any).user?.email) {
       const user = (result as any).user;
       sendBookingConfirmationEmail({
@@ -104,6 +112,22 @@ router.post('/', requireAuth, requireActiveUser, async (req: AuthRequest, res: a
         reservationId: result.id,
       }).catch(err => {
         console.error('[Booking Confirmation Email Error]:', err);
+      });
+    }
+
+    // Send notification email asynchronously to spot owner via Resend
+    if (result && (result as any).spot?.owner?.email) {
+      const owner = (result as any).spot.owner;
+      const user = (result as any).user;
+      sendHostSpotBookedEmail({
+        hostEmail: owner.email,
+        hostName: owner.firstName,
+        driverName: user ? `${user.firstName} ${user.lastName}` : 'A driver',
+        spotName: result.spot.name,
+        startTime: result.startTime,
+        hourlyPrice: result.spot.price,
+      }).catch(err => {
+        console.error('[Host Spot Booked Email Error]:', err);
       });
     }
 
@@ -165,7 +189,7 @@ router.put('/:id/status', requireAuth, async (req: AuthRequest, res: any): Promi
     const updated = await prisma.$transaction(async (tx) => {
       const reservation = await tx.reservation.findUnique({ 
         where: { id: req.params.id as string },
-        include: { spot: true }
+        include: { spot: { include: { owner: true } }, user: true }
       });
       if (!reservation) throw new Error('Reservation not found');
       if (reservation.userId !== userId) throw new Error('Forbidden');
@@ -187,14 +211,8 @@ router.put('/:id/status', requireAuth, async (req: AuthRequest, res: any): Promi
         // Add back the security deposit, then subtract final cost
         let newBalance = user.walletBalance + reservation.securityDeposit - finalPrice;
         
-        // If they don't have enough, we'd normally charge the card here
-        // We'll just update the balance (it can go negative as debt if no card)
-        // We could also check if they have a default card.
         const defaultCard = await tx.creditCard.findFirst({ where: { userId, isDefault: true } });
         if (newBalance < 0 && defaultCard) {
-           // Simulate charging the card to cover the difference
-           // Then balance goes back to what it was before finalPrice, up to 0.
-           // Actually, simpler: we just charge the card the missing amount.
            newBalance = 0; 
         }
 
@@ -226,9 +244,36 @@ router.put('/:id/status', requireAuth, async (req: AuthRequest, res: any): Promi
           status, 
           endTime, 
           totalPrice: finalPrice 
-        }
+        },
+        include: { spot: { include: { owner: true } }, user: true }
       });
     });
+
+    // Send completion emails asynchronously
+    if (updated.status === 'COMPLETED') {
+      const durationMs = Math.max(0, (updated.endTime?.getTime() || Date.now()) - updated.startTime.getTime());
+      const durationMinutes = durationMs / (1000 * 60);
+
+      if (updated.user?.email) {
+        sendBookingCompletedDriverEmail({
+          email: updated.user.email,
+          firstName: updated.user.firstName,
+          spotName: updated.spot.name,
+          totalCost: updated.totalPrice || 0,
+          refundedDeposit: updated.securityDeposit,
+          durationMinutes,
+        }).catch(err => console.error('[Booking Completed Driver Email Error]:', err));
+      }
+
+      if (updated.spot?.owner?.email) {
+        sendHostEarningsEmail({
+          hostEmail: updated.spot.owner.email,
+          hostName: updated.spot.owner.firstName,
+          spotName: updated.spot.name,
+          earnings: (updated.totalPrice || 0) * 0.9,
+        }).catch(err => console.error('[Host Earnings Email Error]:', err));
+      }
+    }
     
     res.json({ message: 'Reservation updated', reservation: updated });
   } catch (error: any) {

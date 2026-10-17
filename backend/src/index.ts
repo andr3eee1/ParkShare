@@ -21,6 +21,7 @@ const port = process.env.PORT || 8745;
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+app.use('/assets', express.static('assets'));
 
 app.use('/auth', authRouter);
 app.use('/passes', passesRouter);
