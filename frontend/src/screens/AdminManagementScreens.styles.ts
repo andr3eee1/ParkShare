@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { tokens } from '../theme/tokens';
 
 export const styles = StyleSheet.create({
@@ -46,13 +46,53 @@ export const styles = StyleSheet.create({
   sanctionButtonText: { fontFamily: tokens.typography.bodySemiBold, fontSize: 12 },
   auditPanel: { backgroundColor: tokens.colors.panelSurface, borderRadius: 14, marginTop: 18, padding: 14, ...tokens.shadows.soft },
   auditRow: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 12, marginTop: 6 },
-  modalOverlay: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', flex: 1, justifyContent: 'center', padding: 20 },
-  modalCard: { backgroundColor: tokens.colors.white, borderRadius: 18, maxWidth: 420, padding: 22, width: '100%' },
+  modalOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
+  },
+  modalCard: {
+    backgroundColor: tokens.colors.white,
+    borderRadius: 18,
+    maxWidth: 420,
+    padding: 22,
+    width: '100%',
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
+  },
   modalTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingBold, fontSize: 19 },
   modalText: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, lineHeight: 19, marginTop: 8 },
-  modalInput: { borderColor: '#E5E7EB', borderRadius: 12, borderWidth: 1, color: tokens.colors.primaryText, fontFamily: tokens.typography.body, fontSize: 14, marginTop: 14, minHeight: 72, padding: 12, textAlignVertical: 'top' },
+  modalInput: {
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    borderWidth: 1,
+    color: tokens.colors.primaryText,
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
+    marginTop: 14,
+    minHeight: 72,
+    padding: 12,
+    textAlignVertical: 'top',
+    ...(Platform.OS === 'web' ? ({ cursor: 'text' } as any) : {}),
+  },
   modalButtons: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  modalButton: { alignItems: 'center', borderRadius: 12, flex: 1, paddingVertical: 13 },
+  modalButton: {
+    alignItems: 'center',
+    borderRadius: 12,
+    flex: 1,
+    paddingVertical: 13,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
+  },
   modalCancel: { backgroundColor: '#EEF2F5' },
   modalCancelText: { color: tokens.colors.primaryText, fontFamily: tokens.typography.bodySemiBold, fontSize: 14 },
   modalConfirm: { backgroundColor: tokens.colors.emerald },
@@ -88,6 +128,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   primaryActionText: {
     color: tokens.colors.white,
@@ -104,6 +145,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   secondaryActionText: {
     color: tokens.colors.emeraldDeep,
@@ -120,6 +162,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   dangerActionText: {
     color: tokens.colors.danger,
@@ -135,6 +178,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     ...tokens.shadows.soft,
     elevation: 8,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
   },
   editFieldGroup: {
     marginBottom: 14,
@@ -155,6 +199,7 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    ...(Platform.OS === 'web' ? ({ cursor: 'text' } as any) : {}),
   },
   editTextArea: {
     minHeight: 80,
@@ -172,6 +217,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     backgroundColor: '#F9FAFB',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   rolePillActive: {
     borderColor: tokens.colors.emerald,

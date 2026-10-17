@@ -252,9 +252,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
   },
   card: {
     width: '100%',
@@ -265,6 +267,7 @@ const styles = StyleSheet.create({
     padding: 22,
     ...tokens.shadows.soft,
     elevation: 8,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
   },
   header: {
     flexDirection: 'row',
@@ -305,6 +308,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   formScroll: {
     marginTop: 16,
@@ -329,6 +333,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 14,
     color: tokens.colors.primaryText,
+    ...(Platform.OS === 'web' ? ({ cursor: 'text' } as any) : {}),
   },
   textArea: {
     minHeight: 120,
@@ -340,6 +345,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 8,
     marginBottom: 8,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   actionToggleText: {
     fontFamily: tokens.typography.bodySemiBold,
@@ -367,6 +373,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   cancelBtnText: {
     fontFamily: tokens.typography.bodySemiBold,
@@ -381,6 +388,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     paddingHorizontal: 20,
     borderRadius: 12,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   sendBtnDisabled: {
     opacity: 0.7,

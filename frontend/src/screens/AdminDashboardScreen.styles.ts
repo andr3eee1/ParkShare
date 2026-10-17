@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { tokens } from '../theme/tokens';
 
 export const styles = StyleSheet.create({
@@ -84,6 +84,15 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
   },
   modalContent: {
     width: '100%',
@@ -93,6 +102,7 @@ export const styles = StyleSheet.create({
     padding: 22,
     ...tokens.shadows.soft,
     elevation: 8,
+    ...(Platform.OS === 'web' ? ({ cursor: 'default' } as any) : {}),
   },
   modalHeader: {
     flexDirection: 'row',
@@ -127,6 +137,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   diagnosticsPanel: {
     paddingHorizontal: 4,
@@ -141,7 +152,18 @@ export const styles = StyleSheet.create({
   diagnosticFooter: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingTop: 14, marginTop: 4 },
   refreshTimes: { flex: 1, gap: 2 },
   checkedAtText: { color: tokens.colors.secondaryText, flex: 1, fontFamily: tokens.typography.body, fontSize: 11 },
-  refreshButton: { alignItems: 'center', borderColor: '#B7D8D3', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#F0F9F5' },
+  refreshButton: {
+    alignItems: 'center',
+    borderColor: '#B7D8D3',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#F0F9F5',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
+  },
   refreshButtonText: { color: tokens.colors.emeraldDeep, fontFamily: tokens.typography.bodySemiBold, fontSize: 11 },
   modalDismissBtn: {
     backgroundColor: tokens.colors.emerald,
@@ -149,6 +171,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 18,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : {}),
   },
   modalDismissBtnText: {
     fontFamily: tokens.typography.bodySemiBold,

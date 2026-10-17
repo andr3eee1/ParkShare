@@ -910,8 +910,9 @@ export const AdminRecordScreen = () => {
 
       {/* ── SANCTION CONFIRMATION MODAL ── */}
       <Modal visible={!!pendingAction} transparent animationType="fade" onRequestClose={() => setPendingAction(null)}>
-        <Pressable style={styles.modalOverlay} onPress={() => !submitting && setPendingAction(null)}>
-          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => !submitting && setPendingAction(null)} />
+          <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Confirm {pendingAction?.toLowerCase()}</Text>
             <Text style={styles.modalText}>
               {pendingAction === 'BAN'
@@ -939,14 +940,15 @@ export const AdminRecordScreen = () => {
                 {submitting ? <ActivityIndicator color={tokens.colors.white} /> : <Text style={styles.modalConfirmText}>Confirm</Text>}
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* ── EDIT USER MODAL ── */}
       <Modal visible={showEditUserModal} transparent animationType="fade" onRequestClose={() => setShowEditUserModal(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => !submitting && setShowEditUserModal(false)}>
-          <Pressable style={styles.editModalCard} onPress={(e) => e.stopPropagation()}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => !submitting && setShowEditUserModal(false)} />
+          <View style={styles.editModalCard}>
             <Text style={styles.modalTitle}>Edit User Account</Text>
             <Text style={styles.modalText}>Adjust profile details, roles, and wallet balance.</Text>
 
@@ -1024,14 +1026,15 @@ export const AdminRecordScreen = () => {
                 {submitting ? <ActivityIndicator color={tokens.colors.white} /> : <Text style={styles.modalConfirmText}>Save Changes</Text>}
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* ── EDIT PARKING SPACE MODAL ── */}
       <Modal visible={showEditSpaceModal} transparent animationType="fade" onRequestClose={() => setShowEditSpaceModal(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => !submitting && setShowEditSpaceModal(false)}>
-          <Pressable style={styles.editModalCard} onPress={(e) => e.stopPropagation()}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => !submitting && setShowEditSpaceModal(false)} />
+          <View style={styles.editModalCard}>
             <Text style={styles.modalTitle}>Edit Parking Space</Text>
             <Text style={styles.modalText}>Update listing title, hourly price, and description.</Text>
 
@@ -1083,14 +1086,15 @@ export const AdminRecordScreen = () => {
                 {submitting ? <ActivityIndicator color={tokens.colors.white} /> : <Text style={styles.modalConfirmText}>Save</Text>}
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* ── EDIT BOOKING PRICING MODAL ── */}
       <Modal visible={showEditBookingModal} transparent animationType="fade" onRequestClose={() => setShowEditBookingModal(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => !submitting && setShowEditBookingModal(false)}>
-          <Pressable style={styles.editModalCard} onPress={(e) => e.stopPropagation()}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => !submitting && setShowEditBookingModal(false)} />
+          <View style={styles.editModalCard}>
             <Text style={styles.modalTitle}>Adjust Booking Pricing</Text>
             <Text style={styles.modalText}>Update total charge or security deposit amount.</Text>
 
@@ -1130,8 +1134,8 @@ export const AdminRecordScreen = () => {
                 {submitting ? <ActivityIndicator color={tokens.colors.white} /> : <Text style={styles.modalConfirmText}>Save</Text>}
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {/* ── COMPOSE CUSTOM EMAIL MODAL ── */}

@@ -10,6 +10,7 @@ import { getApiUrl } from '../api/config';
 import { GlassPanel } from '../components/GlassPanel';
 import { Screen } from '../components/Screen';
 import { BrandGradient } from '../components/Brand';
+import { useNotifications } from '../context/NotificationContext';
 import { styles } from './AccountScreen.styles';
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
@@ -22,10 +23,11 @@ const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }>
 export const AccountScreen = () => {
   const navigation = useNavigation<any>();
   const { user, logout, token, updateUser } = useContext(AuthContext) as any;
+  const { unreadCount, fetchNotifications } = useNotifications();
   const isAdmin = user?.role === 'ADMIN';
   const status = STATUS_STYLE[user?.accountStatus || 'ACTIVE'] || STATUS_STYLE.ACTIVE;
 
-  // Refresh standing whenever the tab is focused so warnings appear promptly.
+  // Refresh standing and notifications whenever the tab is focused so warnings appear promptly.
   useFocusEffect(
     useCallback(() => {
       if (!token) return;
@@ -34,8 +36,9 @@ export const AccountScreen = () => {
         .get('/auth/me')
         .then((res) => { if (active && res.data?.user) updateUser(res.data.user); })
         .catch(() => {});
+      fetchNotifications();
       return () => { active = false; };
-    }, [token])
+    }, [token, fetchNotifications])
   );
 
   const handleLogout = async () => {
@@ -107,23 +110,42 @@ export const AccountScreen = () => {
 
       {/* Menu Items */}
       <GlassPanel style={styles.menuContainer} borderRadius={20} intensity={40} overlayColor={tokens.colors.panelSurface}>
-        {menuItems.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[styles.menuItem, index < menuItems.length - 1 ? styles.menuDivider : null]}
-            onPress={() => navigation.navigate(item.route)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuIconContainer}>
-              <Ionicons name={item.icon as any} size={20} color={tokens.colors.emerald} />
-            </View>
-            <View style={styles.menuTextContainer}>
-              <Text style={styles.menuTitle}>{item.title}</Text>
-              <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={tokens.colors.secondaryText} />
-          </TouchableOpacity>
-        ))}
+        {menuItems.map((item, index) => {
+          const isNotificationItem = item.route === 'Notifications';
+          const hasUnread = isNotificationItem && unreadCount > 0;
+
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[styles.menuItem, index < menuItems.length - 1 ? styles.menuDivider : null]}
+              onPress={() => navigation.navigate(item.route)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuIconContainer}>
+                <Ionicons name={item.icon as any} size={20} color={tokens.colors.emerald} />
+                {hasUnread && <View style={styles.menuNotificationDot} />}
+              </View>
+              <View style={styles.menuTextContainer}>
+                <View style={styles.menuTitleRow}>
+                  <Text style={styles.menuTitle}>{item.title}</Text>
+                  {hasUnread && (
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.notificationBadgeText}>
+                        {unreadCount > 1 ? `${unreadCount} new` : 'New'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={[styles.menuSubtitle, hasUnread && { color: '#DC2626', fontWeight: '500' }]}>
+                  {hasUnread
+                    ? (unreadCount > 1 ? `You have ${unreadCount} new notifications` : 'You have a new notification')
+                    : item.subtitle}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={tokens.colors.secondaryText} />
+            </TouchableOpacity>
+          );
+        })}
       </GlassPanel>
 
       {/* Logout Button */}

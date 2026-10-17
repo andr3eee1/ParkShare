@@ -34,6 +34,7 @@ import { AddSpotScreen } from './src/screens/AddSpotScreen';
 import { AdminDashboardScreen } from './src/screens/AdminDashboardScreen';
 import { AdminManagementScreen, AdminRecordScreen } from './src/screens/AdminManagementScreens';
 import { PassProvider } from './src/context/PassContext';
+import { NotificationProvider, useNotifications } from './src/context/NotificationContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { styles } from './App.styles';
 
@@ -166,6 +167,7 @@ export default function App() {
 
   const MainNavigator = () => {
     const { user } = useContext(AuthContext);
+    const { unreadCount } = useNotifications();
     const insets = require('react-native-safe-area-context').useSafeAreaInsets();
     const bottomPadding = Math.max(insets.bottom, 12);
     
@@ -179,6 +181,30 @@ export default function App() {
               else if (route.name === 'History') iconName = 'time';
               else if (route.name === 'Passes') iconName = 'card';
               else if (route.name === 'Account') iconName = 'person';
+
+              if (route.name === 'Account') {
+                return (
+                  <View style={{ width: size + 6, height: size + 2, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name={iconName} size={size} color={color} />
+                    {unreadCount > 0 && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: -1,
+                          right: 1,
+                          width: 9,
+                          height: 9,
+                          borderRadius: 4.5,
+                          backgroundColor: '#EF4444',
+                          borderWidth: 1.5,
+                          borderColor: '#FFFFFF',
+                        }}
+                      />
+                    )}
+                  </View>
+                );
+              }
+
               return <Ionicons name={iconName} size={size} color={color} />;
             },
             tabBarActiveTintColor: tokens.colors.emerald,
@@ -266,7 +292,9 @@ export default function App() {
       <AlertProvider>
         <PassProvider>
           <AuthProvider>
-            <RootNavigator />
+            <NotificationProvider>
+              <RootNavigator />
+            </NotificationProvider>
           </AuthProvider>
         </PassProvider>
       </AlertProvider>

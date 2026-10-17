@@ -6,6 +6,7 @@ import { apiClient } from '../../api/client';
 import { GlassPanel } from '../../components/GlassPanel';
 import { Screen, ScreenHeader } from '../../components/Screen';
 import { useAlert } from '../../context/AlertContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { tokens } from '../../theme/tokens';
 import { styles } from './NotificationsScreen.styles';
 
@@ -32,6 +33,7 @@ const formatDate = (value: string) => {
 
 export const NotificationsScreen = () => {
   const { alert } = useAlert();
+  const { fetchNotifications } = useNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,13 +49,14 @@ export const NotificationsScreen = () => {
     try {
       const response = await apiClient.get('/moderation/notifications');
       setNotifications(response.data.notifications || []);
+      void fetchNotifications();
     } catch (requestError: any) {
       setError(requestError?.response?.data?.error || 'Unable to load notifications.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [fetchNotifications]);
 
   useFocusEffect(
     useCallback(() => {
@@ -71,6 +74,7 @@ export const NotificationsScreen = () => {
 
     try {
       await apiClient.post(`/moderation/notifications/${notification.id}/read`);
+      void fetchNotifications();
     } catch {
       setNotifications((current) => current.map((item) => (
         item.id === notification.id ? { ...item, read: false } : item
@@ -90,6 +94,7 @@ export const NotificationsScreen = () => {
 
     try {
       await apiClient.post('/moderation/notifications/read-all');
+      void fetchNotifications();
     } catch {
       setNotifications(previousNotifications);
       alert('Could not update notifications', 'Please try again.', undefined, 'error');
