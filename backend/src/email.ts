@@ -1,4 +1,6 @@
 import { Resend } from 'resend';
+import fs from 'fs';
+import path from 'path';
 
 const apiKey = process.env.RESEND_API_KEY;
 
@@ -6,17 +8,30 @@ export const resend = apiKey ? new Resend(apiKey) : null;
 export const DEFAULT_FROM_EMAIL = process.env.FROM_EMAIL || 'ParkShare <noreply@park-share.ro>';
 export const APP_URL = process.env.APP_URL || 'https://park-share.ro';
 
+// Load logo-mark.png buffer once for inline CID attachment
+let logoBuffer: Buffer | null = null;
+const logoPath = path.join(__dirname, '../assets/logo-mark.png');
+if (fs.existsSync(logoPath)) {
+  try {
+    logoBuffer = fs.readFileSync(logoPath);
+  } catch (err) {
+    console.warn('[Email] Could not load logo buffer from assets:', err);
+  }
+}
+
 export interface SendEmailOptions {
   to: string | string[];
   subject: string;
   html: string;
   text?: string;
   from?: string;
+  attachments?: any[];
 }
 
 /**
  * Generic email sender using Resend.
- * In development or when RESEND_API_KEY is not configured, logs the email instead of failing.
+ * Automatically attaches the ParkShare logo as an inline CID so it renders
+ * seamlessly in email clients (Gmail, Apple Mail, Outlook) without relying on external URLs.
  */
 export async function sendEmail(options: SendEmailOptions) {
   const from = options.from || DEFAULT_FROM_EMAIL;
@@ -29,6 +44,17 @@ export async function sendEmail(options: SendEmailOptions) {
     return { id: 'mock-email-id', mock: true };
   }
 
+  // Attach logo as inline CID attachment if available
+  const attachments = [...(options.attachments || [])];
+  if (logoBuffer && !attachments.some((a) => a.content_id === 'parkshare-logo')) {
+    attachments.push({
+      filename: 'logo.png',
+      content: logoBuffer,
+      content_id: 'parkshare-logo',
+      content_type: 'image/png',
+    });
+  }
+
   try {
     const response = await resend!.emails.send({
       from,
@@ -36,6 +62,7 @@ export async function sendEmail(options: SendEmailOptions) {
       subject: options.subject,
       html: options.html,
       text: options.text,
+      attachments,
     });
 
     if (response.error) {
@@ -52,7 +79,13 @@ export async function sendEmail(options: SendEmailOptions) {
 }
 
 /**
- * Shared HTML Master Layout with the ParkShare logo, responsive card, and verified footer.
+ * Shared Green-Forward HTML Master Layout (matches docs/brand/brand-spec.md §3):
+ * - Primary Emerald: #009967
+ * - Deep Emerald: #006552
+ * - Emerald Wash: #EAF9F1
+ * - Emerald Tint: #D7F8E8
+ * - Ink: #101826
+ * - Slate: #62748E
  */
 function renderEmailLayout(params: {
   previewText?: string;
@@ -64,14 +97,14 @@ function renderEmailLayout(params: {
   const badgeHtml = params.badge
     ? `
     <div style="text-align: center; margin-bottom: 14px;">
-      <span style="display: inline-block; background-color: ${params.badge.bg || '#eff6ff'}; color: ${params.badge.color || '#1d4ed8'}; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 12px; border-radius: 9999px;">
+      <span style="display: inline-block; background-color: ${params.badge.bg || '#D7F8E8'}; color: ${params.badge.color || '#006552'}; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 5px 14px; border-radius: 9999px;">
         ${params.badge.text}
       </span>
     </div>`
     : '';
 
   const subtitleHtml = params.subtitle
-    ? `<p style="font-size: 15px; line-height: 1.5; color: #64748b; margin: 0 0 20px 0; text-align: center;">${params.subtitle}</p>`
+    ? `<p style="font-size: 15px; line-height: 1.5; color: #62748E; margin: 0 0 20px 0; text-align: center;">${params.subtitle}</p>`
     : '';
 
   return `
@@ -82,28 +115,25 @@ function renderEmailLayout(params: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   ${params.previewText ? `<meta name="description" content="${params.previewText}">` : ''}
   <title>${params.title}</title>
-  <!--[if mso]>
-  <noscript>
-    <xml>
-      <o:OfficeDocumentSettings>
-        <o:PixelsPerInch>96</o:PixelsPerInch>
-      </o:OfficeDocumentSettings>
-    </xml>
-  </noscript>
-  <![endif]-->
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 32px 16px; color: #1e293b; -webkit-font-smoothing: antialiased;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #EDF5F2; margin: 0; padding: 32px 16px; color: #101826; -webkit-font-smoothing: antialiased;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; margin: 0 auto;">
-    <!-- Brand Header -->
+    <!-- Brand Header with Logo -->
     <tr>
       <td align="center" style="padding-bottom: 24px;">
         <table role="presentation" cellpadding="0" cellspacing="0">
           <tr>
             <td style="vertical-align: middle;">
-              <img src="https://park-share.ro/assets/logo-mark.png" width="44" height="44" alt="ParkShare" style="display: block; border-radius: 10px; border: 0; background: #2563eb;" onerror="this.style.display='none'" />
+              <!-- Embedded CID Logo image with bulletproof emerald fallback -->
+              <img src="cid:parkshare-logo" width="48" height="48" alt="🅿️" style="display: block; border-radius: 12px; width: 48px; height: 48px; border: 0; background-color: #009967;" />
             </td>
-            <td style="vertical-align: middle; padding-left: 12px;">
-              <span style="font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">Park<span style="color: #2563eb;">Share</span></span>
+            <td style="vertical-align: middle; padding-left: 12px; text-align: left;">
+              <div style="font-size: 26px; font-weight: 800; color: #101826; letter-spacing: -0.5px; line-height: 1.1;">
+                Park<span style="color: #009967;">Share</span>
+              </div>
+              <div style="font-size: 12px; color: #62748E; font-weight: 500; margin-top: 2px;">
+                Park smarter. Share more.
+              </div>
             </td>
           </tr>
         </table>
@@ -113,31 +143,37 @@ function renderEmailLayout(params: {
     <!-- Main Card -->
     <tr>
       <td>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); padding: 36px 32px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #FFFFFF; border-radius: 18px; border: 1px solid #D6E8DF; box-shadow: 0 4px 16px -2px rgba(0, 101, 82, 0.08); overflow: hidden;">
+          <!-- Top Accent Stripe -->
           <tr>
-            <td>
+            <td style="height: 5px; background: linear-gradient(90deg, #009967 0%, #006552 100%); line-height: 5px; font-size: 0;">&nbsp;</td>
+          </tr>
+
+          <!-- Card Content Body -->
+          <tr>
+            <td style="padding: 36px 32px;">
               ${badgeHtml}
-              <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0; text-align: center;">${params.title}</h1>
+              <h1 style="font-size: 22px; font-weight: 700; color: #101826; margin: 0 0 8px 0; text-align: center;">${params.title}</h1>
               ${subtitleHtml}
 
               <!-- Content Slot -->
-              <div style="font-size: 15px; line-height: 1.6; color: #334155;">
+              <div style="font-size: 15px; line-height: 1.6; color: #101826;">
                 ${params.bodyContent}
               </div>
 
               <!-- Footer Signature -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top: 36px; border-top: 1px solid #f1f5f9; padding-top: 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top: 36px; border-top: 1px solid #EAF2EE; padding-top: 24px;">
                 <tr>
-                  <td align="center" style="font-size: 12px; line-height: 1.6; color: #94a3b8;">
-                    <p style="margin: 0 0 6px 0; font-weight: 600; color: #64748b;">
-                      🅿️ ParkShare &bull; Smart Community Parking
+                  <td align="center" style="font-size: 12px; line-height: 1.6; color: #62748E;">
+                    <p style="margin: 0 0 6px 0; font-weight: 700; color: #006552;">
+                      🅿️ ParkShare &bull; Rețeaua inteligentă de parcare din România
                     </p>
                     <p style="margin: 0 0 6px 0;">
-                      <a href="${APP_URL}" style="color: #2563eb; text-decoration: none; font-weight: 500;">park-share.ro</a> &bull;
-                      <a href="mailto:support@park-share.ro" style="color: #2563eb; text-decoration: none; font-weight: 500;">support@park-share.ro</a>
+                      <a href="${APP_URL}" style="color: #009967; text-decoration: none; font-weight: 600;">park-share.ro</a> &bull;
+                      <a href="mailto:support@park-share.ro" style="color: #009967; text-decoration: none; font-weight: 600;">support@park-share.ro</a>
                     </p>
-                    <p style="margin: 0; font-size: 11px; color: #cbd5e1;">
-                      Secured with Resend &bull; Bucharest, Romania
+                    <p style="margin: 0; font-size: 11px; color: #94A3B8;">
+                      Sent from custom domain park-share.ro via Resend
                     </p>
                   </td>
                 </tr>
@@ -154,31 +190,31 @@ function renderEmailLayout(params: {
 }
 
 /**
- * Helper to render high-contrast 6-digit OTP code container.
+ * Helper to render emerald-themed 6-digit OTP code container.
  */
 function renderOtpBox(code: string, label = 'VERIFICATION CODE', validMinutes = 10): string {
   return `
-    <div style="background-color: #f0f7ff; border: 2px dashed #93c5fd; border-radius: 12px; padding: 22px 16px; text-align: center; margin: 24px 0;">
-      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #2563eb; font-weight: 700; margin-bottom: 6px;">
+    <div style="background-color: #EAF9F1; border: 2px dashed #009967; border-radius: 14px; padding: 22px 16px; text-align: center; margin: 24px 0;">
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #009967; font-weight: 700; margin-bottom: 6px;">
         ${label}
       </div>
-      <div style="font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', monospace; font-size: 34px; font-weight: 800; letter-spacing: 10px; color: #1e3a8a; margin: 6px 0;">
+      <div style="font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', monospace; font-size: 36px; font-weight: 800; letter-spacing: 10px; color: #006552; margin: 6px 0;">
         ${code}
       </div>
-      <div style="font-size: 12px; color: #64748b; margin-top: 6px;">
-        Expires in <strong>${validMinutes} minutes</strong> &bull; Do not share this code
+      <div style="font-size: 12px; color: #62748E; margin-top: 6px;">
+        Valabil <strong>${validMinutes} minute</strong> &bull; Nu divulga acest cod nimănui
       </div>
     </div>
   `;
 }
 
 /**
- * Helper to render standard call-to-action button.
+ * Helper to render primary emerald call-to-action button.
  */
 function renderButton(text: string, url: string): string {
   return `
     <div style="text-align: center; margin: 28px 0 16px 0;">
-      <a href="${url}" target="_blank" style="display: inline-block; background-color: #2563eb; color: #ffffff !important; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 30px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25);">
+      <a href="${url}" target="_blank" style="display: inline-block; background-color: #009967; color: #FFFFFF !important; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 153, 103, 0.28);">
         ${text}
       </a>
     </div>
@@ -197,29 +233,29 @@ export async function sendAccountVerificationEmail(params: {
   const verifyLink = params.verifyUrl || `${APP_URL}/verify-email?email=${encodeURIComponent(params.email)}&code=${params.code}`;
 
   const html = renderEmailLayout({
-    previewText: `Your ParkShare verification code is ${params.code}`,
-    badge: { text: 'Account Verification', bg: '#dbeafe', color: '#1e40af' },
-    title: 'Confirm your email address',
-    subtitle: `Welcome, ${params.firstName}! Please verify your account to unlock full access.`,
+    previewText: `Codul tău de verificare ParkShare este ${params.code}`,
+    badge: { text: 'Verificare Cont', bg: '#D7F8E8', color: '#006552' },
+    title: 'Confirmă adresa de email',
+    subtitle: `Bun venit, ${params.firstName}! Confirmă contul pentru a avea acces complet la rețeaua ParkShare.`,
     bodyContent: `
-      <p>Thank you for signing up for ParkShare! To complete your registration and secure your profile, enter the 6-digit confirmation code below in the app:</p>
+      <p>Îți mulțumim că te-ai alăturat comunității <strong>ParkShare</strong>! Pentru a-ți securiza contul și a debloca toate funcțiile, introdu codul de 6 cifre de mai jos în aplicație:</p>
       
-      ${renderOtpBox(params.code, 'ACCOUNT VERIFICATION CODE', 15)}
+      ${renderOtpBox(params.code, 'COD VERIFICARE EMAIL', 15)}
       
-      <p style="text-align: center; margin-bottom: 8px;">Or verify instantly with a single tap:</p>
-      ${renderButton('Verify My Account', verifyLink)}
+      <p style="text-align: center; margin-bottom: 8px; color: #62748E; font-size: 14px;">Sau verifică instant contul cu un singur click:</p>
+      ${renderButton('Confirmă Contul Meu', verifyLink)}
 
-      <div style="background-color: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-top: 24px; font-size: 13px; color: #64748b; border: 1px solid #e2e8f0;">
-        <strong>Didn't create an account?</strong> If you did not sign up for ParkShare, you can safely ignore this email.
+      <div style="background-color: #F9FAFB; border-radius: 10px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #62748E; border: 1px solid #E5E7EB;">
+        <strong>Nu ai creat acest cont?</strong> Dacă nu te-ai înregistrat pe ParkShare, poți ignora în siguranță acest mesaj.
       </div>
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: `${params.code} is your ParkShare confirmation code`,
+    subject: `${params.code} este codul tău de confirmare ParkShare`,
     html,
-    text: `Hello ${params.firstName},\n\nYour ParkShare confirmation code is: ${params.code}\n\nOr click here to verify: ${verifyLink}\n\nThis code expires in 15 minutes.`,
+    text: `Salut ${params.firstName},\n\nCodul tău de confirmare ParkShare este: ${params.code}\n\nSau accesează linkul: ${verifyLink}\n\nCodul expiră în 15 minute.`,
   });
 }
 
@@ -235,29 +271,29 @@ export async function sendPasswordResetEmail(params: {
   const resetLink = params.resetUrl || `${APP_URL}/reset-password?email=${encodeURIComponent(params.email)}&code=${params.code}`;
 
   const html = renderEmailLayout({
-    previewText: `Reset your ParkShare password with code ${params.code}`,
-    badge: { text: 'Security Request', bg: '#fef3c7', color: '#92400e' },
-    title: 'Password Reset Request',
-    subtitle: `Hi ${params.firstName}, we received a request to reset your password.`,
+    previewText: `Resetează parola ParkShare cu codul ${params.code}`,
+    badge: { text: 'Securitate', bg: '#FEF3C7', color: '#92400E' },
+    title: 'Resetare Parolă',
+    subtitle: `Salut ${params.firstName}, am primit o solicitare de resetare a parolei tale.`,
     bodyContent: `
-      <p>Enter the 6-digit PIN below in the ParkShare app to choose a new password:</p>
+      <p>Introdu codul PIN de 6 cifre de mai jos în aplicația ParkShare pentru a-ți alege o parolă nouă:</p>
 
-      ${renderOtpBox(params.code, 'PASSWORD RESET PIN', 15)}
+      ${renderOtpBox(params.code, 'PIN RESETARE PAROLĂ', 15)}
 
-      <p style="text-align: center; margin-bottom: 8px;">Alternatively, reset your password directly online:</p>
-      ${renderButton('Reset Password', resetLink)}
+      <p style="text-align: center; margin-bottom: 8px; color: #62748E; font-size: 14px;">Sau resetează parola direct online:</p>
+      ${renderButton('Resetează Parola', resetLink)}
 
-      <div style="background-color: #fffbeb; border-radius: 8px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #78350f; border: 1px solid #fde68a;">
-        <strong>⚠️ Security Advisory:</strong> If you did NOT request this password reset, please ignore this email or update your password immediately if you suspect unauthorized access.
+      <div style="background-color: #FFFBEB; border-radius: 10px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #78350F; border: 1px solid #FDE68A;">
+        <strong>⚠️ Notă de securitate:</strong> Dacă NU ai solicitat resetarea parolei, ignoră acest email. Parola ta rămâne neschimbată și în siguranță.
       </div>
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: `Password Reset Code: ${params.code}`,
+    subject: `Cod Resetare Parolă: ${params.code}`,
     html,
-    text: `Hello ${params.firstName},\n\nYour ParkShare password reset code is: ${params.code}\n\nOr reset directly: ${resetLink}\n\nThis code expires in 15 minutes. If you did not request this, please ignore.`,
+    text: `Salut ${params.firstName},\n\nCodul tău de resetare a parolei este: ${params.code}\n\nSau resetează direct: ${resetLink}\n\nCodul expiră în 15 minute.`,
   });
 }
 
@@ -269,31 +305,31 @@ export async function sendPasswordChangedAlertEmail(params: {
   firstName: string;
 }) {
   const html = renderEmailLayout({
-    previewText: 'Your ParkShare password was updated successfully',
-    badge: { text: 'Security Notice', bg: '#ecfdf5', color: '#047857' },
-    title: 'Password Successfully Changed',
-    subtitle: `Hello ${params.firstName}, your account password has been updated.`,
+    previewText: 'Parola contului tău ParkShare a fost schimbată',
+    badge: { text: 'Alertă Securitate', bg: '#D7F8E8', color: '#006552' },
+    title: 'Parola a fost actualizată',
+    subtitle: `Salut ${params.firstName}, parola contului tău a fost modificată cu succes.`,
     bodyContent: `
-      <p>This is a confirmation that your ParkShare account password was recently updated at <strong>${new Date().toUTCString()}</strong>.</p>
+      <p>Îți confirmăm că parola asociată contului ParkShare a fost schimbată la data de <strong>${new Date().toUTCString()}</strong>.</p>
       
-      <p>If you made this change, no further action is required.</p>
+      <p>Dacă ai efectuat tu această schimbare, nu este necesară nicio altă acțiune.</p>
 
-      <div style="background-color: #fef2f2; border-radius: 8px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #991b1b; border: 1px solid #fecaca;">
-        <strong>Didn't make this change?</strong> Your account may be compromised. Please contact our security support team immediately at <a href="mailto:security@park-share.ro" style="color: #dc2626; font-weight: 600;">security@park-share.ro</a>.
+      <div style="background-color: #FEF2F2; border-radius: 10px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #991B1B; border: 1px solid #FECACA;">
+        <strong>Nu ai fost tu?</strong> Contul tău poate fi compromis. Te rugăm să contactezi de urgență echipa noastră de securitate la <a href="mailto:security@park-share.ro" style="color: #DC2626; font-weight: 700;">security@park-share.ro</a>.
       </div>
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: 'Security Alert: Your ParkShare password was changed',
+    subject: 'Securitate: Parola contului ParkShare a fost actualizată',
     html,
-    text: `Hello ${params.firstName},\n\nYour ParkShare account password was just successfully changed. If you did not perform this action, please contact security@park-share.ro immediately.`,
+    text: `Salut ${params.firstName},\n\nParola contului tău a fost actualizată cu succes. Dacă nu ai fost tu, contactează imediat security@park-share.ro.`,
   });
 }
 
 // ==========================================
-// 4. TWO-FACTOR AUTHENTICATION (2FA) LOGIN CODE
+// 4. TWO-FACTOR AUTHENTICATION (2FA) CODE
 // ==========================================
 export async function send2FACodeEmail(params: {
   email: string;
@@ -301,26 +337,26 @@ export async function send2FACodeEmail(params: {
   code: string;
 }) {
   const html = renderEmailLayout({
-    previewText: `${params.code} is your 2FA authentication code`,
-    badge: { text: 'Two-Factor Authentication', bg: '#ede9fe', color: '#6d28d9' },
-    title: 'Login Authentication Code',
-    subtitle: `Hello ${params.firstName}, someone is signing in to your ParkShare account.`,
+    previewText: `Codul tău de autentificare 2FA este ${params.code}`,
+    badge: { text: 'Autentificare 2FA', bg: '#D7F8E8', color: '#006552' },
+    title: 'Cod de Autentificare',
+    subtitle: `Salut ${params.firstName}, o încercare de conectare a fost inițiată.`,
     bodyContent: `
-      <p>Enter the security verification code below to authorize your sign-in attempt:</p>
+      <p>Introdu codul de securitate de mai jos pentru a autoriza conectarea în contul tău ParkShare:</p>
 
-      ${renderOtpBox(params.code, '2FA LOGIN CODE', 10)}
+      ${renderOtpBox(params.code, 'COD DE CONECTARE 2FA', 10)}
 
-      <div style="background-color: #f8fafc; border-radius: 8px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #475569; border: 1px solid #e2e8f0;">
-        <strong>Security Notice:</strong> This code was generated for a login attempt at <strong>${new Date().toUTCString()}</strong>. If this wasn't you, someone may have your password. We recommend resetting your password immediately.
+      <div style="background-color: #F9FAFB; border-radius: 10px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #62748E; border: 1px solid #E5E7EB;">
+        <strong>Notă:</strong> Acest cod a fost generat pentru o încercare de conectare la data de <strong>${new Date().toUTCString()}</strong>. Dacă nu ai fost tu, îți recomandăm să schimbi parola imediat.
       </div>
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: `${params.code} is your ParkShare 2FA login code`,
+    subject: `${params.code} este codul tău 2FA ParkShare`,
     html,
-    text: `Hello ${params.firstName},\n\nYour ParkShare 2FA login code is: ${params.code}\n\nThis code expires in 10 minutes. Do not share it with anyone.`,
+    text: `Salut ${params.firstName},\n\nCodul tău de securitate 2FA este: ${params.code}\n\nExpiră în 10 minute. Nu divulga acest cod nimănui.`,
   });
 }
 
@@ -329,31 +365,31 @@ export async function send2FACodeEmail(params: {
 // ==========================================
 export async function sendWelcomeEmail(user: { email: string; firstName: string }) {
   const html = renderEmailLayout({
-    previewText: 'Welcome to ParkShare - the smart community parking network',
-    badge: { text: 'Welcome', bg: '#dcfce7', color: '#166534' },
-    title: `Welcome to ParkShare, ${user.firstName}! 🎉`,
-    subtitle: 'Your smart community parking account is ready.',
+    previewText: 'Bine ai venit în comunitatea ParkShare!',
+    badge: { text: 'Bun Venit', bg: '#D7F8E8', color: '#006552' },
+    title: `Bun venit la ParkShare, ${user.firstName}! 🎉`,
+    subtitle: 'Contul tău inteligent de parcare este activ.',
     bodyContent: `
-      <p>Thank you for joining <strong>ParkShare</strong> — Romania's premier community parking network.</p>
+      <p>Îți mulțumim că te-ai alăturat <strong>ParkShare</strong> — prima rețea comunitară de parcări private din România.</p>
 
-      <div style="background-color: #f0f7ff; border-radius: 12px; padding: 18px 20px; margin: 20px 0; border: 1px solid #bfdbfe;">
-        <p style="margin: 0; font-weight: 700; color: #1e40af; font-size: 14px;">With your new account, you can:</p>
-        <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #1e3a8a; font-size: 14px; line-height: 1.6;">
-          <li><strong>Find & Reserve:</strong> Secure private parking spots instantly on our interactive live map.</li>
-          <li><strong>Monetize:</strong> List your unused parking space and earn guaranteed passive income.</li>
-          <li><strong>Trust & Safety:</strong> Enjoy automatic deposits, dynamic trust ratings, and verified drivers.</li>
+      <div style="background-color: #EAF9F1; border-radius: 14px; padding: 20px 22px; margin: 20px 0; border: 1px solid #B8EAD1;">
+        <p style="margin: 0; font-weight: 700; color: #006552; font-size: 15px;">Ce poți face acum cu contul tău:</p>
+        <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #006552; font-size: 14px; line-height: 1.7;">
+          <li><strong>Găsește & Rezervă:</strong> Locuri de parcare private pe harta noastră interactivă în timp real.</li>
+          <li><strong>Monetizează:</strong> Adaugă locul tău liber de parcare și generează venit pasiv garantat.</li>
+          <li><strong>Siguranță Garantată:</strong> Garanții automate de securitate și evaluare mutuală prin TrustScore.</li>
         </ul>
       </div>
 
-      ${renderButton('Explore Parking Spots', APP_URL)}
+      ${renderButton('Explorează Locurile Libere', APP_URL)}
     `,
   });
 
   return sendEmail({
     to: user.email,
-    subject: 'Welcome to ParkShare!',
+    subject: 'Bun venit la ParkShare!',
     html,
-    text: `Hello ${user.firstName},\n\nWelcome to ParkShare! Start reserving spots or listing your parking spaces today.\n\nVisit: ${APP_URL}`,
+    text: `Salut ${user.firstName},\n\nBun venit la ParkShare! Rezervă locuri de parcare sau adaugă propriul loc pe https://park-share.ro`,
   });
 }
 
@@ -375,43 +411,43 @@ export async function sendBookingConfirmationEmail(params: {
   }).format(params.startTime);
 
   const html = renderEmailLayout({
-    previewText: `Booking confirmed for ${params.spotName}`,
-    badge: { text: 'Booking Active', bg: '#dcfce7', color: '#166534' },
-    title: 'Spot Reserved Successfully',
-    subtitle: `Hi ${params.firstName}, your parking reservation is active!`,
+    previewText: `Rezervare confirmată: ${params.spotName}`,
+    badge: { text: 'Rezervare Activă', bg: '#D7F8E8', color: '#006552' },
+    title: 'Loc Rezervat cu Succes! 🚗',
+    subtitle: `Salut ${params.firstName}, locul tău de parcare te așteaptă!`,
     bodyContent: `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; font-size: 14px;">
-        <tr style="background-color: #f8fafc;">
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500;">Parking Space</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #0f172a;">${params.spotName}</td>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0; border: 1px solid #D6E8DF; border-radius: 12px; overflow: hidden; font-size: 14px;">
+        <tr style="background-color: #F3FCF8;">
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500;">Loc de Parcare</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #101826;">${params.spotName}</td>
         </tr>
         <tr>
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Start Time</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">${formattedDate}</td>
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">Ora Începerii</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #101826; border-top: 1px solid #EAF2EE;">${formattedDate}</td>
         </tr>
-        <tr style="background-color: #f8fafc;">
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Security Deposit Held</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #2563eb; border-top: 1px solid #f1f5f9;">${params.deposit.toFixed(2)} RON</td>
+        <tr style="background-color: #F3FCF8;">
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">Garanție Reținută</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #009967; border-top: 1px solid #EAF2EE;">${params.deposit.toFixed(2)} RON</td>
         </tr>
         <tr>
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Booking Reference</td>
-          <td style="padding: 12px 16px; text-align: right; font-family: monospace; font-size: 13px; color: #475569; border-top: 1px solid #f1f5f9;">${params.reservationId.slice(0, 8).toUpperCase()}</td>
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">ID Rezervare</td>
+          <td style="padding: 12px 16px; text-align: right; font-family: monospace; font-size: 13px; color: #62748E; border-top: 1px solid #EAF2EE;">${params.reservationId.slice(0, 8).toUpperCase()}</td>
         </tr>
       </table>
 
-      <p style="font-size: 13px; color: #64748b; text-align: center;">
-        Remember to click <strong>"End Parking"</strong> in the app when you leave to release your deposit.
+      <p style="font-size: 13px; color: #62748E; text-align: center;">
+        Nu uita să apeși <strong>"Încheie Rezervarea"</strong> în aplicație când părăsești locul pentru a-ți elibera garanția.
       </p>
 
-      ${renderButton('View Booking in App', `${APP_URL}/bookings`)}
+      ${renderButton('Deschide Rezervarea', `${APP_URL}/bookings`)}
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: `Booking Confirmed: ${params.spotName}`,
+    subject: `Rezervare Confirmată: ${params.spotName}`,
     html,
-    text: `Booking confirmed for ${params.spotName} starting ${formattedDate}. Security deposit held: ${params.deposit.toFixed(2)} RON.`,
+    text: `Rezervarea pentru ${params.spotName} a început la ${formattedDate}. Garanție reținută: ${params.deposit.toFixed(2)} RON.`,
   });
 }
 
@@ -433,39 +469,39 @@ export async function sendHostSpotBookedEmail(params: {
   }).format(params.startTime);
 
   const html = renderEmailLayout({
-    previewText: `Your parking spot ${params.spotName} was just booked!`,
-    badge: { text: 'New Reservation', bg: '#ecfdf5', color: '#059669' },
-    title: 'Your Spot Was Booked! 🚗',
-    subtitle: `Great news, ${params.hostName}! A driver just reserved your spot.`,
+    previewText: `Locul tău ${params.spotName} a fost rezervat!`,
+    badge: { text: 'Rezervare Nouă', bg: '#D7F8E8', color: '#006552' },
+    title: 'Locul tău a fost rezervat! 🅿️',
+    subtitle: `Vești excelente, ${params.hostName}! Un șofer a rezervat spațiul tău.`,
     bodyContent: `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; font-size: 14px;">
-        <tr style="background-color: #f8fafc;">
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500;">Spot</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #0f172a;">${params.spotName}</td>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0; border: 1px solid #D6E8DF; border-radius: 12px; overflow: hidden; font-size: 14px;">
+        <tr style="background-color: #F3FCF8;">
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500;">Spațiu Parcare</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #101826;">${params.spotName}</td>
         </tr>
         <tr>
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Driver</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">${params.driverName}</td>
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">Șofer</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #101826; border-top: 1px solid #EAF2EE;">${params.driverName}</td>
         </tr>
-        <tr style="background-color: #f8fafc;">
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Start Time</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">${formattedDate}</td>
+        <tr style="background-color: #F3FCF8;">
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">Ora Sosirii</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #101826; border-top: 1px solid #EAF2EE;">${formattedDate}</td>
         </tr>
         <tr>
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Rate</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #16a34a; border-top: 1px solid #f1f5f9;">${params.hourlyPrice.toFixed(2)} RON / hr</td>
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">Tarif Orar</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #009967; border-top: 1px solid #EAF2EE;">${params.hourlyPrice.toFixed(2)} RON / oră</td>
         </tr>
       </table>
 
-      ${renderButton('View Host Dashboard', `${APP_URL}/provider`)}
+      ${renderButton('Panou Gazdă', `${APP_URL}/provider`)}
     `,
   });
 
   return sendEmail({
     to: params.hostEmail,
-    subject: `New Booking: ${params.spotName} has been reserved`,
+    subject: `Rezervare Nouă: ${params.spotName} a fost rezervat`,
     html,
-    text: `Hello ${params.hostName},\n\nYour spot "${params.spotName}" was just booked by ${params.driverName} starting ${formattedDate} at ${params.hourlyPrice} RON/hr.`,
+    text: `Salut ${params.hostName},\n\nLocul tău "${params.spotName}" a fost rezervat de ${params.driverName} începând cu ${formattedDate} (${params.hourlyPrice} RON/h).`,
   });
 }
 
@@ -482,42 +518,42 @@ export async function sendBookingCompletedDriverEmail(params: {
 }) {
   const durationText = params.durationMinutes < 60
     ? `${Math.max(1, Math.round(params.durationMinutes))} min`
-    : `${(params.durationMinutes / 60).toFixed(1)} hrs`;
+    : `${(params.durationMinutes / 60).toFixed(1)} ore`;
 
   const html = renderEmailLayout({
-    previewText: `Receipt for your parking at ${params.spotName}`,
-    badge: { text: 'Session Completed', bg: '#f1f5f9', color: '#475569' },
-    title: 'Parking Session Completed',
-    subtitle: `Thanks for using ParkShare, ${params.firstName}! Here is your receipt.`,
+    previewText: `Chitanță pentru parcarea la ${params.spotName}`,
+    badge: { text: 'Sesiune Încheiată', bg: '#D7F8E8', color: '#006552' },
+    title: 'Sesiune de Parcare Încheiată',
+    subtitle: `Mulțumim că folosești ParkShare, ${params.firstName}! Iată sumarul sesiunii tale.`,
     bodyContent: `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; font-size: 14px;">
-        <tr style="background-color: #f8fafc;">
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500;">Spot</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #0f172a;">${params.spotName}</td>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0; border: 1px solid #D6E8DF; border-radius: 12px; overflow: hidden; font-size: 14px;">
+        <tr style="background-color: #F3FCF8;">
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500;">Loc de Parcare</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #101826;">${params.spotName}</td>
         </tr>
         <tr>
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Duration</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #0f172a; border-top: 1px solid #f1f5f9;">${durationText}</td>
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">Durată</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #101826; border-top: 1px solid #EAF2EE;">${durationText}</td>
         </tr>
-        <tr style="background-color: #f8fafc;">
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Deposit Released</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #16a34a; border-top: 1px solid #f1f5f9;">+${params.refundedDeposit.toFixed(2)} RON</td>
+        <tr style="background-color: #F3FCF8;">
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">Garanție Eliberată</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #009967; border-top: 1px solid #EAF2EE;">+${params.refundedDeposit.toFixed(2)} RON</td>
         </tr>
         <tr>
-          <td style="padding: 12px 16px; color: #64748b; font-weight: 500; border-top: 1px solid #f1f5f9;">Total Parking Fee</td>
-          <td style="padding: 12px 16px; text-align: right; font-weight: 700; color: #0f172a; border-top: 1px solid #f1f5f9;">${params.totalCost.toFixed(2)} RON</td>
+          <td style="padding: 12px 16px; color: #62748E; font-weight: 500; border-top: 1px solid #EAF2EE;">Cost Total Parcare</td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #101826; border-top: 1px solid #EAF2EE;">${params.totalCost.toFixed(2)} RON</td>
         </tr>
       </table>
 
-      ${renderButton('Leave a Review', `${APP_URL}/bookings`)}
+      ${renderButton('Lasă o Recenzie', `${APP_URL}/bookings`)}
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: `Parking Receipt: ${params.spotName} (${params.totalCost.toFixed(2)} RON)`,
+    subject: `Chitanță Parcare: ${params.spotName} (${params.totalCost.toFixed(2)} RON)`,
     html,
-    text: `Your parking at ${params.spotName} has concluded. Duration: ${durationText}. Total fee: ${params.totalCost.toFixed(2)} RON. Deposit released.`,
+    text: `Sesiunea de parcare la ${params.spotName} s-a încheiat. Durată: ${durationText}. Total: ${params.totalCost.toFixed(2)} RON. Garanție eliberată.`,
   });
 }
 
@@ -531,26 +567,26 @@ export async function sendHostEarningsEmail(params: {
   earnings: number;
 }) {
   const html = renderEmailLayout({
-    previewText: `You earned ${params.earnings.toFixed(2)} RON on ParkShare!`,
-    badge: { text: 'Earnings Credited', bg: '#dcfce7', color: '#15803d' },
-    title: 'Payout Added to Wallet! 💰',
-    subtitle: `Hi ${params.hostName}, your spot earnings have been credited.`,
+    previewText: `Ai câștigat ${params.earnings.toFixed(2)} RON pe ParkShare!`,
+    badge: { text: 'Venit Înregistrat', bg: '#D7F8E8', color: '#006552' },
+    title: 'Banii au intrat în Portofel! 💰',
+    subtitle: `Salut ${params.hostName}, câștigul tău pentru locul de parcare a fost transferat.`,
     bodyContent: `
-      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 24px; text-align: center; margin: 20px 0;">
-        <div style="font-size: 13px; color: #166534; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Credited to Wallet</div>
-        <div style="font-size: 36px; font-weight: 800; color: #15803d; margin: 8px 0;">+${params.earnings.toFixed(2)} RON</div>
-        <div style="font-size: 13px; color: #4ade80;">Spot: <strong>${params.spotName}</strong></div>
+      <div style="background-color: #EAF9F1; border: 1.5px solid #B8EAD1; border-radius: 14px; padding: 24px; text-align: center; margin: 20px 0;">
+        <div style="font-size: 13px; color: #006552; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Adăugat în Portofel</div>
+        <div style="font-size: 38px; font-weight: 800; color: #006552; margin: 8px 0;">+${params.earnings.toFixed(2)} RON</div>
+        <div style="font-size: 13px; color: #009967; font-weight: 600;">Loc: <strong>${params.spotName}</strong></div>
       </div>
 
-      ${renderButton('View Wallet Balance', `${APP_URL}/wallet`)}
+      ${renderButton('Vezi Soldul Portofelului', `${APP_URL}/wallet`)}
     `,
   });
 
   return sendEmail({
     to: params.hostEmail,
-    subject: `💰 You earned ${params.earnings.toFixed(2)} RON from ${params.spotName}`,
+    subject: `💰 Ai câștigat ${params.earnings.toFixed(2)} RON pentru ${params.spotName}`,
     html,
-    text: `You just earned ${params.earnings.toFixed(2)} RON from parking on "${params.spotName}". The funds have been added to your ParkShare wallet balance.`,
+    text: `Ai câștigat ${params.earnings.toFixed(2)} RON pentru parcarea pe "${params.spotName}". Fondurile sunt disponibile în portofelul tău.`,
   });
 }
 
@@ -564,26 +600,26 @@ export async function sendWalletDepositEmail(params: {
   newBalance: number;
 }) {
   const html = renderEmailLayout({
-    previewText: `Deposit confirmed: +${params.amount.toFixed(2)} RON added`,
-    badge: { text: 'Wallet Top-Up', bg: '#dbeafe', color: '#1d4ed8' },
-    title: 'Wallet Deposit Confirmed',
-    subtitle: `Hello ${params.firstName}, your top-up was processed successfully.`,
+    previewText: `Depunere confirmată: +${params.amount.toFixed(2)} RON adăugați`,
+    badge: { text: 'Alimentare Portofel', bg: '#D7F8E8', color: '#006552' },
+    title: 'Alimentare Portofel Confirmată',
+    subtitle: `Salut ${params.firstName}, depunerea ta a fost procesată cu succes.`,
     bodyContent: `
-      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 24px; text-align: center; margin: 20px 0;">
-        <div style="font-size: 13px; color: #1e40af; font-weight: 600; text-transform: uppercase;">Amount Added</div>
-        <div style="font-size: 36px; font-weight: 800; color: #1e3a8a; margin: 8px 0;">+${params.amount.toFixed(2)} RON</div>
-        <div style="font-size: 14px; color: #3b82f6;">Updated Balance: <strong>${params.newBalance.toFixed(2)} RON</strong></div>
+      <div style="background-color: #EAF9F1; border: 1.5px solid #B8EAD1; border-radius: 14px; padding: 24px; text-align: center; margin: 20px 0;">
+        <div style="font-size: 13px; color: #006552; font-weight: 700; text-transform: uppercase;">Sumă Depusă</div>
+        <div style="font-size: 38px; font-weight: 800; color: #006552; margin: 8px 0;">+${params.amount.toFixed(2)} RON</div>
+        <div style="font-size: 14px; color: #009967; font-weight: 600;">Sold Actualizat: <strong>${params.newBalance.toFixed(2)} RON</strong></div>
       </div>
 
-      ${renderButton('Open Wallet', `${APP_URL}/wallet`)}
+      ${renderButton('Deschide Portofelul', `${APP_URL}/wallet`)}
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: `Wallet Top-Up Confirmed (+${params.amount.toFixed(2)} RON)`,
+    subject: `Alimentare Portofel Confirmată (+${params.amount.toFixed(2)} RON)`,
     html,
-    text: `Hello ${params.firstName},\n\nYour deposit of ${params.amount.toFixed(2)} RON has been added to your wallet. Your new balance is ${params.newBalance.toFixed(2)} RON.`,
+    text: `Salut ${params.firstName},\n\nDepunerea de ${params.amount.toFixed(2)} RON a fost adăugată. Noul tău sold este ${params.newBalance.toFixed(2)} RON.`,
   });
 }
 
@@ -601,32 +637,32 @@ export async function sendPassActivatedEmail(params: {
   }).format(params.activeUntil);
 
   const passNames: Record<string, string> = {
-    'commuter': 'Commuter Pass (Mon-Fri)',
-    'night-owl': 'Night-Owl Pass (Overnight)',
-    'park-plus': 'ParkPlus All-Access Pass',
+    'commuter': 'Abonament Navetist (Luni-Vineri)',
+    'night-owl': 'Abonament Night-Owl (Nocturn)',
+    'park-plus': 'Abonament ParkPlus All-Access',
   };
   const passTitle = passNames[params.passKind] || params.passKind;
 
   const html = renderEmailLayout({
-    previewText: `Your ${passTitle} is now active`,
-    badge: { text: 'Membership Pass', bg: '#f3e8ff', color: '#7e22ce' },
-    title: 'Parking Pass Activated! 🎟️',
-    subtitle: `Congratulations ${params.firstName}, your pass is ready to use.`,
+    previewText: `Abonamentul ${passTitle} este acum activ`,
+    badge: { text: 'Abonament Activ', bg: '#D7F8E8', color: '#006552' },
+    title: 'Abonament Activat! 🎟️',
+    subtitle: `Felicitări ${params.firstName}, abonamentul tău este gata de utilizare.`,
     bodyContent: `
-      <div style="background-color: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 22px; margin: 20px 0;">
-        <h3 style="margin: 0 0 6px 0; color: #6b21a8; font-size: 18px;">${passTitle}</h3>
-        <p style="margin: 0; color: #7e22ce; font-size: 14px;">Valid until: <strong>${expiryFormatted}</strong></p>
+      <div style="background-color: #EAF9F1; border: 1.5px solid #B8EAD1; border-radius: 14px; padding: 22px; margin: 20px 0;">
+        <h3 style="margin: 0 0 6px 0; color: #006552; font-size: 18px;">${passTitle}</h3>
+        <p style="margin: 0; color: #009967; font-size: 14px; font-weight: 600;">Valabil până la: <strong>${expiryFormatted}</strong></p>
       </div>
 
-      ${renderButton('Explore Pass Spots', `${APP_URL}/passes`)}
+      ${renderButton('Vezi Locurile Eligibile', `${APP_URL}/passes`)}
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: `Pass Activated: ${passTitle}`,
+    subject: `Abonament Activat: ${passTitle}`,
     html,
-    text: `Your ${passTitle} has been activated and is valid until ${expiryFormatted}.`,
+    text: `Abonamentul ${passTitle} a fost activat și este valabil până la ${expiryFormatted}.`,
   });
 }
 
@@ -642,45 +678,44 @@ export async function sendModerationNoticeEmail(params: {
 }) {
   const isSuspension = params.action === 'SUSPEND' || params.action === 'AUTO_SUSPEND';
   const isBan = params.action === 'BAN';
-  const isWarning = params.action === 'WARN' || params.action === 'AUTO_WARN';
 
   const title = isBan
-    ? 'Account Permanently Suspended'
+    ? 'Cont Suspendat Permanent'
     : isSuspension
-    ? 'Temporary Account Suspension'
-    : 'Trust & Safety Warning';
+    ? 'Suspendare Temporară a Contului'
+    : 'Avertisment Încredere & Siguranță';
 
-  const badgeColor = isBan ? '#7f1d1d' : isSuspension ? '#991b1b' : '#92400e';
-  const badgeBg = isBan ? '#fee2e2' : isSuspension ? '#fee2e2' : '#fef3c7';
+  const badgeColor = isBan ? '#7F1D1D' : isSuspension ? '#991B1B' : '#92400E';
+  const badgeBg = isBan ? '#FEE2E2' : isSuspension ? '#FEE2E2' : '#FEF3C7';
 
   const html = renderEmailLayout({
-    previewText: `Important Trust & Safety Notice: ${title}`,
-    badge: { text: 'Trust & Safety', bg: badgeBg, color: badgeColor },
+    previewText: `Notificare Siguranță: ${title}`,
+    badge: { text: 'Încredere & Siguranță', bg: badgeBg, color: badgeColor },
     title,
-    subtitle: `Hello ${params.firstName}, please review this moderation update regarding your account.`,
+    subtitle: `Salut ${params.firstName}, te rugăm să consulți această decizie de moderare.`,
     bodyContent: `
-      <div style="background-color: #fff1f2; border: 1px solid #fecdd3; border-radius: 10px; padding: 18px; margin: 20px 0;">
-        <p style="margin: 0 0 8px 0; font-weight: 700; color: #9f1239;">Reason for this action:</p>
-        <p style="margin: 0; color: #881337; font-size: 14px;">${params.reason || 'Violation of community trust guidelines or repeated low reviews.'}</p>
+      <div style="background-color: #FFF1F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 18px; margin: 20px 0;">
+        <p style="margin: 0 0 8px 0; font-weight: 700; color: #9F1239;">Motivul acțiunii:</p>
+        <p style="margin: 0; color: #881337; font-size: 14px;">${params.reason || 'Încălcarea standardelor de încredere sau recenzii negative repetate.'}</p>
         ${
           params.suspendedUntil
-            ? `<p style="margin: 12px 0 0 0; font-size: 13px; color: #be123c;">Suspension expires: <strong>${new Intl.DateTimeFormat('ro-RO', { dateStyle: 'medium', timeStyle: 'short' }).format(params.suspendedUntil)}</strong></p>`
+            ? `<p style="margin: 12px 0 0 0; font-size: 13px; color: #BE123C;">Expirare suspendare: <strong>${new Intl.DateTimeFormat('ro-RO', { dateStyle: 'medium', timeStyle: 'short' }).format(params.suspendedUntil)}</strong></p>`
             : ''
         }
       </div>
 
-      <p style="font-size: 14px; color: #475569;">
-        If you believe this action was applied in error, you may submit a formal appeal through your profile dashboard.
+      <p style="font-size: 14px; color: #62748E;">
+        Dacă consideri că această măsură a fost luată dintr-o eroare, poți depune o contestație direct din profilul tău.
       </p>
 
-      ${renderButton('Submit an Appeal', `${APP_URL}/standing`)}
+      ${renderButton('Depune Contestație', `${APP_URL}/standing`)}
     `,
   });
 
   return sendEmail({
     to: params.email,
-    subject: `Important Notice: ${title}`,
+    subject: `Notificare Importantă: ${title}`,
     html,
-    text: `Hello ${params.firstName},\n\nA moderation action (${params.action}) was applied to your ParkShare account.\nReason: ${params.reason || 'Community guidelines violation'}.\n\nYou can review or appeal this decision at ${APP_URL}/standing`,
+    text: `Salut ${params.firstName},\n\nO acțiune de moderare (${params.action}) a fost aplicată contului tău.\nMotiv: ${params.reason || 'Standarde comunitare'}.\n\nPoți contesta decizia la ${APP_URL}/standing`,
   });
 }
