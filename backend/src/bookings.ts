@@ -3,6 +3,7 @@ import { prisma } from './prisma';
 import { requireAuth, requireActiveUser, AuthRequest } from './middleware';
 import { z } from 'zod';
 import { quoteDeposit } from './deposit';
+import { sendBookingConfirmationEmail } from './email';
 
 const router = Router();
 
@@ -85,11 +86,26 @@ router.post('/', requireAuth, requireActiveUser, async (req: AuthRequest, res: a
           securityDeposit: requiredDeposit,
           status: 'ACTIVE'
         },
-        include: { spot: true }
+        include: { spot: true, user: true }
       });
 
       return reservation;
     });
+
+    // Send confirmation email asynchronously via Resend
+    if (result && (result as any).user?.email) {
+      const user = (result as any).user;
+      sendBookingConfirmationEmail({
+        email: user.email,
+        firstName: user.firstName,
+        spotName: result.spot.name,
+        startTime: result.startTime,
+        deposit: result.securityDeposit,
+        reservationId: result.id,
+      }).catch(err => {
+        console.error('[Booking Confirmation Email Error]:', err);
+      });
+    }
 
     res.json({ message: 'Booking successful', reservation: result });
   } catch (error: any) {

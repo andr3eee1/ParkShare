@@ -6,6 +6,7 @@ import { z } from 'zod';
 import multer from 'multer';
 import path from 'path';
 import { requireAuth, AuthRequest } from './middleware';
+import { sendWelcomeEmail } from './email';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_in_production';
@@ -68,6 +69,11 @@ router.post('/register', async (req, res): Promise<any> => {
 
     const token = jwt.sign({ userId: user.id, role: user.role,
         walletBalance: user.walletBalance }, JWT_SECRET, { expiresIn: '7d' });
+
+    // Send welcome email via Resend asynchronously (don't block response)
+    sendWelcomeEmail({ email: user.email, firstName: user.firstName }).catch(err => {
+      console.error('[Welcome Email Error]:', err);
+    });
 
     res.status(201).json({
       message: 'User created successfully',
