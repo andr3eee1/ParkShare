@@ -1,8 +1,65 @@
-import { commonStyles } from '../../theme/commonStyles';
+import { StyleSheet } from 'react-native';
+import { tokens } from '../../theme/tokens';
 
-export const styles = {
-  card: commonStyles.placeholderCard,
-  iconWrap: commonStyles.placeholderIcon,
-  title: commonStyles.placeholderTitle,
-  body: commonStyles.placeholderBody,
-};
+export const styles = StyleSheet.create({
+  stateCard: { alignItems: 'center', padding: 28 },
+  iconWrap: {
+    alignItems: 'center',
+    backgroundColor: tokens.colors.emeraldTint,
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
+    marginBottom: 14,
+    width: 56,
+  },
+  errorIconWrap: { backgroundColor: '#FDECEC' },
+  title: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingMedium, fontSize: 17 },
+  body: {
+    color: tokens.colors.secondaryText,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: tokens.colors.primaryText,
+    borderRadius: 10,
+    marginTop: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  retryText: { color: tokens.colors.white, fontFamily: tokens.typography.bodySemiBold, fontSize: 13 },
+  stateText: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, marginTop: 10 },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitle: { color: tokens.colors.primaryText, fontFamily: tokens.typography.headingMedium, fontSize: 16 },
+  sectionAction: { color: tokens.colors.emerald, fontFamily: tokens.typography.bodySemiBold, fontSize: 13 },
+  notificationCard: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    marginBottom: 12,
+    padding: 16,
+  },
+  unreadCard: { borderColor: tokens.colors.emerald },
+  notificationIcon: {
+    alignItems: 'center',
+    backgroundColor: '#EEF2F5',
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
+    marginRight: 12,
+    width: 40,
+  },
+  unreadIcon: { backgroundColor: tokens.colors.emeraldTint },
+  notificationContent: { flex: 1 },
+  notificationTitleRow: { alignItems: 'center', flexDirection: 'row' },
+  notificationTitle: { color: tokens.colors.primaryText, flex: 1, fontFamily: tokens.typography.bodySemiBold, fontSize: 15 },
+  unreadTitle: { fontFamily: tokens.typography.headingMedium },
+  unreadDot: { backgroundColor: tokens.colors.emerald, borderRadius: 4, height: 8, marginLeft: 8, width: 8 },
+  notificationBody: { color: tokens.colors.secondaryText, fontFamily: tokens.typography.body, fontSize: 13, lineHeight: 19, marginTop: 5 },
+  notificationDate: { color: '#8A98A4', fontFamily: tokens.typography.body, fontSize: 11, marginTop: 8 },
+});

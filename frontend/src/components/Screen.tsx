@@ -1,5 +1,16 @@
 import React from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  type RefreshControlProps,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +27,8 @@ interface ScreenProps {
   children: React.ReactNode;
   /** Wrap the scroll content in a KeyboardAvoidingView (use for forms). */
   keyboardAvoiding?: boolean;
+  /** Optional native pull-to-refresh control for scrollable screens. */
+  refreshControl?: React.ReactElement<RefreshControlProps>;
   /** Content column max width. Use a larger value for dashboard-style pages. */
   maxWidth?: number;
   contentStyle?: StyleProp<ViewStyle>;
@@ -25,6 +38,7 @@ interface ScreenProps {
 export const Screen: React.FC<ScreenProps> = ({
   children,
   keyboardAvoiding = false,
+  refreshControl,
   maxWidth = 640,
   contentStyle,
   style,
@@ -32,6 +46,7 @@ export const Screen: React.FC<ScreenProps> = ({
   const body = (
     <ScrollView
       contentContainerStyle={[styles.content, { maxWidth }, contentStyle]}
+      refreshControl={refreshControl}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
