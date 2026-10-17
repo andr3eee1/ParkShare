@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Switch,
@@ -264,10 +265,18 @@ export const AdminManagementScreen = () => {
     });
   }, [config, filter, query, records]);
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('AdminDashboard');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Go back">
+        <TouchableOpacity style={styles.backButton} onPress={handleBack} accessibilityLabel="Go back">
           <Ionicons name="arrow-back" size={21} color={tokens.colors.primaryText} />
         </TouchableOpacity>
         <View style={styles.headerCopy}>
@@ -333,8 +342,8 @@ export const AdminManagementScreen = () => {
           <TouchableOpacity
             style={styles.recordCard}
             activeOpacity={0.8}
-            onPress={() =>
-              navigation.navigate('AdminRecord', {
+            onPress={() => {
+              const recordPayload = {
                 title: item.title,
                 subtitle: item.subtitle,
                 meta: item.meta,
@@ -345,8 +354,15 @@ export const AdminManagementScreen = () => {
                 entityId: item.entityId,
                 accountStatus: item.accountStatus,
                 rawData: item.rawData,
-              })
-            }
+                returnScreen: route.name,
+              };
+              if (Platform.OS === 'web' && typeof window !== 'undefined' && window.sessionStorage) {
+                try {
+                  window.sessionStorage.setItem('parkshare_admin_record_cache', JSON.stringify(recordPayload));
+                } catch {}
+              }
+              navigation.navigate('AdminRecord', recordPayload);
+            }}
           >
             <View style={[styles.recordIcon, { backgroundColor: `${item.statusColor}18` }]}>
               <Ionicons name={item.icon} size={20} color={item.statusColor} />
@@ -376,7 +392,50 @@ export const AdminManagementScreen = () => {
 export const AdminRecordScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const record = route.params || {};
+
+  const getInitialRecord = () => {
+    if (route.params && route.params.entityId) {
+      return route.params;
+    }
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        const cached = window.sessionStorage.getItem('parkshare_admin_record_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.entityId) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return route.params || {};
+  };
+
+  const [record, setRecord] = useState<any>(getInitialRecord);
+
+  useEffect(() => {
+    if (route.params && route.params.entityId) {
+      setRecord(route.params);
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          window.sessionStorage.setItem('parkshare_admin_record_cache', JSON.stringify(route.params));
+        } catch {}
+      }
+    }
+  }, [route.params]);
+
+  const updateCachedRecord = (patch: any) => {
+    setRecord((prev: any) => {
+      const next = { ...prev, ...patch };
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          window.sessionStorage.setItem('parkshare_admin_record_cache', JSON.stringify(next));
+        } catch {}
+      }
+      return next;
+    });
+  };
+
   const { token } = useContext(AuthContext);
   const { alert } = useAlert();
 
@@ -385,6 +444,28 @@ export const AdminRecordScreen = () => {
   const isBooking = record.entityType === 'BOOKING' && !!record.entityId;
   const isReport = record.entityType === 'REPORT' && !!record.entityId;
   const isEmail = record.entityType === 'EMAIL' && !!record.entityId;
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    const fallbackScreen =
+      record.returnScreen ||
+      (isUser
+        ? 'AdminUsers'
+        : isSpace
+        ? 'AdminSpaces'
+        : isBooking
+        ? 'AdminBookings'
+        : isReport
+        ? 'AdminReports'
+        : isEmail
+        ? 'AdminEmails'
+        : 'AdminDashboard');
+
+    navigation.navigate(fallbackScreen);
+  };
 
   // Local live state
   const [localTitle, setLocalTitle] = useState(record.title || '');
@@ -533,7 +614,7 @@ export const AdminRecordScreen = () => {
     try {
       await adminDelete(token, `/admin/spaces/${record.entityId}`);
       alert('Deleted', 'Parking space removed successfully.', undefined, 'success');
-      navigation.goBack();
+      handleBack();
     } catch (err: any) {
       alert('Cannot Delete', err?.message || 'Could not delete parking space.', undefined, 'error');
     } finally {
@@ -609,10 +690,41 @@ export const AdminRecordScreen = () => {
       ? tokens.colors.warningAmber
       : tokens.colors.danger;
 
+  if (!record.entityId) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack} accessibilityLabel="Go back">
+            <Ionicons name="arrow-back" size={21} color={tokens.colors.primaryText} />
+          </TouchableOpacity>
+          <View style={styles.headerCopy}>
+            <Text style={styles.title}>Record details</Text>
+            <Text style={styles.subtitle}>No record selected</Text>
+          </View>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Ionicons name="document-text-outline" size={48} color={tokens.colors.secondaryText} />
+          <Text style={{ fontFamily: tokens.typography.headingBold, fontSize: 18, color: tokens.colors.primaryText, marginTop: 14 }}>
+            No record selected
+          </Text>
+          <Text style={{ fontFamily: tokens.typography.body, fontSize: 14, color: tokens.colors.secondaryText, textAlign: 'center', marginTop: 6, marginBottom: 20 }}>
+            Select an item from one of the admin management tables to view its details.
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryActionButton}
+            onPress={handleBack}
+          >
+            <Text style={styles.primaryActionText}>Back to Management</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Go back">
+        <TouchableOpacity style={styles.backButton} onPress={handleBack} accessibilityLabel="Go back">
           <Ionicons name="arrow-back" size={21} color={tokens.colors.primaryText} />
         </TouchableOpacity>
         <View style={styles.headerCopy}>

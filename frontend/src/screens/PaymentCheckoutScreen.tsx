@@ -28,6 +28,14 @@ export const PaymentCheckoutScreen = () => {
   const walletBalance = user?.walletBalance || 0;
   const canAfford = walletBalance >= amount;
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainApp', { screen: 'Explore' });
+    }
+  };
+
   const handleTopUp = async () => {
     setTopUpLoading(true);
     try {
@@ -108,18 +116,18 @@ export const PaymentCheckoutScreen = () => {
             <Text style={{ fontFamily: tokens.typography.body, fontSize: 16, color: tokens.colors.secondaryText, marginTop: 12, textAlign: 'center', marginBottom: 24 }}>
               You successfully paid {amount.toFixed(2)} RON.
             </Text>
-            <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+            <TouchableOpacity style={styles.closeButton} onPress={handleBack}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       ) : (
         <>
-          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => navigation.goBack()} disabled={processing} />
+          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleBack} disabled={processing} />
           <SlideUpView style={styles.sheetContainer} draggable={true} minimizedOffset={600} initialMinimized={false}>
             <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
               <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} disabled={processing}>
+                <TouchableOpacity style={styles.backButton} onPress={handleBack} disabled={processing}>
                   <Ionicons name="close" size={24} color={tokens.colors.primaryText} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Checkout</Text>

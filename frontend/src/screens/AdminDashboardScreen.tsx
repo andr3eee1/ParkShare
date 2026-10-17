@@ -161,11 +161,19 @@ export const AdminDashboardScreen = () => {
     { label: 'Active passes', count: overview ? String(overview.passes.active) : '—', description: 'Subscriptions currently active', icon: 'card-outline', color: tokens.colors.warningAmber },
   ];
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainApp', { screen: 'Account' });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Go back">
+          <TouchableOpacity style={styles.backButton} onPress={handleBack} accessibilityLabel="Go back">
             <Ionicons name="arrow-back" size={21} color={tokens.colors.primaryText} />
           </TouchableOpacity>
           <View style={styles.headerCopy}>

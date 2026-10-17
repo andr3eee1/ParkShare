@@ -78,6 +78,9 @@ interface ScreenHeaderProps {
   showBack?: boolean;
   /** Custom back handler. Defaults to navigation.goBack(). */
   onBack?: () => void;
+  /** Optional fallback screen route when navigation cannot go back (e.g. after browser refresh). Defaults to 'MainApp' (Account tab). */
+  fallbackRoute?: string;
+  fallbackScreen?: string;
   /** Optional element rendered on the right side of the header row. */
   right?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -91,12 +94,32 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   eyebrow,
   showBack = true,
   onBack,
+  fallbackRoute,
+  fallbackScreen,
   right,
   style,
   variant = 'gradient',
 }) => {
   const navigation = useNavigation<any>();
-  const handleBack = onBack ?? (() => navigation.goBack());
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    if (fallbackRoute) {
+      if (fallbackScreen) {
+        navigation.navigate(fallbackRoute, { screen: fallbackScreen });
+      } else {
+        navigation.navigate(fallbackRoute);
+      }
+      return;
+    }
+    navigation.navigate('MainApp', { screen: 'Account' });
+  };
   const onGradient = variant === 'gradient';
 
   const body = (

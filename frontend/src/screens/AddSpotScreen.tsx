@@ -41,7 +41,7 @@ export const AddSpotScreen = () => {
 
       if (res.data) {
         alert('Success', 'Spot created!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
+          { text: 'OK', onPress: handleBack }
         ], 'success');
       }
     } catch (err: any) {
@@ -52,11 +52,19 @@ export const AddSpotScreen = () => {
     }
   };
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      (navigation as any).navigate('MainApp', { screen: 'Explore' });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={handleBack}>
             <Ionicons name="close" size={28} color={tokens.colors.primaryText} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add Parking Spot</Text>

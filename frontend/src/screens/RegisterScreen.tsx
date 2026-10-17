@@ -52,6 +52,14 @@ export const RegisterScreen = () => {
     }
   };
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Login');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <BrandGradient style={StyleSheet.absoluteFill} />
@@ -63,7 +71,7 @@ export const RegisterScreen = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.content}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back">
+            <TouchableOpacity style={styles.backButton} onPress={handleBack} accessibilityRole="button" accessibilityLabel="Go back">
               <Ionicons name="arrow-back" size={22} color={tokens.colors.white} />
             </TouchableOpacity>
 
