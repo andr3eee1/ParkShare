@@ -86,7 +86,7 @@ router.post('/register', async (req, res): Promise<any> => {
     const token = jwt.sign(
       { userId: user.id, role: user.role, walletBalance: user.walletBalance },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '30d' }
     );
 
     // Send account confirmation email with 6-digit code via Resend
@@ -256,7 +256,7 @@ router.post('/login', async (req, res): Promise<any> => {
     const token = jwt.sign(
       { userId: user.id, role: user.role, walletBalance: user.walletBalance },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '30d' }
     );
 
     res.json({
@@ -299,7 +299,7 @@ router.post('/login-2fa', async (req, res): Promise<any> => {
     const token = jwt.sign(
       { userId: user.id, role: user.role, walletBalance: user.walletBalance },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '30d' }
     );
 
     res.json({
@@ -643,6 +643,30 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: any): Promise<any> 
     });
   } catch (error: any) {
     console.error('Get profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/refresh', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = (req as AuthRequest).user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role, walletBalance: user.walletBalance },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      user: toPublicUser(user),
+    });
+  } catch (error: any) {
+    console.error('Refresh token error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

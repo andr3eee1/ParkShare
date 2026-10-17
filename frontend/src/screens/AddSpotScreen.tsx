@@ -7,6 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { Map } from '../components/Map';
 import { useAlert } from '../context/AlertContext';
+import { apiClient } from '../api/client';
 import { styles } from './AddSpotScreen.styles';
 
 export const AddSpotScreen = () => {
@@ -30,31 +31,22 @@ export const AddSpotScreen = () => {
 
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/spots`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          price: parseFloat(price),
-          latitude,
-          longitude
-        })
+      const res = await apiClient.post('/spots', {
+        name,
+        description,
+        price: parseFloat(price),
+        latitude,
+        longitude
       });
 
-      if (res.ok) {
+      if (res.data) {
         alert('Success', 'Spot created!', [
           { text: 'OK', onPress: () => navigation.goBack() }
         ], 'success');
-      } else {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to create spot');
       }
     } catch (err: any) {
-      alert('Error', err.message, undefined, 'error');
+      const msg = err.response?.data?.error || err.message || 'Failed to create spot';
+      alert('Error', typeof msg === 'string' ? msg : JSON.stringify(msg), undefined, 'error');
     } finally {
       setLoading(false);
     }

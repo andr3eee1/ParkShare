@@ -9,6 +9,30 @@ export class ApiRequestError extends Error {
   }
 }
 
+type UnauthorizedListener = () => void;
+const unauthorizedListeners = new Set<UnauthorizedListener>();
+
+export const onUnauthorized = (listener: UnauthorizedListener) => {
+  unauthorizedListeners.add(listener);
+  return () => {
+    unauthorizedListeners.delete(listener);
+  };
+};
+
+export const triggerUnauthorized = async () => {
+  try {
+    await AsyncStorage.removeItem('userToken');
+    await AsyncStorage.removeItem('userData');
+  } catch {}
+  unauthorizedListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (e) {
+      console.error('Error in unauthorized listener:', e);
+    }
+  });
+};
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -28,10 +52,33 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+    const isPublicAuthRoute =
+      url.includes('/auth/login') ||
+      url.includes('/auth/register') ||
+      url.includes('/auth/reset-password') ||
+      url.includes('/auth/verify-email') ||
+      url.includes('/auth/forgot-password');
+
+    if (status === 401 && !isPublicAuthRoute) {
+      console.warn('[Session Expired] 401 Unauthorized received on', url);
+      await triggerUnauthorized();
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const adminApi = async (token: string, path: string): Promise<any> => {
   const response = await fetch(getApiUrl(path), {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (response.status === 401) {
+    await triggerUnauthorized();
+  }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new ApiRequestError(body.error || 'Unable to load admin data', response.status);
   return body;
@@ -46,6 +93,9 @@ export const adminPost = async (token: string, path: string, payload: any = {}):
     },
     body: JSON.stringify(payload),
   });
+  if (response.status === 401) {
+    await triggerUnauthorized();
+  }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = typeof body.error === 'string' ? body.error : 'Unable to apply admin action';

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../api/config';
+import { onUnauthorized } from '../api/client';
 
 type User = {
   id: string;
@@ -46,6 +47,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Automatically log out when any API call returns 401 Unauthorized
+    const unsubscribe = onUnauthorized(() => {
+      console.warn('[AuthContext] Session expired, resetting user state.');
+      setUser(null);
+      setToken(null);
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
     const bootstrapAsync = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('userToken');
@@ -54,10 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           try {
             const parsedUser = JSON.parse(storedUser);
             if (parsedUser && typeof parsedUser === 'object') {
-              setToken(storedToken);
-              setUser(parsedUser);
-
-              // Fetch the latest user profile to sync wallet balance and other data
+              // Fetch latest profile from server to validate session and sync state
               try {
                 const response = await fetch(`${API_BASE_URL}/auth/me`, {
                   method: 'GET',
@@ -70,35 +78,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (response.ok) {
                   const data = await response.json();
                   if (data.user) {
+                    setToken(storedToken);
                     setUser(data.user);
                     await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+                  } else {
+                    setToken(storedToken);
+                    setUser(parsedUser);
                   }
-                } else if (response.status === 404) {
-                  // Fallback: If /auth/me is not deployed yet, use PUT /profile with empty body
-                  const fallbackResponse = await fetch(`${API_BASE_URL}/auth/profile`, {
-                    method: 'PUT',
-                    headers: {
-                      'Authorization': `Bearer ${storedToken}`,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({}),
-                  });
-                  if (fallbackResponse.ok) {
-                    const fallbackData = await fallbackResponse.json();
-                    if (fallbackData.user) {
-                      setUser(fallbackData.user);
-                      await AsyncStorage.setItem('userData', JSON.stringify(fallbackData.user));
-                    }
-                  }
+                } else if (response.status === 401 || response.status === 403 || response.status === 404) {
+                  // Session is expired or invalid on the server! Invalidate immediately
+                  console.warn('[AuthContext] Stored token is invalid or expired. Clearing session.');
+                  await AsyncStorage.removeItem('userToken');
+                  await AsyncStorage.removeItem('userData');
+                  setUser(null);
+                  setToken(null);
+                } else {
+                  // Other status (e.g. server down / offline): keep cached user for offline viewing
+                  setToken(storedToken);
+                  setUser(parsedUser);
                 }
               } catch (networkError) {
-                console.warn('Could not sync user profile from server:', networkError);
+                // Network error (offline): allow user to continue with cached session
+                console.warn('Network offline, using cached session:', networkError);
+                setToken(storedToken);
+                setUser(parsedUser);
               }
             }
           } catch (parseError) {
             // Corrupted data, clear it
             await AsyncStorage.removeItem('userToken');
             await AsyncStorage.removeItem('userData');
+            setUser(null);
+            setToken(null);
           }
         }
       } catch (e) {

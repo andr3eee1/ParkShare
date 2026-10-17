@@ -588,24 +588,22 @@ export const ExploreScreen = () => {
 
   useEffect(() => {
     if (token) {
-      fetch(`${process.env.EXPO_PUBLIC_API_URL}/vehicles`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.vehicles && data.vehicles.length > 0) {
-          setVehicles(data.vehicles);
-          const defaultVehicle = data.vehicles.find((v: any) => v.isDefault);
-          if (defaultVehicle) {
-            setVehiclePlate(defaultVehicle.plate);
-            setSelectedVehicleId(defaultVehicle.id);
-          } else {
-            setVehiclePlate(data.vehicles[0].plate);
-            setSelectedVehicleId(data.vehicles[0].id);
+      apiClient.get('/vehicles')
+        .then(res => {
+          const data = res.data;
+          if (data.vehicles && data.vehicles.length > 0) {
+            setVehicles(data.vehicles);
+            const defaultVehicle = data.vehicles.find((v: any) => v.isDefault);
+            if (defaultVehicle) {
+              setVehiclePlate(defaultVehicle.plate);
+              setSelectedVehicleId(defaultVehicle.id);
+            } else {
+              setVehiclePlate(data.vehicles[0].plate);
+              setSelectedVehicleId(data.vehicles[0].id);
+            }
           }
-        }
-      })
-      .catch(console.error);
+        })
+        .catch(console.error);
     }
   }, [token]);
 
