@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Platform,
 } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../../components/GlassPanel';
 import { Screen, ScreenHeader } from '../../components/Screen';
@@ -19,9 +21,16 @@ import { styles } from './SecurityScreen.styles';
 export const SecurityScreen = () => {
   const { user, updateUser } = useContext(AuthContext) as any;
   const { alert } = useAlert();
+  const route = useRoute<any>();
+
+  const paramCode = route?.params?.code || (
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('code') || ''
+      : ''
+  );
 
   // Email verification state
-  const [emailCode, setEmailCode] = useState('');
+  const [emailCode, setEmailCode] = useState(paramCode);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
   const [emailMessage, setEmailMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);

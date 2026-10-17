@@ -1,13 +1,15 @@
 import { AlertProvider } from "./src/context/AlertContext";
 import React, { useEffect } from 'react';
 import { View, Platform, Text, Image } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, getStateFromPath, getPathFromState } from '@react-navigation/native';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { useContext } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
+import { ResetPasswordScreen } from './src/screens/ResetPasswordScreen';
+import { VerifyEmailScreen } from './src/screens/VerifyEmailScreen';
 import { AccountScreen } from './src/screens/AccountScreen';
 import { StandingScreen } from './src/screens/StandingScreen';
 import { PersonalInformationScreen } from './src/screens/settings/PersonalInformationScreen';
@@ -102,6 +104,72 @@ export default function App() {
     );
   };
 
+  const linking = {
+    prefixes: [
+      'https://park-share.ro/platform',
+      'https://park-share.ro',
+      'http://localhost:8081/platform',
+      'http://localhost:8081',
+      'parkshare://',
+      '/platform',
+      '/',
+    ],
+    config: {
+      screens: {
+        Login: 'login',
+        Register: 'register',
+        ResetPassword: 'reset-password',
+        VerifyEmail: 'verify-email',
+        MainApp: {
+          path: '',
+          screens: {
+            Explore: 'explore',
+            'My Spots': 'my-spots',
+            History: 'history',
+            Passes: 'passes',
+            Account: 'account',
+          },
+        },
+        Standing: 'standing',
+        PersonalInformation: 'profile',
+        PaymentMethods: 'payment-methods',
+        MyVehicles: 'vehicles',
+        Notifications: 'notifications',
+        Security: 'security',
+        HelpSupport: 'support',
+        AddSpot: 'add-spot',
+        PaymentCheckout: 'checkout',
+        AdminDashboard: 'admin',
+        AdminUsers: 'admin/users',
+        AdminSpaces: 'admin/spaces',
+        AdminBookings: 'admin/bookings',
+        AdminReports: 'admin/reports',
+        AdminRecord: 'admin/record',
+      },
+    },
+    getStateFromPath(path: string, options: any) {
+      let clean = path;
+      if (clean.startsWith('/platform')) {
+        clean = clean.slice('/platform'.length);
+      }
+      if (!clean.startsWith('/')) {
+        clean = '/' + clean;
+      }
+      if (clean.startsWith('/wallet')) clean = clean.replace(/^\/wallet/, '/payment-methods');
+      if (clean.startsWith('/bookings')) clean = clean.replace(/^\/bookings/, '/history');
+      if (clean.startsWith('/provider')) clean = clean.replace(/^\/provider/, '/my-spots');
+      return getStateFromPath(clean, options);
+    },
+    getPathFromState(state: any, options: any) {
+      const p = getPathFromState(state, options);
+      if (Platform.OS === 'web') {
+        const clean = p.startsWith('/') ? p : `/${p}`;
+        return `/platform${clean === '/' ? '' : clean}`;
+      }
+      return p;
+    },
+  };
+
   const RootNavigator = () => {
     const { user, isLoading } = useContext(AuthContext);
 
@@ -115,12 +183,14 @@ export default function App() {
     }
 
     return (
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {user == null ? (
             <>
               <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Register" component={RegisterScreen} />
+              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+              <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
             </>
           ) : (
             <>
@@ -131,7 +201,9 @@ export default function App() {
               <Stack.Screen name="MyVehicles" component={MyVehiclesScreen} />
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
               <Stack.Screen name="Security" component={SecurityScreen} />
-                            <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+              <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+              <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
               {user.role === 'ADMIN' ? (
                 <>
                   <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
