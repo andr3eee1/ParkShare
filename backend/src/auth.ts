@@ -403,6 +403,49 @@ router.post('/reset-password', async (req, res): Promise<any> => {
   }
 });
 
+const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+});
+
+router.post('/change-password', requireAuth, async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { currentPassword, newPassword } = ChangePasswordSchema.parse(req.body);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      return res.status(400).json({ error: 'Parola curentă este incorectă' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    sendPasswordChangedAlertEmail({
+      email: user.email,
+      firstName: user.firstName,
+    }).catch(err => console.error('[Password Changed Alert Error]:', err));
+
+    res.json({ message: 'Parola a fost actualizată cu succes!' });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.issues });
+    }
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ==========================================
 // 2FA PROFILE SETTINGS (Enable / Disable)
 // ==========================================

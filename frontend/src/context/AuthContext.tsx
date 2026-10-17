@@ -18,6 +18,8 @@ type User = {
   driverReviewsCount?: number;
   hostReviewsCount?: number;
   completedBookings?: number;
+  emailVerified?: boolean;
+  twoFactorEnabled?: boolean;
 };
 
 type AuthContextType = {
