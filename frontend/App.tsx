@@ -47,6 +47,98 @@ const PlaceholderScreen = ({ name }: { name: string }) => (
   </View>
 );
 
+const linking = {
+  prefixes: [
+    'https://park-share.ro/platform',
+    'http://localhost:8081/platform',
+    'http://localhost:8081',
+    'parkshare://',
+    '/platform',
+  ],
+  config: {
+    screens: {
+      Login: 'login',
+      Register: 'register',
+      ResetPassword: 'reset-password',
+      VerifyEmail: 'verify-email',
+      MainApp: {
+        path: '',
+        screens: {
+          Explore: 'explore',
+          'My Spots': 'my-spots',
+          History: 'history',
+          Passes: 'passes',
+          Account: 'account',
+        },
+      },
+      Standing: 'standing',
+      PersonalInformation: 'profile',
+      PaymentMethods: 'payment-methods',
+      MyVehicles: 'vehicles',
+      Notifications: 'notifications',
+      Security: 'security',
+      HelpSupport: 'support',
+      AddSpot: 'add-spot',
+      PaymentCheckout: 'checkout',
+      AdminDashboard: 'admin',
+      AdminUsers: 'admin/users',
+      AdminSpaces: 'admin/spaces',
+      AdminBookings: 'admin/bookings',
+      AdminReports: 'admin/reports',
+      AdminRecord: 'admin/record',
+    },
+  },
+  getStateFromPath(path: string, options: any) {
+    let clean = path;
+    if (clean.includes('://')) {
+      try {
+        const parsed = new URL(clean);
+        clean = parsed.pathname + parsed.search;
+      } catch {}
+    }
+    if (clean.startsWith('/platform')) {
+      clean = clean.slice('/platform'.length);
+    }
+    if (!clean.startsWith('/')) {
+      clean = '/' + clean;
+    }
+    if (clean.startsWith('/wallet')) clean = clean.replace(/^\/wallet/, '/payment-methods');
+    if (clean.startsWith('/bookings')) clean = clean.replace(/^\/bookings/, '/history');
+    if (clean.startsWith('/provider')) clean = clean.replace(/^\/provider/, '/my-spots');
+
+    const state = getStateFromPath(clean, options);
+    if (!state) return state;
+
+    // Delete any cached route.path so React Navigation will always delegate URL serialization
+    // to getPathFromState, preserving the /platform prefix on refreshes and route transitions
+    const stripRoutePaths = (obj: any) => {
+      if (!obj || !obj.routes) return;
+      for (const r of obj.routes) {
+        if ('path' in r) {
+          delete r.path;
+        }
+        if (r.state) {
+          stripRoutePaths(r.state);
+        }
+      }
+    };
+    stripRoutePaths(state);
+
+    return state;
+  },
+  getPathFromState(state: any, options: any) {
+    const p = getPathFromState(state, options);
+    if (Platform.OS === 'web') {
+      const clean = p.startsWith('/') ? p : `/${p}`;
+      if (clean.startsWith('/platform')) {
+        return clean;
+      }
+      return `/platform${clean === '/' ? '' : clean}`;
+    }
+    return p;
+  },
+};
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     SpaceGrotesk: SpaceGrotesk_400Regular,
@@ -57,11 +149,7 @@ export default function App() {
     Inter_SemiBold: Inter_600SemiBold,
   });
 
-  if (!fontsLoaded) {
-    return null;
-  }
-
-  // Ensure web URLs always maintain the /platform base path
+  // Ensure web URLs always maintain the /platform base path (must be called unconditionally before early return)
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const p = window.location.pathname;
@@ -70,6 +158,10 @@ export default function App() {
       }
     }
   }, []);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const MainNavigator = () => {
     const { user } = useContext(AuthContext);
@@ -112,98 +204,6 @@ export default function App() {
           <Tab.Screen name="Account" component={AccountScreen} />
         </Tab.Navigator>
     );
-  };
-
-  const linking = {
-    prefixes: [
-      'https://park-share.ro/platform',
-      'http://localhost:8081/platform',
-      'http://localhost:8081',
-      'parkshare://',
-      '/platform',
-    ],
-    config: {
-      screens: {
-        Login: 'login',
-        Register: 'register',
-        ResetPassword: 'reset-password',
-        VerifyEmail: 'verify-email',
-        MainApp: {
-          path: '',
-          screens: {
-            Explore: 'explore',
-            'My Spots': 'my-spots',
-            History: 'history',
-            Passes: 'passes',
-            Account: 'account',
-          },
-        },
-        Standing: 'standing',
-        PersonalInformation: 'profile',
-        PaymentMethods: 'payment-methods',
-        MyVehicles: 'vehicles',
-        Notifications: 'notifications',
-        Security: 'security',
-        HelpSupport: 'support',
-        AddSpot: 'add-spot',
-        PaymentCheckout: 'checkout',
-        AdminDashboard: 'admin',
-        AdminUsers: 'admin/users',
-        AdminSpaces: 'admin/spaces',
-        AdminBookings: 'admin/bookings',
-        AdminReports: 'admin/reports',
-        AdminRecord: 'admin/record',
-      },
-    },
-    getStateFromPath(path: string, options: any) {
-      let clean = path;
-      if (clean.includes('://')) {
-        try {
-          const parsed = new URL(clean);
-          clean = parsed.pathname + parsed.search;
-        } catch {}
-      }
-      if (clean.startsWith('/platform')) {
-        clean = clean.slice('/platform'.length);
-      }
-      if (!clean.startsWith('/')) {
-        clean = '/' + clean;
-      }
-      if (clean.startsWith('/wallet')) clean = clean.replace(/^\/wallet/, '/payment-methods');
-      if (clean.startsWith('/bookings')) clean = clean.replace(/^\/bookings/, '/history');
-      if (clean.startsWith('/provider')) clean = clean.replace(/^\/provider/, '/my-spots');
-
-      const state = getStateFromPath(clean, options);
-      if (!state) return state;
-
-      // Delete any cached route.path so React Navigation will always delegate URL serialization
-      // to getPathFromState, preserving the /platform prefix on refreshes and route transitions
-      const stripRoutePaths = (obj: any) => {
-        if (!obj || !obj.routes) return;
-        for (const r of obj.routes) {
-          if ('path' in r) {
-            delete r.path;
-          }
-          if (r.state) {
-            stripRoutePaths(r.state);
-          }
-        }
-      };
-      stripRoutePaths(state);
-
-      return state;
-    },
-    getPathFromState(state: any, options: any) {
-      const p = getPathFromState(state, options);
-      if (Platform.OS === 'web') {
-        const clean = p.startsWith('/') ? p : `/${p}`;
-        if (clean.startsWith('/platform')) {
-          return clean;
-        }
-        return `/platform${clean === '/' ? '' : clean}`;
-      }
-      return p;
-    },
   };
 
   const RootNavigator = () => {
