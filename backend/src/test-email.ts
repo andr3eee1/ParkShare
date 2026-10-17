@@ -26,7 +26,7 @@ async function main() {
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
               <tr>
                 <td style="vertical-align: middle;">
-                  <img src="cid:parkshare-logo" width="46" height="46" alt="🅿️" style="display: block; border-radius: 12px; width: 46px; height: 46px; background-color: #009967;" />
+                  <img src="https://park-share.ro/api/assets/logo-mark.png" width="46" height="46" alt="🅿️" style="display: block; border-radius: 12px; width: 46px; height: 46px;" />
                 </td>
                 <td style="vertical-align: middle; padding-left: 12px; text-align: left;">
                   <div style="font-size: 24px; font-weight: 800; color: #101826; letter-spacing: -0.5px;">Park<span style="color: #009967;">Share</span></div>

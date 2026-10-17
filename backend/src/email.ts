@@ -6,18 +6,9 @@ const apiKey = process.env.RESEND_API_KEY;
 
 export const resend = apiKey ? new Resend(apiKey) : null;
 export const DEFAULT_FROM_EMAIL = process.env.FROM_EMAIL || 'ParkShare <noreply@park-share.ro>';
-export const APP_URL = process.env.APP_URL || 'https://park-share.ro';
-
-// Load logo-mark.png buffer once for inline CID attachment
-let logoBuffer: Buffer | null = null;
-const logoPath = path.join(__dirname, '../assets/logo-mark.png');
-if (fs.existsSync(logoPath)) {
-  try {
-    logoBuffer = fs.readFileSync(logoPath);
-  } catch (err) {
-    console.warn('[Email] Could not load logo buffer from assets:', err);
-  }
-}
+export const API_BASE_URL = process.env.API_BASE_URL || 'https://park-share.ro/api';
+export const APP_URL = process.env.APP_URL || 'https://park-share.ro/platform';
+export const LOGO_URL = process.env.LOGO_URL || `${API_BASE_URL}/assets/logo-mark.png`;
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -30,8 +21,8 @@ export interface SendEmailOptions {
 
 /**
  * Generic email sender using Resend.
- * Automatically attaches the ParkShare logo as an inline CID so it renders
- * seamlessly in email clients (Gmail, Apple Mail, Outlook) without relying on external URLs.
+ * Uses public hosted HTTPS assets on park-share.ro/api/assets/ for maximum
+ * deliverability and instant rendering across all webmail and mobile clients.
  */
 export async function sendEmail(options: SendEmailOptions) {
   const from = options.from || DEFAULT_FROM_EMAIL;
@@ -44,17 +35,6 @@ export async function sendEmail(options: SendEmailOptions) {
     return { id: 'mock-email-id', mock: true };
   }
 
-  // Attach logo as inline CID attachment if available
-  const attachments = [...(options.attachments || [])];
-  if (logoBuffer && !attachments.some((a) => a.content_id === 'parkshare-logo')) {
-    attachments.push({
-      filename: 'logo.png',
-      content: logoBuffer,
-      content_id: 'parkshare-logo',
-      content_type: 'image/png',
-    });
-  }
-
   try {
     const response = await resend!.emails.send({
       from,
@@ -62,7 +42,7 @@ export async function sendEmail(options: SendEmailOptions) {
       subject: options.subject,
       html: options.html,
       text: options.text,
-      attachments,
+      attachments: options.attachments,
     });
 
     if (response.error) {
@@ -124,8 +104,7 @@ function renderEmailLayout(params: {
         <table role="presentation" cellpadding="0" cellspacing="0">
           <tr>
             <td style="vertical-align: middle;">
-              <!-- Embedded CID Logo image with bulletproof emerald fallback -->
-              <img src="cid:parkshare-logo" width="48" height="48" alt="🅿️" style="display: block; border-radius: 12px; width: 48px; height: 48px; border: 0; background-color: #009967;" />
+              <img src="${LOGO_URL}" width="48" height="48" alt="🅿️" style="display: block; border-radius: 12px; width: 48px; height: 48px; border: 0;" />
             </td>
             <td style="vertical-align: middle; padding-left: 12px; text-align: left;">
               <div style="font-size: 26px; font-weight: 800; color: #101826; letter-spacing: -0.5px; line-height: 1.1;">
