@@ -61,6 +61,16 @@ export default function App() {
     return null;
   }
 
+  // Ensure web URLs always maintain the /platform base path
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      if (p !== '/' && !p.startsWith('/platform') && !p.startsWith('/api') && !p.startsWith('/_')) {
+        window.history.replaceState(null, '', `/platform${p}${window.location.search}`);
+      }
+    }
+  }, []);
+
   const MainNavigator = () => {
     const { user } = useContext(AuthContext);
     const insets = require('react-native-safe-area-context').useSafeAreaInsets();
@@ -107,12 +117,10 @@ export default function App() {
   const linking = {
     prefixes: [
       'https://park-share.ro/platform',
-      'https://park-share.ro',
       'http://localhost:8081/platform',
       'http://localhost:8081',
       'parkshare://',
       '/platform',
-      '/',
     ],
     config: {
       screens: {
@@ -149,6 +157,12 @@ export default function App() {
     },
     getStateFromPath(path: string, options: any) {
       let clean = path;
+      if (clean.includes('://')) {
+        try {
+          const parsed = new URL(clean);
+          clean = parsed.pathname + parsed.search;
+        } catch {}
+      }
       if (clean.startsWith('/platform')) {
         clean = clean.slice('/platform'.length);
       }
@@ -158,12 +172,34 @@ export default function App() {
       if (clean.startsWith('/wallet')) clean = clean.replace(/^\/wallet/, '/payment-methods');
       if (clean.startsWith('/bookings')) clean = clean.replace(/^\/bookings/, '/history');
       if (clean.startsWith('/provider')) clean = clean.replace(/^\/provider/, '/my-spots');
-      return getStateFromPath(clean, options);
+
+      const state = getStateFromPath(clean, options);
+      if (!state) return state;
+
+      // Delete any cached route.path so React Navigation will always delegate URL serialization
+      // to getPathFromState, preserving the /platform prefix on refreshes and route transitions
+      const stripRoutePaths = (obj: any) => {
+        if (!obj || !obj.routes) return;
+        for (const r of obj.routes) {
+          if ('path' in r) {
+            delete r.path;
+          }
+          if (r.state) {
+            stripRoutePaths(r.state);
+          }
+        }
+      };
+      stripRoutePaths(state);
+
+      return state;
     },
     getPathFromState(state: any, options: any) {
       const p = getPathFromState(state, options);
       if (Platform.OS === 'web') {
         const clean = p.startsWith('/') ? p : `/${p}`;
+        if (clean.startsWith('/platform')) {
+          return clean;
+        }
         return `/platform${clean === '/' ? '' : clean}`;
       }
       return p;
