@@ -62,6 +62,7 @@ model User {
   moderationReceived  ModerationAction[] @relation("ModerationTarget")
   moderationPerformed ModerationAction[] @relation("ModerationActor")
   appeals             Appeal[]
+  emailLogs           EmailLog[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 }
@@ -212,4 +213,23 @@ model Appeal {
 
   @@index([userId])
   @@index([status])
+}
+
+/// Audit log of all sent system and custom emails.
+model EmailLog {
+  id          String   @id @default(uuid())
+  to          String
+  subject     String
+  bodyPreview String?
+  htmlContent String?
+  status      String   @default("SENT") // SENT | FAILED
+  error       String?
+  sender      String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([to])
+  @@index([createdAt])
+  @@index([userId])
 }

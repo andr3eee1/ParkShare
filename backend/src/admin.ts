@@ -3,7 +3,7 @@ import { prisma } from './prisma';
 import { z } from 'zod';
 import { AuthRequest, requireAdmin, requireAuth } from './middleware';
 import { applySanction, evaluateStanding, getStandingSnapshot } from './standing';
-import { sendEmail } from './email';
+import { sendEmail, sendCustomAdminEmail } from './email';
 
 const router = Router();
 
@@ -125,6 +125,7 @@ router.get('/users', async (req: AuthRequest, res: any): Promise<any> => {
         avatarUrl: true,
         role: true,
         walletBalance: true,
+        emailVerified: true,
         createdAt: true,
         trustScore: true,
         hostRating: true,
@@ -421,6 +422,285 @@ router.get('/moderation', async (_req, res) => {
   } catch (error) {
     console.error('Admin moderation log error:', error);
     res.status(500).json({ error: 'Failed to load moderation log' });
+  }
+});
+
+// --- EMAIL LOGS & CUSTOM EMAILS ---
+
+/**
+ * GET /admin/emails
+ * Lists recently sent system and custom emails with search and status filters.
+ */
+router.get('/emails', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const status = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : undefined;
+    const where: any = {};
+
+    if (status && ['SENT', 'FAILED'].includes(status)) where.status = status;
+    if (search) {
+      where.OR = [
+        { to: { contains: search, mode: 'insensitive' } },
+        { subject: { contains: search, mode: 'insensitive' } },
+        { bodyPreview: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const emails = await prisma.emailLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+    });
+
+    res.json({ emails });
+  } catch (error) {
+    console.error('Admin emails list error:', error);
+    res.status(500).json({ error: 'Failed to load email logs' });
+  }
+});
+
+/**
+ * GET /admin/emails/:id
+ * Single email log with full HTML content and details.
+ */
+router.get('/emails/:id', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const email = await prisma.emailLog.findUnique({
+      where: { id: req.params.id as string },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+    });
+    if (!email) return res.status(404).json({ error: 'Email log not found' });
+    res.json({ email });
+  } catch (error) {
+    console.error('Admin email detail error:', error);
+    res.status(500).json({ error: 'Failed to load email log details' });
+  }
+});
+
+const SendCustomEmailSchema = z.object({
+  to: z.string().email(),
+  subject: z.string().trim().min(2).max(150),
+  message: z.string().trim().min(5).max(3000),
+  actionUrl: z.string().url().optional().or(z.literal('')),
+  actionText: z.string().trim().max(50).optional(),
+});
+
+/**
+ * POST /admin/emails/send
+ * Sends a custom email to any user or email address using ParkShare brand styling.
+ */
+router.post('/emails/send', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const data = SendCustomEmailSchema.parse(req.body);
+    const adminUser = req.user?.userId
+      ? await prisma.user.findUnique({
+          where: { id: req.user.userId },
+          select: { firstName: true, lastName: true, email: true },
+        })
+      : null;
+
+    const adminName = adminUser ? `${adminUser.firstName} ${adminUser.lastName}` : 'ParkShare Support';
+    const adminEmail = adminUser?.email;
+
+    await sendCustomAdminEmail({
+      to: data.to,
+      subject: data.subject,
+      message: data.message,
+      senderAdminName: adminName,
+      senderAdminEmail: adminEmail,
+      actionUrl: data.actionUrl || undefined,
+      actionText: data.actionText || undefined,
+    });
+
+    // In-app notification if the recipient is a registered user
+    const recipientUser = await prisma.user.findUnique({
+      where: { email: data.to },
+      select: { id: true },
+    });
+    if (recipientUser) {
+      await prisma.notification.create({
+        data: {
+          userId: recipientUser.id,
+          type: 'ADMIN_NOTICE',
+          title: data.subject,
+          body: data.message.slice(0, 250),
+        },
+      });
+    }
+
+    res.json({ success: true, message: `Email sent to ${data.to}` });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
+    console.error('Admin send email error:', error);
+    res.status(500).json({ error: error?.message || 'Failed to send custom email' });
+  }
+});
+
+// --- EDITABLE ENTITY ENDPOINTS ---
+
+const EditUserSchema = z.object({
+  firstName: z.string().trim().min(1).optional(),
+  lastName: z.string().trim().min(1).optional(),
+  role: z.enum(['USER', 'PROVIDER', 'ADMIN']).optional(),
+  walletBalance: z.number().min(0).optional(),
+  emailVerified: z.boolean().optional(),
+  trustScore: z.number().min(1.0).max(5.0).optional(),
+  hostRating: z.number().min(1.0).max(5.0).optional(),
+});
+
+/**
+ * PATCH /admin/users/:id
+ * Allows editing user attributes (role, balance, verified status, names, score).
+ */
+router.patch('/users/:id', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const userId = req.params.id as string;
+    const data = EditUserSchema.parse(req.body);
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        walletBalance: true,
+        emailVerified: true,
+        trustScore: true,
+        hostRating: true,
+        accountStatus: true,
+      },
+    });
+
+    res.json({ message: 'User updated successfully', user });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
+    console.error('Admin update user error:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+const EditSpaceSchema = z.object({
+  name: z.string().trim().min(2).optional(),
+  description: z.string().trim().optional(),
+  price: z.number().min(0).optional(),
+  isAvailable: z.boolean().optional(),
+});
+
+/**
+ * PATCH /admin/spaces/:id
+ * Edit parking space name, description, hourly price, and toggle availability.
+ */
+router.patch('/spaces/:id', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const spaceId = req.params.id as string;
+    const data = EditSpaceSchema.parse(req.body);
+
+    const space = await prisma.parkingSpot.update({
+      where: { id: spaceId },
+      data,
+      include: {
+        owner: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+    });
+
+    res.json({ message: 'Parking space updated successfully', space });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
+    console.error('Admin update space error:', error);
+    res.status(500).json({ error: 'Failed to update parking space' });
+  }
+});
+
+/**
+ * DELETE /admin/spaces/:id
+ * Delete a parking space if no active reservations.
+ */
+router.delete('/spaces/:id', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const spaceId = req.params.id as string;
+
+    const activeReservations = await prisma.reservation.count({
+      where: { spotId: spaceId, status: 'ACTIVE' },
+    });
+    if (activeReservations > 0) {
+      return res.status(400).json({ error: 'Cannot delete space with active reservations. Set availability to false instead.' });
+    }
+
+    await prisma.review.deleteMany({ where: { targetSpotId: spaceId } });
+    await prisma.reservation.deleteMany({ where: { spotId: spaceId } });
+    await prisma.parkingSpot.delete({ where: { id: spaceId } });
+
+    res.json({ message: 'Parking space deleted successfully' });
+  } catch (error: any) {
+    console.error('Admin delete space error:', error);
+    res.status(500).json({ error: 'Failed to delete parking space' });
+  }
+});
+
+const EditBookingSchema = z.object({
+  status: z.enum(['ACTIVE', 'COMPLETED', 'CANCELLED']).optional(),
+  totalPrice: z.number().min(0).optional(),
+  securityDeposit: z.number().min(0).optional(),
+});
+
+/**
+ * PATCH /admin/bookings/:id
+ * Update booking status or prices.
+ */
+router.patch('/bookings/:id', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const bookingId = req.params.id as string;
+    const data = EditBookingSchema.parse(req.body);
+
+    const booking = await prisma.reservation.update({
+      where: { id: bookingId },
+      data,
+      include: {
+        spot: { select: { id: true, name: true, price: true, owner: { select: { id: true, firstName: true, lastName: true } } } },
+        user: { select: { id: true, email: true, firstName: true, lastName: true } },
+      },
+    });
+
+    res.json({ message: 'Booking updated successfully', booking });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
+    console.error('Admin update booking error:', error);
+    res.status(500).json({ error: 'Failed to update booking' });
+  }
+});
+
+const EditReportSchema = z.object({
+  status: z.enum(['OPEN', 'RESOLVED', 'DISMISSED']),
+});
+
+/**
+ * PATCH /admin/reports/:id
+ * Mark report as resolved, dismissed, or reopened.
+ */
+router.patch('/reports/:id', async (req: AuthRequest, res: any): Promise<any> => {
+  try {
+    const reportId = req.params.id as string;
+    const data = EditReportSchema.parse(req.body);
+
+    const report = await prisma.report.update({
+      where: { id: reportId },
+      data: { status: data.status },
+      include: { reporter: true },
+    });
+
+    res.json({ message: 'Report updated successfully', report });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
+    console.error('Admin update report error:', error);
+    res.status(500).json({ error: 'Failed to update report' });
   }
 });
 

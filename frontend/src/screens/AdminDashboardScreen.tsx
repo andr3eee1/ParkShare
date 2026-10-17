@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassPanel } from '../components/GlassPanel';
+import { ComposeEmailModal } from '../components/ComposeEmailModal';
 import { tokens } from '../theme/tokens';
 import { AuthContext } from '../context/AuthContext';
 import { adminApi, ApiRequestError, checkBackendHealth } from '../api/client';
@@ -96,6 +97,7 @@ const managementAreas = [
   { label: 'Parking spaces', description: 'Listings and approvals', icon: 'map-outline' as IconName, route: 'AdminSpaces' },
   { label: 'Bookings', description: 'Trips and payments', icon: 'receipt-outline' as IconName, route: 'AdminBookings' },
   { label: 'Reports', description: 'Trust and safety', icon: 'flag-outline' as IconName, route: 'AdminReports' },
+  { label: 'Sent emails', description: 'Delivery logs & outreach', icon: 'mail-outline' as IconName, route: 'AdminEmails' },
 ];
 
 export const AdminDashboardScreen = () => {
@@ -107,6 +109,7 @@ export const AdminDashboardScreen = () => {
   const [diagnostics, setDiagnostics] = useState<Diagnostics>({ backend: 'checking', database: 'checking', admin: 'checking', checkedAt: null });
   const [lastStatsRefresh, setLastStatsRefresh] = useState<Date | null>(null);
   const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
+  const [showComposeEmailModal, setShowComposeEmailModal] = useState(false);
   const metricWidth = width >= 900 ? '23.5%' : '48%';
 
   const loadDashboard = useCallback(async () => {
@@ -172,31 +175,42 @@ export const AdminDashboardScreen = () => {
           </View>
           <View style={styles.headerActions}>
             <View style={styles.adminBadge}>
-              <Ionicons name="shield-checkmark-outline" size={16} color={tokens.colors.emeraldDeep} />
+              <Ionicons name="shield-checkmark-outline" size={14} color={tokens.colors.emeraldDeep} />
               <Text style={styles.adminBadgeText}>Admin</Text>
             </View>
-            <TouchableOpacity
-              style={styles.diagnosticsBtn}
-              onPress={() => setShowDiagnosticsModal(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Open connection diagnostics"
-            >
-              <View
-                style={[
-                  styles.statusDot,
-                  {
-                    backgroundColor:
-                      diagnostics.backend === 'connected' && diagnostics.admin === 'connected'
-                        ? tokens.colors.availabilityGreen
-                        : diagnostics.backend === 'checking'
-                        ? tokens.colors.warningAmber
-                        : '#DC2626',
-                  },
-                ]}
-              />
-              <Ionicons name="pulse-outline" size={14} color={tokens.colors.emeraldDeep} />
-              <Text style={styles.diagnosticsBtnText}>Diagnostics</Text>
-            </TouchableOpacity>
+            <View style={styles.headerButtonsRow}>
+              <TouchableOpacity
+                style={styles.sendEmailHeaderBtn}
+                onPress={() => setShowComposeEmailModal(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Send custom email"
+              >
+                <Ionicons name="mail-outline" size={14} color={tokens.colors.white} />
+                <Text style={styles.sendEmailHeaderBtnText}>Send Email</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.diagnosticsBtn}
+                onPress={() => setShowDiagnosticsModal(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Open connection diagnostics"
+              >
+                <View
+                  style={[
+                    styles.statusDot,
+                    {
+                      backgroundColor:
+                        diagnostics.backend === 'connected' && diagnostics.admin === 'connected'
+                          ? tokens.colors.availabilityGreen
+                          : diagnostics.backend === 'checking'
+                          ? tokens.colors.warningAmber
+                          : '#DC2626',
+                    },
+                  ]}
+                />
+                <Ionicons name="pulse-outline" size={14} color={tokens.colors.emeraldDeep} />
+                <Text style={styles.diagnosticsBtnText}>Diagnostics</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -366,6 +380,12 @@ export const AdminDashboardScreen = () => {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {/* Compose Email Modal */}
+      <ComposeEmailModal
+        visible={showComposeEmailModal}
+        onClose={() => setShowComposeEmailModal(false)}
+      />
     </SafeAreaView>
   );
 };

@@ -104,6 +104,44 @@ export const adminPost = async (token: string, path: string, payload: any = {}):
   return body;
 };
 
+export const adminPatch = async (token: string, path: string, payload: any = {}): Promise<any> => {
+  const response = await fetch(getApiUrl(path), {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (response.status === 401) {
+    await triggerUnauthorized();
+  }
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = typeof body.error === 'string' ? body.error : (Array.isArray(body.error) ? body.error.map((e: any) => e.message).join(', ') : 'Unable to update record');
+    throw new ApiRequestError(message, response.status);
+  }
+  return body;
+};
+
+export const adminDelete = async (token: string, path: string): Promise<any> => {
+  const response = await fetch(getApiUrl(path), {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (response.status === 401) {
+    await triggerUnauthorized();
+  }
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = typeof body.error === 'string' ? body.error : 'Unable to delete record';
+    throw new ApiRequestError(message, response.status);
+  }
+  return body;
+};
+
 export type BackendHealth = {
   status?: 'ok' | 'degraded';
   database?: 'connected' | 'unavailable';

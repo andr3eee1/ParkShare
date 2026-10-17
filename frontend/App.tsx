@@ -85,6 +85,7 @@ const linking = {
       AdminSpaces: 'admin/spaces',
       AdminBookings: 'admin/bookings',
       AdminReports: 'admin/reports',
+      AdminEmails: 'admin/emails',
       AdminRecord: 'admin/record',
     },
   },
@@ -247,6 +248,7 @@ export default function App() {
                   <Stack.Screen name="AdminSpaces" component={AdminManagementScreen} />
                   <Stack.Screen name="AdminBookings" component={AdminManagementScreen} />
                   <Stack.Screen name="AdminReports" component={AdminManagementScreen} />
+                  <Stack.Screen name="AdminEmails" component={AdminManagementScreen} />
                   <Stack.Screen name="AdminRecord" component={AdminRecordScreen} />
                 </>
               ) : null}

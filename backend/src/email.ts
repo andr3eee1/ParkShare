@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import fs from 'fs';
 import path from 'path';
+import { prisma } from './prisma';
 
 const apiKey = process.env.RESEND_API_KEY;
 
@@ -17,45 +18,110 @@ export interface SendEmailOptions {
   text?: string;
   from?: string;
   attachments?: any[];
+  sender?: string;
+  userId?: string;
 }
 
 /**
  * Generic email sender using Resend.
  * Uses public hosted HTTPS assets on park-share.ro/api/assets/ for maximum
  * deliverability and instant rendering across all webmail and mobile clients.
+ * Automatically persists to the EmailLog database table for audit & admin visibility.
  */
 export async function sendEmail(options: SendEmailOptions) {
   const from = options.from || DEFAULT_FROM_EMAIL;
+  const toStr = Array.isArray(options.to) ? options.to.join(', ') : options.to;
+  const firstRecipient = Array.isArray(options.to) ? options.to[0] : options.to;
+
+  const bodyPreview = options.text
+    ? options.text.slice(0, 300)
+    : options.html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+
+  let status = 'SENT';
+  let sendError: string | null = null;
+  let result: any = null;
 
   if (!apiKey || apiKey === 're_your_api_key_here') {
     console.log(`\x1b[33m[Resend: Dev/Mock]\x1b[0m API key not configured. Mocking email send:`);
-    console.log(`  To: ${Array.isArray(options.to) ? options.to.join(', ') : options.to}`);
+    console.log(`  To: ${toStr}`);
     console.log(`  From: ${from}`);
     console.log(`  Subject: ${options.subject}`);
-    return { id: 'mock-email-id', mock: true };
-  }
+    result = { id: 'mock-email-id', mock: true };
+  } else {
+    try {
+      const response = await resend!.emails.send({
+        from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+        attachments: options.attachments,
+      });
 
-  try {
-    const response = await resend!.emails.send({
-      from,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-      attachments: options.attachments,
-    });
+      if (response.error) {
+        console.error('[Resend Error]', response.error);
+        status = 'FAILED';
+        sendError = response.error.message;
+        throw new Error(`Resend error: ${response.error.message}`);
+      }
 
-    if (response.error) {
-      console.error('[Resend Error]', response.error);
-      throw new Error(`Resend error: ${response.error.message}`);
+      console.log(`\x1b[32m[Resend Success]\x1b[0m Email sent to ${toStr}. ID: ${response.data?.id}`);
+      result = response.data;
+    } catch (error: any) {
+      console.error('[Resend Exception]', error);
+      status = 'FAILED';
+      sendError = error?.message || String(error);
+
+      // Still record failure to database for admin visibility
+      try {
+        let matchedUserId = options.userId;
+        if (!matchedUserId && firstRecipient) {
+          const u = await prisma.user.findUnique({ where: { email: firstRecipient }, select: { id: true } });
+          if (u) matchedUserId = u.id;
+        }
+        await prisma.emailLog.create({
+          data: {
+            to: toStr,
+            subject: options.subject,
+            bodyPreview,
+            htmlContent: options.html,
+            status,
+            error: sendError,
+            sender: options.sender || from,
+            userId: matchedUserId || null,
+          },
+        });
+      } catch (logErr) {
+        console.error('Failed to log failed email:', logErr);
+      }
+      throw error;
     }
-
-    console.log(`\x1b[32m[Resend Success]\x1b[0m Email sent to ${options.to}. ID: ${response.data?.id}`);
-    return response.data;
-  } catch (error: any) {
-    console.error('[Resend Exception]', error);
-    throw error;
   }
+
+  // Log successful or mocked email send
+  try {
+    let matchedUserId = options.userId;
+    if (!matchedUserId && firstRecipient) {
+      const u = await prisma.user.findUnique({ where: { email: firstRecipient }, select: { id: true } });
+      if (u) matchedUserId = u.id;
+    }
+    await prisma.emailLog.create({
+      data: {
+        to: toStr,
+        subject: options.subject,
+        bodyPreview,
+        htmlContent: options.html,
+        status,
+        error: sendError,
+        sender: options.sender || from,
+        userId: matchedUserId || null,
+      },
+    });
+  } catch (logErr) {
+    console.error('Failed to log sent email:', logErr);
+  }
+
+  return result;
 }
 
 /**
@@ -698,3 +764,62 @@ export async function sendModerationNoticeEmail(params: {
     text: `Salut ${params.firstName},\n\nO acțiune de moderare (${params.action}) a fost aplicată contului tău.\nMotiv: ${params.reason || 'Standarde comunitare'}.\n\nPoți contesta decizia la ${APP_URL}/standing`,
   });
 }
+
+/**
+ * Send a custom admin-crafted email to a user with the brand-consistent ParkShare green layout.
+ */
+export async function sendCustomAdminEmail(params: {
+  to: string;
+  subject: string;
+  message: string;
+  senderAdminName?: string;
+  senderAdminEmail?: string;
+  actionUrl?: string;
+  actionText?: string;
+}) {
+  const previewText = params.message.slice(0, 100);
+  const actionButtonHtml = params.actionUrl
+    ? `
+    <div style="text-align: center; margin: 26px 0 12px 0;">
+      <a href="${params.actionUrl}" style="background-color: #009967; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 15px; padding: 14px 28px; border-radius: 12px; display: inline-block;">
+        ${params.actionText || 'Open ParkShare'}
+      </a>
+    </div>`
+    : '';
+
+  const formattedParagraphs = params.message
+    .split('\n')
+    .filter((line) => line.trim().length > 0)
+    .map((line) => `<p style="margin: 0 0 14px 0; line-height: 1.6; color: #101826; font-size: 15px;">${line}</p>`)
+    .join('');
+
+  const bodyContent = `
+    <div style="padding: 6px 0;">
+      ${formattedParagraphs}
+      ${actionButtonHtml}
+      ${
+        params.senderAdminName
+          ? `<p style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #E5E7EB; font-size: 13px; color: #62748E;">
+               Sent by <strong>${params.senderAdminName}</strong> from ParkShare Administration.
+             </p>`
+          : ''
+      }
+    </div>
+  `;
+
+  const html = renderEmailLayout({
+    previewText,
+    badge: { text: 'Admin Communication', bg: '#D7F8E8', color: '#006552' },
+    title: params.subject,
+    bodyContent,
+  });
+
+  return sendEmail({
+    to: params.to,
+    subject: params.subject,
+    html,
+    text: `${params.subject}\n\n${params.message}\n\n${params.actionUrl ? `${params.actionText || 'Open'}: ${params.actionUrl}\n\n` : ''}ParkShare Team`,
+    sender: params.senderAdminEmail || params.senderAdminName || 'ParkShare Admin',
+  });
+}
+
