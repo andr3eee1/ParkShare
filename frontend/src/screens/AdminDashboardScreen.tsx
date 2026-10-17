@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -106,6 +106,7 @@ export const AdminDashboardScreen = () => {
   const [error, setError] = useState('');
   const [diagnostics, setDiagnostics] = useState<Diagnostics>({ backend: 'checking', database: 'checking', admin: 'checking', checkedAt: null });
   const [lastStatsRefresh, setLastStatsRefresh] = useState<Date | null>(null);
+  const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
   const metricWidth = width >= 900 ? '23.5%' : '48%';
 
   const loadDashboard = useCallback(async () => {
@@ -169,35 +170,50 @@ export const AdminDashboardScreen = () => {
             <Text style={styles.screenTitle}>Admin dashboard</Text>
             <Text style={styles.subtitle}>Keep the marketplace moving safely.</Text>
           </View>
-          <View style={styles.adminBadge}>
-            <Ionicons name="shield-checkmark-outline" size={18} color={tokens.colors.municipalTeal} />
-            <Text style={styles.adminBadgeText}>Admin</Text>
-          </View>
-        </View>
-
-        <View style={styles.mockNotice}>
-          {overview ? <Ionicons name="cloud-done-outline" size={18} color={tokens.colors.municipalTeal} /> : <ActivityIndicator size="small" color={tokens.colors.municipalTeal} />}
-          <Text style={styles.mockNoticeText}>{error || (overview ? 'Live data from the ParkShare database.' : 'Loading live admin data...')}</Text>
-        </View>
-
-        <Text style={[styles.sectionTitle, { marginTop: 16, marginBottom: 8 }]}>Connection diagnostics</Text>
-        <GlassPanel style={[styles.diagnosticsPanel, { marginBottom: 12 }]} borderRadius={16} intensity={30} overlayColor={tokens.colors.panelSurface}>
-          <DiagnosticRow label="Backend API" status={diagnostics.backend} detail={`${API_BASE_URL} · ${API_URL_SOURCE === 'environment' ? 'configured by environment' : 'deployed fallback'}`} />
-          <DiagnosticRow label="Database" status={diagnostics.database} detail="Verified through the health check and statistics query" />
-          <DiagnosticRow label="Admin access" status={diagnostics.admin} detail="Authenticated statistics request" />
-          <DiagnosticRow label="Signed-in account" status={user ? 'connected' : 'unavailable'} detail={user ? `${user.email} · ${user.role}` : 'No authenticated account'} />
-          <View style={styles.diagnosticFooter}>
-            <View style={styles.refreshTimes}>
-              <Text style={styles.checkedAtText}>{diagnostics.checkedAt ? `Checked ${diagnostics.checkedAt.toLocaleTimeString()}` : 'Checking connection…'}</Text>
-              <Text style={styles.checkedAtText}>{lastStatsRefresh ? `Stats refreshed ${lastStatsRefresh.toLocaleTimeString()}` : 'Stats not loaded yet'}</Text>
+          <View style={styles.headerActions}>
+            <View style={styles.adminBadge}>
+              <Ionicons name="shield-checkmark-outline" size={16} color={tokens.colors.emeraldDeep} />
+              <Text style={styles.adminBadgeText}>Admin</Text>
             </View>
-            <TouchableOpacity style={styles.refreshButton} onPress={loadDashboard} disabled={diagnostics.backend === 'checking' || diagnostics.admin === 'checking'} accessibilityRole="button" accessibilityLabel="Refresh connection diagnostics">
-              <Ionicons name="refresh-outline" size={16} color={tokens.colors.municipalTeal} />
-              <Text style={styles.refreshButtonText}>Refresh</Text>
+            <TouchableOpacity
+              style={styles.diagnosticsBtn}
+              onPress={() => setShowDiagnosticsModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Open connection diagnostics"
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor:
+                      diagnostics.backend === 'connected' && diagnostics.admin === 'connected'
+                        ? tokens.colors.availabilityGreen
+                        : diagnostics.backend === 'checking'
+                        ? tokens.colors.warningAmber
+                        : '#DC2626',
+                  },
+                ]}
+              />
+              <Ionicons name="pulse-outline" size={14} color={tokens.colors.emeraldDeep} />
+              <Text style={styles.diagnosticsBtnText}>Diagnostics</Text>
             </TouchableOpacity>
           </View>
-        </GlassPanel>
+        </View>
 
+        {error ? (
+          <TouchableOpacity
+            style={[styles.mockNotice, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', borderWidth: 1 }]}
+            onPress={() => setShowDiagnosticsModal(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="warning-outline" size={18} color="#991B1B" />
+            <Text style={[styles.mockNoticeText, { color: '#991B1B' }]}>
+              {error} — Tap to view diagnostics
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {/* 4 Primary Metric Squares First */}
         <View style={styles.metricGrid}>
           {metrics.map((metric) => (
             <GlassPanel key={metric.label} style={[styles.metricCard, { width: metricWidth }]} borderRadius={18} intensity={30} overlayColor={tokens.colors.panelSurface}>
@@ -251,6 +267,105 @@ export const AdminDashboardScreen = () => {
           ))}
         </View>
       </ScrollView>
+
+      {/* Diagnostics Modal Popup */}
+      <Modal
+        visible={showDiagnosticsModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDiagnosticsModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowDiagnosticsModal(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderTitleRow}>
+                <View
+                  style={[
+                    styles.statusDot,
+                    {
+                      width: 10,
+                      height: 10,
+                      backgroundColor:
+                        diagnostics.backend === 'connected' && diagnostics.admin === 'connected'
+                          ? tokens.colors.availabilityGreen
+                          : '#DC2626',
+                    },
+                  ]}
+                />
+                <View>
+                  <Text style={styles.modalTitle}>Connection Diagnostics</Text>
+                  <Text style={styles.modalSubtitle}>Live platform & database connectivity</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowDiagnosticsModal(false)}
+                accessibilityLabel="Close diagnostics"
+              >
+                <Ionicons name="close" size={18} color={tokens.colors.primaryText} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.diagnosticsPanel}>
+              <DiagnosticRow
+                label="Backend API"
+                status={diagnostics.backend}
+                detail={`${API_BASE_URL} · ${API_URL_SOURCE === 'environment' ? 'configured by environment' : 'deployed fallback'}`}
+              />
+              <DiagnosticRow
+                label="Database"
+                status={diagnostics.database}
+                detail="Verified through the health check and statistics query"
+              />
+              <DiagnosticRow
+                label="Admin access"
+                status={diagnostics.admin}
+                detail="Authenticated statistics request"
+              />
+              <DiagnosticRow
+                label="Signed-in account"
+                status={user ? 'connected' : 'unavailable'}
+                detail={user ? `${user.email} · ${user.role}` : 'No authenticated account'}
+              />
+              <View style={styles.diagnosticFooter}>
+                <View style={styles.refreshTimes}>
+                  <Text style={styles.checkedAtText}>
+                    {diagnostics.checkedAt ? `Checked ${diagnostics.checkedAt.toLocaleTimeString()}` : 'Checking connection…'}
+                  </Text>
+                  <Text style={styles.checkedAtText}>
+                    {lastStatsRefresh ? `Stats refreshed ${lastStatsRefresh.toLocaleTimeString()}` : 'Stats not loaded yet'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  onPress={loadDashboard}
+                  disabled={diagnostics.backend === 'checking' || diagnostics.admin === 'checking'}
+                  accessibilityRole="button"
+                  accessibilityLabel="Refresh connection diagnostics"
+                >
+                  <Ionicons name="refresh-outline" size={16} color={tokens.colors.emeraldDeep} />
+                  <Text style={styles.refreshButtonText}>Refresh</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalDismissBtn}
+              onPress={() => setShowDiagnosticsModal(false)}
+            >
+              <Text style={styles.modalDismissBtnText}>Done</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
