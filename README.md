@@ -102,4 +102,12 @@ The promo ad is generated entirely from code with **Remotion** (`marketing-video
 5. Press `w` to open it in a local web browser, or scan the QR code with the Expo Go app on your phone!
 
 ---
+
+## 📄 License
+
+Copyright © 2026 ParkShare. All rights reserved.
+
+This repository is **proprietary**. The source is publicly visible for reference only; no permission is granted to use, copy, modify, distribute or deploy it without prior written consent from ParkShare. See [`LICENSE`](LICENSE) for the full terms.
+
+---
 *Developed by Team Clutch at the VNU Hackathon!*
